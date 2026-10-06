@@ -296,7 +296,7 @@ router.post("/verify-whatsapp-otp", isAuthenticated, async (req, res) => {
 // =======================
 router.put("/update", isAuthenticated, attachInstitutionProfile({ required: false }), async (req, res) => {
   try {
-    const { name, sidebar_name, phoneNumber, profilePicture, platformLogo, profileBanner, qualification, department, bio, prn, abc_id, branch, batch, address, hobby, subjectsAssigned, dob, gender, fatherName, motherName, eligibilityNo, pattern, alternateEmail, signature, admission_type, category } = req.body;
+    const { name, sidebar_name, phoneNumber, profilePicture, platformLogo, profileBanner, qualification, department, bio, prn, abc_id, branch, batch, address, hobby, subjectsAssigned, dob, gender, fatherName, motherName, eligibilityNo, pattern, alternateEmail, signature, admission_type, category, metadata } = req.body;
 
     // Safety check: Don't allow empty name
     if (name !== undefined && (name === null || name.trim() === "")) {
@@ -344,6 +344,10 @@ router.put("/update", isAuthenticated, attachInstitutionProfile({ required: fals
     if (signature !== undefined) updateData.signature = signature;
     if (admission_type !== undefined) updateData.admission_type = admission_type;
     if (category !== undefined) updateData.category = category;
+
+    if (metadata !== undefined && typeof metadata === 'object') {
+      updateData.metadata = { ...req.user.metadata, ...metadata };
+    }
 
     // Push Notifications Toggle
     if (req.body.pushNotifications !== undefined && typeof req.body.pushNotifications.global === 'boolean') {

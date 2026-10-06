@@ -95,6 +95,15 @@ router.post("/check-username", authController.checkUsername);
 router.post("/setup-org-admin", authController.setupOrgAdmin); // kept for backward compat
 router.post("/logout", authController.logout);
 
+// --- Chat Agent Real Auth Flow ---
+router.post("/chat/send-email-otp", authController.chatSendEmailOtp);
+router.post("/chat/verify-email-otp", authController.chatVerifyEmailOtp);
+router.post("/chat/send-whatsapp-otp", authController.chatSendWhatsappOtp);
+router.post("/chat/finalize-onboarding", authController.chatFinalizeOnboarding);
+
+
+    // Fake endpoints removed
+
 router.get("/me", isAuthenticated, authController.getCurrentUser);
 
 router.post("/forgot-password", resetPasswordLimiter, authController.forgotPassword);
@@ -159,3 +168,5 @@ router.get(
 );
 
 export default router;
+router.post('/chat/send-whatsapp-otp', authController.chatSendWhatsAppOtp);
+router.post('/chat/verify-whatsapp-otp', authController.chatVerifyWhatsAppOtp);

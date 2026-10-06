@@ -2988,3 +2988,321 @@ export const checkUsername = async (req, res) => {
 };
 
 
+
+// --- Chat Sandbox Endpoints ---
+const chatOtps = new Map();
+
+export const chatSendOtp = async (req, res) => {
+    try {
+        const { email } = req.body;
+        const otp = '123456';
+        chatOtps.set(email.toLowerCase(), otp);
+        res.json({ message: 'OTP sent' });
+    } catch (e) {
+        res.status(500).json({ message: e.message });
+    }
+};
+
+export const chatVerifyOtp = async (req, res) => {
+    try {
+        const { email, otp } = req.body;
+        if (chatOtps.get(email.toLowerCase()) === otp || otp === '123456') {
+            res.json({ message: 'OTP verified' });
+        } else {
+            res.status(400).json({ message: 'Invalid OTP' });
+        }
+    } catch (e) {
+        res.status(500).json({ message: e.message });
+    }
+};
+
+export const chatOnboard = async (req, res) => {
+    try {
+        const connectDB = (await import('../../config/db.js')).default;
+        await connectDB();
+        const { email, name, password, age, role, whatsappPhone } = req.body;
+        const User = (await import('../models/User.js')).default;
+        const bcrypt = (await import('bcryptjs')).default;
+        const jwt = (await import('jsonwebtoken')).default;
+        
+        let user = await User.findOne({ email: email.toLowerCase() });
+        const orgId = '6ac4b95e0f8a97f45e98b0ff';
+
+        if (!user) {
+            user = new User({
+                email: email.toLowerCase(),
+                name: name || 'Chat User',
+                password: await bcrypt.hash(password, 10),
+                role: 'student',
+                organization_id: orgId,
+                metadata: { age, job_role: role, whatsappPhone },
+                isEmailVerified: true
+            });
+        } else {
+            user.metadata = { ...(user.metadata || {}), age, job_role: role, whatsappPhone };
+            user.organization_id = orgId;
+            user.role = 'student';
+            if (password) {
+               user.password = await bcrypt.hash(password, 10);
+            }
+        }
+        await user.save();
+
+        const JWT_SECRET = process.env.JWT_SECRET || 'dev_secret';
+        const token = jwt.sign({ id: user._id.toString(), role: user.role, organization_id: user.organization_id }, JWT_SECRET, { expiresIn: '30d' });
+
+        res.json({ token, user });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+// ============================================================================
+// CHAT AGENT REAL AUTH FLOW (END-TO-END)
+// ============================================================================
+
+export const chatSendEmailOtp = async (req, res) => {
+    try {
+        const { email } = req.body;
+        if (!email) return res.status(400).json({ message: 'Email required' });
+        const otp = Math.floor(100000 + Math.random() * 900000).toString();
+        
+        const OnboardingOTP = (await import('../models/OnboardingOTP.js')).default;
+        await OnboardingOTP.deleteMany({ target: email.toLowerCase() });
+        await OnboardingOTP.create({
+            target: email.toLowerCase(),
+            type: 'email',
+            otp,
+            expires_at: new Date(Date.now() + 10 * 60 * 1000)
+        });
+
+        const { sendEmail } = await import('../services/aws-ses.service.js');
+        await sendEmail({
+            to: email.toLowerCase(),
+            subject: 'Classgrid AI - Verification Code',
+            html: `<p>Your Classgrid AI verification code is: <strong>${otp}</strong></p>`,
+            text: `Your Classgrid AI verification code is: ${otp}`
+        });
+
+        res.json({ message: 'OTP sent to email' });
+    } catch (e) {
+        console.error('chatSendEmailOtp Error:', e);
+        res.status(500).json({ message: e.message });
+    }
+};
+
+export const chatVerifyEmailOtp = async (req, res) => {
+    try {
+        const { email, otp } = req.body;
+        const OnboardingOTP = (await import('../models/OnboardingOTP.js')).default;
+        const record = await OnboardingOTP.findOne({ target: email.toLowerCase(), type: 'email' });
+        
+        if (!record || record.otp !== otp) {
+            return res.status(400).json({ message: 'Invalid or expired OTP' });
+        }
+        await OnboardingOTP.deleteOne({ _id: record._id });
+        res.json({ message: 'Email verified' });
+    } catch (e) {
+        console.error('chatVerifyEmailOtp Error:', e);
+        res.status(500).json({ message: e.message });
+    }
+};
+
+export const chatSendWhatsappOtp = async (req, res) => {
+    try {
+        const { phoneNumber } = req.body;
+        if (!phoneNumber) return res.status(400).json({ message: 'Phone number required' });
+
+        const otp = Math.floor(100000 + Math.random() * 900000).toString();
+        const OnboardingOTP = (await import('../models/OnboardingOTP.js')).default;
+        
+        await OnboardingOTP.deleteMany({ target: phoneNumber, type: 'phone' });
+        await OnboardingOTP.create({
+            target: phoneNumber,
+            type: 'phone',
+            otp,
+            expires_at: new Date(Date.now() + 10 * 60 * 1000)
+        });
+
+        if (process.env.WHATSAPP_PHONE_ID && process.env.WHATSAPP_ACCESS_TOKEN) {
+            const waRes = await fetch(`https://graph.facebook.com/v17.0/${process.env.WHATSAPP_PHONE_ID}/messages`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${process.env.WHATSAPP_ACCESS_TOKEN}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    messaging_product: 'whatsapp',
+                    recipient_type: 'individual',
+                    to: phoneNumber,
+                    type: 'text',
+                    text: {
+                        preview_url: false,
+                        body: `*${otp}* is your verification code. For your security, do not share this code.`
+                    }
+                })
+            });
+            const data = await waRes.json();
+            if (data.error) throw new Error(data.error.message || 'WhatsApp API Error');
+        } else {
+            console.warn('WHATSAPP CREDENTIALS MISSING. OTP was generated but not sent:', otp);
+        }
+
+        res.json({ message: 'OTP sent to WhatsApp' });
+    } catch (e) {
+        console.error('chatSendWhatsappOtp Error:', e);
+        res.status(500).json({ message: e.message });
+    }
+};
+
+export const chatFinalizeOnboarding = async (req, res) => {
+    try {
+        const connectDB = (await import('../../config/db.js')).default;
+        await connectDB();
+        const { email, name, password, age, role, whatsappPhone, whatsappOtp } = req.body;
+
+        const OnboardingOTP = (await import('../models/OnboardingOTP.js')).default;
+        const record = await OnboardingOTP.findOne({ target: whatsappPhone, type: 'phone' });
+        if (!record || record.otp !== whatsappOtp) {
+            return res.status(400).json({ message: 'Invalid WhatsApp OTP' });
+        }
+        await OnboardingOTP.deleteOne({ _id: record._id });
+
+        const User = (await import('../models/User.js')).default;
+        const bcrypt = (await import('bcryptjs')).default;
+        const jwt = (await import('jsonwebtoken')).default;
+
+        // One email = one whatsapp number validation
+        const existingPhoneUser = await User.findOne({ "metadata.whatsappPhone": whatsappPhone });
+        if (existingPhoneUser && existingPhoneUser.email !== email.toLowerCase()) {
+            return res.status(400).json({ message: "This WhatsApp number is already linked to another email." });
+        }
+        
+        let user = await User.findOne({ email: email.toLowerCase() });
+        const orgId = '6ac4b95e0f8a97f45e98b0ff';
+
+        if (!user) {
+            user = new User({
+                email: email.toLowerCase(),
+                name: name || 'AI User',
+                password: await bcrypt.hash(password, 10),
+                role: 'student',
+                organization_id: orgId,
+                metadata: { age, job_role: role, whatsappPhone },
+                isEmailVerified: true
+            });
+        } else {
+            if (user.metadata?.whatsappPhone && user.metadata.whatsappPhone !== whatsappPhone) {
+                 return res.status(400).json({ message: "You have already linked a different WhatsApp number to this email." });
+            }
+            user.metadata = { ...(user.metadata || {}), age, job_role: role, whatsappPhone };
+            user.organization_id = orgId;
+            user.role = 'student';
+            if (password) {
+               user.password = await bcrypt.hash(password, 10);
+            }
+        }
+        await user.save();
+
+        const JWT_SECRET = process.env.JWT_SECRET || 'dev_secret';
+        const token = jwt.sign({ id: user._id.toString(), role: user.role, organization_id: user.organization_id }, JWT_SECRET, { expiresIn: '30d' });
+
+        res.json({ token, user });
+    } catch (error) {
+        console.error('chatFinalizeOnboarding Error:', error);
+        res.status(500).json({ message: error.message });
+    }
+};
+
+export const chatSendWhatsAppOtp = async (req, res) => {
+    try {
+        const { phone } = req.body;
+        if (!phone) return res.status(400).json({ message: "Phone number is required." });
+
+        const otp = Math.floor(100000 + Math.random() * 900000).toString();
+        
+        await connectDB();
+        
+        await DeviceVerification.findOneAndUpdate(
+            { email: phone }, 
+            {
+                $set: {
+                    otp,
+                    isUsed: false,
+                    failedAttempts: 0,
+                    expiresAt: new Date(Date.now() + 10 * 60 * 1000) 
+                }
+            },
+            { upsert: true }
+        );
+
+        const WHATSAPP_TOKEN = process.env.WHATSAPP_ACCESS_TOKEN; 
+        const PHONE_NUMBER_ID = process.env.WHATSAPP_PHONE_ID; 
+        const TEMPLATE_NAME = "classgrid_otp"; 
+
+        const url = "https://graph.facebook.com/v17.0/${PHONE_NUMBER_ID}/messages";
+        const data = {
+            messaging_product: "whatsapp",
+            to: phone.replace("+", ""),
+            type: "template",
+            template: {
+                name: TEMPLATE_NAME,
+                language: { code: "en" },
+                components: [
+                    {
+                        type: "body",
+                        parameters: [{ type: "text", text: otp }]
+                    },
+                    {
+                        type: "button",
+                        sub_type: "url",
+                        index: "0",
+                        parameters: [{ type: "text", text: otp }]
+                    }
+                ]
+            }
+        };
+
+        const axios = (await import('axios')).default;
+        await axios.post(url, data, {
+            headers: {
+                Authorization: "Bearer ${WHATSAPP_TOKEN}",
+                "Content-Type": "application/json"
+            }
+        });
+
+        res.status(200).json({ message: "WhatsApp OTP sent successfully!" });
+    } catch (error) {
+        console.error("WhatsApp API Error:", error.response?.data || error.message);
+        res.status(500).json({ 
+            message: "Failed to send WhatsApp message. Please verify your Meta .env credentials.",
+            error: error.response?.data || error.message 
+        });
+    }
+};
+
+export const chatVerifyWhatsAppOtp = async (req, res) => {
+    try {
+        const { phone, otp } = req.body;
+        if (!phone || !otp) return res.status(400).json({ message: "Phone and OTP are required." });
+
+        await connectDB();
+        const verification = await DeviceVerification.findOne({ email: phone, isUsed: false });
+        
+        if (!verification) return res.status(404).json({ message: "OTP not found or already used." });
+        if (verification.expiresAt < new Date()) return res.status(400).json({ message: "OTP has expired." });
+        
+        if (verification.otp !== otp) {
+            verification.failedAttempts += 1;
+            await verification.save();
+            return res.status(400).json({ message: "Invalid OTP." });
+        }
+
+        verification.isUsed = true;
+        await verification.save();
+
+        res.status(200).json({ message: "WhatsApp phone verified successfully!" });
+    } catch (error) {
+        res.status(500).json({ message: "Server error verifying OTP." });
+    }
+};

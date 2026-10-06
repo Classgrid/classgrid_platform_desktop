@@ -55,7 +55,8 @@ export type DashboardRole =
   | "hr_dept"
   | "hostel_dept"
   | "faculty"
-  | "student";
+  | "student"
+  | "public_chat";
 
 export type SidebarItem = {
   label: string;

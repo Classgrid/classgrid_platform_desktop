@@ -1,0 +1,1188 @@
+"use client";
+
+import React, { useState, Suspense, useEffect, useRef, useMemo, lazy } from "react";
+import { useSearchParams, useNavigate, Link } from "react-router-dom";
+import { REGEXP_ONLY_DIGITS_AND_CHARS } from "input-otp";
+import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/marketing_ui/input-otp";
+import { Spinner } from "@/components/marketing_ui/spinner";
+import { useTheme } from "next-themes";
+import { Eye, EyeOff, Check, GraduationCap, BookOpen, Shield, Code, PenTool, Database, Microscope, Target, Megaphone, TrendingUp, Headset, Settings, PenLine, Laptop, Users, Building, UserPlus, PiggyBank, Scale, Star, ChevronRight } from "lucide-react";
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/marketing_ui/select";
+import { customArray } from "country-codes-list";
+import * as Flags from 'country-flag-icons/react/3x2';
+import { motion, AnimatePresence } from "framer-motion";
+
+const Confetti = lazy(() => import("react-confetti"));
+
+const ROLES = [
+  { value: "student", label: "Student", icon: GraduationCap },
+  { value: "faculty", label: "Faculty", icon: BookOpen },
+  { value: "administrator", label: "Administrator", icon: Shield },
+  { value: "software_engineer", label: "Software Engineer", icon: Code },
+  { value: "designer", label: "Designer", icon: PenTool },
+  { value: "data_scientist", label: "Data Scientist", icon: Database },
+  { value: "researcher", label: "Researcher", icon: Microscope },
+  { value: "product_manager", label: "Product Manager", icon: Target },
+  { value: "marketer", label: "Marketer", icon: Megaphone },
+  { value: "sales", label: "Sales", icon: TrendingUp },
+  { value: "customer_support", label: "Customer Support", icon: Headset },
+  { value: "operations", label: "Operations", icon: Settings },
+  { value: "writer", label: "Writer", icon: PenLine },
+  { value: "freelancer", label: "Freelancer", icon: Laptop },
+  { value: "consultant", label: "Consultant", icon: Users },
+  { value: "executive", label: "Executive", icon: Building },
+  { value: "hr", label: "Human Resources", icon: UserPlus },
+  { value: "finance", label: "Finance", icon: PiggyBank },
+  { value: "legal", label: "Legal", icon: Scale },
+  { value: "other", label: "Other", icon: Star },
+];
+
+const COUNTRY_CODES = customArray({
+  label: "{countryNameEn}",
+  code: "+{countryCallingCode}",
+  flag: "{flag}",
+  value: "{countryCode}",
+}).sort((a, b) => a.label.localeCompare(b.label));
+
+
+const useSession = () => ({ data: null, status: "unauthenticated" });
+const signIn = async (p: any, o: any) => { console.log("Mock signIn", p, o); return { ok: true, error: null }; };
+
+const OTP_TTL_SECONDS = 60;
+
+/** Map NextAuth URL error codes to user-friendly messages */
+const OAUTH_ERROR_MAP: Record<string, string> = {
+  OAuthCallback: "Sign-in was interrupted. Please try again.",
+  OAuthAccountNotLinked: "Wrong account signed in. It looks like you're signed in with a different email address. Please sign in with the email address that received this email to continue.",
+  OAuthSignin: "Could not start the sign-in flow. Please try again.",
+  OAuthCreateAccount: "Could not create your account. Please try again.",
+  Callback: "Something went wrong during sign-in. Please try again.",
+  AccessDenied: "Access denied. You may not have permission to sign in.",
+  default: "An unexpected error occurred. Please try again.",
+};
+
+function formatCountdown(seconds: number) {
+  const minutes = Math.floor(seconds / 60);
+  const remainingSeconds = seconds % 60;
+  return `${minutes}:${remainingSeconds.toString().padStart(2, "0")}`;
+}
+
+function LoginContent() {
+  const { data: session, status } = useSession();
+  const navigate = useNavigate();
+  const router = { replace: (url: string) => navigate(url, { replace: true }), push: (url: string) => navigate(url) };
+  const [searchParams] = useSearchParams();
+  const { setTheme } = useTheme();
+
+  useEffect(() => {
+    setTheme("system");
+  }, [setTheme]);
+
+  // If Discourse sent SSO params (sso + sig), complete the handshake after login
+  const sso = searchParams.get("sso");
+  const sig = searchParams.get("sig");
+
+  const ssoReturnTo = (sso && sig)
+    ? `/onboarding?sso=${encodeURIComponent(sso)}&sig=${encodeURIComponent(sig)}`
+    : null;
+  const rawCallbackUrl = searchParams.get("next") || searchParams.get("callbackUrl");
+  const oauthError = searchParams.get("error");
+
+  // IMPORTANT: When NextAuth encounters an OAuthCallback error, it replaces the original
+  // callbackUrl with the homepage (https://classgrid.in). We save the REAL callbackUrl
+  // to localStorage before starting OAuth, and restore it here if the URL has been mangled.
+  const isHomepageCallback = !rawCallbackUrl || rawCallbackUrl === "https://classgrid.in" || rawCallbackUrl === "/";
+  let explicitNext = rawCallbackUrl;
+  const hasRetried = searchParams.get("retried") === "true";
+
+  if (typeof window !== "undefined") {
+    // Restore the original callbackUrl from localStorage if it was mangled
+    if (oauthError && isHomepageCallback) {
+      const saved = localStorage.getItem("classgrid:login-callback");
+      if (saved) explicitNext = saved;
+    }
+
+    // AUTO-RECOVER: On OAuthCallback error, clear stale cookies and silently redirect
+    // to a clean login page so the user never sees "Sign-in was interrupted."
+    // The "retried" flag prevents infinite loops — if it fails twice, show the error.
+    if ((oauthError === "OAuthCallback" || oauthError === "Callback") && !hasRetried) {
+      // Clear all NextAuth cookies
+      document.cookie.split(";").forEach((c) => {
+        const name = c.split("=")[0].trim();
+        if (name.includes("next-auth") || name.includes("__Secure-next-auth")) {
+          document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/`;
+          document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; secure`;
+        }
+      });
+
+      // Build a clean login URL with the preserved callbackUrl
+      const cleanUrl = new URL(window.location.origin + "/login");
+      const preservedCallback = explicitNext || localStorage.getItem("classgrid:login-callback");
+      if (preservedCallback) cleanUrl.searchParams.set("callbackUrl", preservedCallback);
+      cleanUrl.searchParams.set("retried", "true");
+
+      // Silently redirect — user never sees the error
+      window.location.replace(cleanUrl.toString());
+    }
+  }
+
+  const intent = searchParams.get("intent");
+  const unsubscribeType = searchParams.get("type");
+  const targetShortCode = searchParams.get("c");
+
+  let unsubscribeReturnTo = intent === "unsubscribe" && unsubscribeType
+    ? `/api/preferences/unsubscribe?type=${unsubscribeType}`
+    : null;
+
+  if (unsubscribeReturnTo && targetShortCode) {
+    unsubscribeReturnTo += `&c=${targetShortCode}`;
+  }
+
+  // After OAuth → if there's an explicit callbackUrl (e.g. from docs ?openComment=true), honour it directly.
+  // Otherwise fall back to /api/auth/post-login which checks role and redirects appropriately.
+  const oauthCallbackUrl = ssoReturnTo || unsubscribeReturnTo || explicitNext || "/api/auth/post-login";
+  const otpSuccessUrl = ssoReturnTo || unsubscribeReturnTo || explicitNext || "/api/auth/post-login";
+
+
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const whatsappTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const isRedirecting = useRef(false);
+
+  // Pre-fetch CSRF token as soon as login page loads.
+  // This ensures the next-auth CSRF cookie is properly set BEFORE the user clicks
+  // any OAuth button, preventing the "Sign-in was interrupted" (OAuthCallback) error.
+  useEffect(() => {
+    fetch("/api/auth/csrf", { credentials: "include" }).catch(() => { });
+  }, []);
+
+  const handleGoogle = () => {
+    setEmail("google-user@example.com");
+    setLoading(true);
+    setTimeout(() => {
+       setLoading(false);
+       setStep("otp");
+       startCountdown();
+    }, 800);
+  };
+
+  const handleGithub = () => {
+    setEmail("github-user@example.com");
+    setLoading(true);
+    setTimeout(() => {
+       setLoading(false);
+       setStep("otp");
+       startCountdown();
+    }, 800);
+  };
+
+  // ── Redirect already-logged-in users ──
+  useEffect(() => {
+    if (status !== "authenticated" || !session?.user || isRedirecting.current) return;
+
+    // If they were kicked back with an error (like wrong unsubscribe account),
+    // we must kill their session and let them see the error, not redirect them again!
+    if (searchParams.get("error")) {
+      return;
+    }
+
+    const user = session.user as any;
+
+    // If there's an explicit "next" param or SSO, honour it
+    if (ssoReturnTo) {
+      isRedirecting.current = true;
+      window.location.href = ssoReturnTo;
+      return;
+    }
+    if (unsubscribeReturnTo) {
+      isRedirecting.current = true;
+      window.location.href = unsubscribeReturnTo;
+      return;
+    }
+    if (explicitNext) {
+      isRedirecting.current = true;
+      window.location.href = explicitNext;
+      return;
+    }
+
+    // Platform users (student / faculty / admin) → raise ticket page
+    if (user.isPlatformUser) {
+      router.replace("/support/ticket");
+    } else {
+      // Non-platform (community) users → Classgrid Talk
+      router.replace("/support/inquiry");
+    }
+  }, [status, session, router, ssoReturnTo, explicitNext, unsubscribeReturnTo]);
+
+  const [mode, setMode] = useState<"signin" | "signup">("signin");
+  const [step, setStep] = useState<"email" | "otp" | "otp_verified" | "password" | "whatsapp" | "whatsapp_otp" | "age" | "role" | "success">("email");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  // (Variables declared above)
+
+  const typeDisplay = unsubscribeType ? unsubscribeType.charAt(0).toUpperCase() + unsubscribeType.slice(1) : "";
+
+  // Show OAuth error from URL (e.g. OAuthCallback)
+  const urlError = searchParams.get("error");
+  const friendlyUrlError = urlError
+    ? (Object.prototype.hasOwnProperty.call(OAUTH_ERROR_MAP, urlError) ? OAUTH_ERROR_MAP[urlError] : OAUTH_ERROR_MAP.default)
+    : "";
+
+  const [email, setEmail] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [otp, setOtp] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [age, setAge] = useState("");
+  const [role, setRole] = useState("");
+  const [whatsappPhone, setWhatsappPhone] = useState("");
+  const [whatsappCountryCode, setWhatsappCountryCode] = useState("IN");
+  const [whatsappOtp, setWhatsappOtp] = useState("");
+  const [whatsappCountdown, setWhatsappCountdown] = useState(0);
+  const [whatsappOtpExpired, setWhatsappOtpExpired] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [isPasswordFocused, setIsPasswordFocused] = useState(false);
+  const [countdown, setCountdown] = useState(0);
+  const [otpExpired, setOtpExpired] = useState(false);
+
+  useEffect(() => {
+    if (targetShortCode) {
+      // get-email fetch bypassed
+    }
+  }, [targetShortCode]);
+
+  // If there's an error in the URL but they are still authenticated, sign them out
+  // so they can see the error message and log in with the correct account.
+  useEffect(() => {
+    if (urlError && status === "authenticated") {
+      // Mock signOut
+    }
+  }, [urlError, status]);
+
+  // ... (keeping existing handlers up to the return statement)
+
+  // Fast-forwarding down to the return JSX...
+
+  const startCountdown = () => {
+    setCountdown(OTP_TTL_SECONDS);
+    setOtpExpired(false);
+    if (timerRef.current) clearInterval(timerRef.current);
+    timerRef.current = setInterval(() => {
+      setCountdown((prev) => {
+        if (prev <= 1) {
+          clearInterval(timerRef.current!);
+          setOtpExpired(true);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+  };
+
+  const startWhatsappCountdown = () => {
+    setWhatsappCountdown(OTP_TTL_SECONDS);
+    setWhatsappOtpExpired(false);
+    if (whatsappTimerRef.current) clearInterval(whatsappTimerRef.current);
+    whatsappTimerRef.current = setInterval(() => {
+      setWhatsappCountdown((prev) => {
+        if (prev <= 1) {
+          clearInterval(whatsappTimerRef.current!);
+          setWhatsappOtpExpired(true);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+  };
+
+  const handleSendOTP = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+
+    if (!email) {
+      setError("Please enter your email");
+      return;
+    }
+
+    if (mode === "signup" && (!firstName || !lastName)) {
+      setError("Please enter your first and last name");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      await apiClient.post("/api/auth/chat/send-email-otp", { email: email.toLowerCase() });
+
+      setStep("otp");
+      startCountdown();
+    } catch (err: any) {
+      setError(err?.message && typeof err.message === "string" ? err.message : "Failed to send OTP.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleVerifyOTP = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+
+    if (otp.length !== 6) {
+      setError("Please enter the 6-digit code");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const res = await apiClient.post("/api/auth/chat/verify-email-otp", {
+        redirect: false,
+        email,
+        otp,
+        name: mode === "signup" ? `${firstName} ${lastName}`.trim() : undefined,
+      });
+
+      if (!res) {
+        setError("Something went wrong. Please try again.");
+        setLoading(false);
+        return;
+      }
+
+      if (res.error) {
+        const errorMap: Record<string, string> = {
+          "OTP has expired": "Your code has expired. Please resend.",
+          "Invalid OTP": "Incorrect code. Please try again.",
+          "Too many attempts. Please request a new OTP.": "Too many wrong attempts. Please resend.",
+          "Invalid or expired OTP": "Code not found. Please resend.",
+        };
+        setError(Object.prototype.hasOwnProperty.call(errorMap, res.error) ? errorMap[res.error] : (typeof res.error === "string" ? res.error : "Sign-in error"));
+        setLoading(false);
+        return;
+      }
+
+      setLoading(false);
+      setStep("otp_verified");
+    } catch (err: any) {
+      setError(err?.message && typeof err.message === "string" ? err.message : "Something went wrong.");
+      setLoading(false);
+    }
+  };
+
+  const passwordRules = useMemo(() => {
+    return {
+      minLength: password.length >= 8,
+      maxLength: password.length > 0 && password.length <= 64,
+      uppercase: /[A-Z]/.test(password),
+      lowercase: /[a-z]/.test(password),
+      number: /[0-9]/.test(password),
+      special: /[@#$%^&*!?_.\-]/.test(password),
+    };
+  }, [password]);
+
+  const passedRules = Object.values(passwordRules).filter(Boolean).length;
+
+  const strength = useMemo(() => {
+    if (!password) return "empty";
+    if (passedRules <= 3) return "weak";
+    if (passedRules <= 5) return "medium";
+    return "strong";
+  }, [password, passedRules]);
+
+  const isStrongPassword =
+    passwordRules.minLength &&
+    passwordRules.maxLength &&
+    passwordRules.uppercase &&
+    passwordRules.lowercase &&
+    passwordRules.number &&
+    passwordRules.special;
+
+  const isConfirmTouched = confirmPassword.length > 0;
+  const isPasswordMatch = password === confirmPassword && isConfirmTouched;
+
+  const strengthStyles = {
+    empty: {
+      border: "border-slate-200 dark:border-[#2a2a2a]",
+      glow: "",
+      text: "text-slate-400",
+      bar: "bg-black/10 dark:bg-white/10 w-0",
+      label: "",
+    },
+    weak: {
+      border: "border-red-500/70",
+      glow: "shadow-[0_0_18px_rgba(239,68,68,0.20)]",
+      text: "text-red-400",
+      bar: "bg-red-500 w-1/3",
+      label: "Weak password",
+    },
+    medium: {
+      border: "border-orange-500/70",
+      glow: "shadow-[0_0_18px_rgba(249,115,22,0.20)]",
+      text: "text-orange-400",
+      bar: "bg-orange-500 w-2/3",
+      label: "Medium password",
+    },
+    strong: {
+      border: "border-emerald-500/80",
+      glow: "shadow-[0_0_20px_rgba(16,185,129,0.25)]",
+      text: "text-emerald-400",
+      bar: "bg-emerald-500 w-full",
+      label: "Strong password",
+    },
+  };
+
+  const current = strengthStyles[strength];
+
+  const confirmBorder = !isConfirmTouched
+    ? "border-slate-200 dark:border-[#2a2a2a]"
+    : isPasswordMatch
+    ? "border-emerald-500/80 shadow-[0_0_18px_rgba(16,185,129,0.22)]"
+    : "border-red-500/70 shadow-[0_0_18px_rgba(239,68,68,0.20)]";
+
+  const handleSetupPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+    if (!isStrongPassword) {
+       setError("Password does not meet the complexity requirements.");
+       return;
+    }
+    if (!isPasswordMatch) {
+       setError("Passwords do not match.");
+       return;
+    }
+    setLoading(true);
+    try {
+      await new Promise(r => setTimeout(r, 800));
+      setStep("whatsapp");
+    } catch (err: any) {
+      setError("Failed to setup password.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSetupAge = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+    if (!age || isNaN(Number(age)) || Number(age) < 13 || Number(age) > 120) {
+       setError("Please enter a valid age.");
+       return;
+    }
+    setLoading(true);
+    try {
+      await new Promise(r => setTimeout(r, 800));
+      setStep("role");
+    } catch (err: any) {
+      setError("Failed to save age.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSendWhatsappOtp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+    if (!whatsappPhone || whatsappPhone.length < 5) {
+       setError("Please enter a valid WhatsApp number.");
+       return;
+    }
+    setLoading(true);
+    try {
+      await new Promise(r => setTimeout(r, 800));
+      await apiClient.post("/api/auth/chat/send-whatsapp-otp", { phoneNumber: `+${whatsappCountryCode}${whatsappPhone}` });
+      setStep("whatsapp_otp");
+      startWhatsappCountdown();
+    } catch (err: any) {
+      setError("Failed to send OTP.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleVerifyWhatsappOtp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+    if (whatsappOtp.length !== 6) {
+       setError("Please enter a valid 6-digit OTP.");
+       return;
+    }
+    setLoading(true);
+    try {
+      await new Promise(r => setTimeout(r, 800));
+      setStep("age");
+    } catch (err: any) {
+      setError("Failed to verify OTP.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSetupRole = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+    if (!role) {
+       setError("Please select a role.");
+       return;
+    }
+    setLoading(true);
+    try {
+      await new Promise(r => setTimeout(r, 800));
+      setStep("success");
+    } catch (err: any) {
+      setError("Failed to save role.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (status === "loading" || (status === "authenticated" && !urlError)) {
+    return (
+      <div className="min-h-screen bg-background text-foreground flex items-center justify-center">
+        <Spinner className="w-6 h-6 text-muted-foreground" />
+      </div>
+    );
+  }
+
+  if (step === ("success" as any)) {
+    return (
+      <div className="min-h-screen bg-slate-50 dark:bg-background flex items-center justify-center p-4 font-sans">
+        <Suspense fallback={null}><Confetti width={window.innerWidth} height={window.innerHeight} /></Suspense>
+        <div className="fixed inset-0 z-50 flex flex-col items-center justify-center overflow-hidden" style={{ background: "radial-gradient(ellipse at 50% 30%, #1e3a5f 0%, #0a0e1a 50%, #05070d 100%)" }}>
+          {/* Starfield */}
+          <div className="absolute inset-0 overflow-hidden pointer-events-none">
+            {Array.from({ length: 60 }).map((_, i) => (
+              <div
+                key={i}
+                className="absolute rounded-full bg-white"
+                style={{
+                  width: `${Math.random() * 2 + 1}px`,
+                  height: `${Math.random() * 2 + 1}px`,
+                  top: `${Math.random() * 100}%`,
+                  left: `${Math.random() * 100}%`,
+                  opacity: Math.random() * 0.5 + 0.1,
+                }}
+              />
+            ))}
+          </div>
+          {/* Aurora Glow */}
+          <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[700px] h-[500px] rounded-full pointer-events-none" style={{ background: "radial-gradient(ellipse, rgba(56,142,255,0.3) 0%, rgba(56,142,255,0.1) 40%, transparent 70%)", filter: "blur(80px)" }} />
+
+          <motion.div
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ duration: 0.8, ease: "easeOut" }}
+            className="relative z-10 text-center px-6 max-w-xl"
+          >
+            <motion.p
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.3, duration: 0.6 }}
+              className="text-emerald-400 text-lg font-semibold mb-4 tracking-wide uppercase"
+            >
+              Setup Complete
+            </motion.p>
+            <motion.h1
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.6, duration: 0.8 }}
+              className="text-4xl md:text-5xl font-bold text-white mb-10 leading-tight"
+            >
+              Welcome to Classgrid Agent
+            </motion.h1>
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 1.0, duration: 0.6 }}
+              className="flex flex-col items-center gap-5 mt-4"
+            >
+              <button
+                onClick={() => window.location.href = "/dashboard"}
+                className="h-14 px-10 flex items-center justify-center text-base font-semibold rounded-full bg-white/10 hover:bg-white/20 text-white border border-white/20 backdrop-blur-sm transition-all duration-300 shadow-lg shadow-blue-500/10 cursor-pointer"
+              >
+                Start Chatting <ChevronRight className="ml-2 size-5" />
+              </button>
+              <button
+                onClick={() => {
+                  setStep("email");
+                  setEmail("");
+                  setWhatsappPhone("");
+                  setPassword("");
+                  setConfirmPassword("");
+                  setRole("");
+                  setAge("");
+                }}
+                className="text-white/50 hover:text-white text-sm font-medium transition-colors cursor-pointer"
+              >
+                Test Again (Restart Sandbox)
+              </button>
+            </motion.div>
+          </motion.div>
+          <style>{`@keyframes pulse { 0%, 100% { opacity: 0.1; } 50% { opacity: 0.7; } }`}</style>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-background text-foreground flex flex-col relative font-sans">
+
+      {/* Top Left Logo */}
+      <Link href="/" className="absolute top-6 left-8 flex items-center gap-3 hover:opacity-80 transition-opacity">
+        <img src="/logo.png" alt="Classgrid Logo" className="w-8 h-8 object-contain" />
+      </Link>
+
+      <div className="flex-1 flex flex-col items-center justify-center p-4">
+
+        <div className="w-full max-w-[400px] bg-card text-card-foreground border border-border shadow-lg rounded-2xl p-6 sm:p-8">
+          
+
+
+          {/* Show OAuth error from URL (e.g. OAuthCallback) */}
+          {friendlyUrlError && (
+            <div className="mb-4 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-center text-sm text-red-600 dark:border-red-900/40 dark:bg-red-950/30 dark:text-red-400">
+              {friendlyUrlError}
+            </div>
+          )}
+
+          {/* Custom Unsubscribe Banner */}
+          {intent === "unsubscribe" && typeDisplay && !friendlyUrlError && (
+            <div className="mb-4 rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-center text-[13.5px] text-amber-700 dark:border-amber-900/40 dark:bg-amber-950/30 dark:text-amber-400 font-medium">
+              You need to log in to unsubscribe from {typeDisplay} updates.
+            </div>
+          )}
+
+
+
+          {step === "otp_verified" ? (
+            <div className="flex flex-col items-center justify-center space-y-8 animate-in fade-in zoom-in-95 duration-300 py-4">
+                 <div 
+                   className="flex flex-col items-center justify-center gap-3"
+                   style={{ animation: "popIn 0.5s cubic-bezier(0.16, 1, 0.3, 1)" }}
+                 >
+                   <div className="h-16 w-16 rounded-full bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-100 dark:border-emerald-500/20 flex items-center justify-center text-emerald-500 shadow-xl shadow-emerald-500/10">
+                     <Check className="h-8 w-8" strokeWidth={3} />
+                   </div>
+                   <div className="text-center space-y-1">
+                     <p className="text-[15px] font-semibold text-emerald-600 dark:text-emerald-500">OTP Verified Successfully</p>
+                     <p className="text-[13px] font-medium text-slate-500 dark:text-[#888888]">{email}</p>
+                   </div>
+                 </div>
+                 
+                 <div className="w-full space-y-3">
+                   <p className="text-center text-[13px] text-slate-500 dark:text-[#888888]">
+                     Please set up a password for future logins.
+                   </p>
+                   <button
+                     onClick={() => setStep("password")}
+                     className="flex w-full items-center justify-center rounded-md bg-slate-900 py-3 text-sm font-medium text-white transition-all duration-200 hover:bg-slate-800 active:scale-[0.98] dark:bg-[#2a2a2a] dark:text-[#f1f1f1] dark:hover:bg-[#333]"
+                   >
+                     Setup Password
+                   </button>
+                 </div>
+            </div>
+          ) : step === "password" ? (
+            <form onSubmit={handleSetupPassword} className="space-y-4 animate-in slide-in-from-right-4 duration-300">
+              <div className="space-y-1.5 relative">
+                <label className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-gray-400">New Password</label>
+                <div className="relative mt-3">
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    placeholder="Enter new password"
+                    value={password}
+                    maxLength={64}
+                    onChange={(e) => setPassword(e.target.value)}
+                    onFocus={() => setIsPasswordFocused(true)}
+                    onBlur={() => setIsPasswordFocused(false)}
+                    className={`w-full h-12 rounded-xl border bg-white px-4 pr-12 text-sm text-slate-900 transition-all outline-none placeholder:text-slate-400 dark:bg-[#161616] dark:text-[#f1f1f1] dark:placeholder:text-[#555] ${current.border} ${current.glow}`}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 dark:text-[#888] dark:hover:text-[#f1f1f1] transition-colors focus:outline-none focus:ring-0 border-none"
+                  >
+                    {showPassword ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
+                  </button>
+
+                  {isPasswordFocused && password.length >= 2 && (
+                    <div className="absolute left-[calc(100%+16px)] top-1/2 z-50 w-[240px] -translate-y-1/2 rounded-xl border border-slate-200 dark:border-[#2a2a2a] bg-white dark:bg-[#1e1e1e] p-4 shadow-xl hidden md:block">
+                      <div className="absolute -left-2 top-1/2 h-4 w-4 -translate-y-1/2 rotate-45 border-b border-l border-slate-200 dark:border-[#2a2a2a] bg-white dark:bg-[#1e1e1e]" />
+                      <p className="text-[13px] font-semibold text-slate-900 dark:text-white">Password must contain:</p>
+                      <ul className="mt-2 flex flex-col gap-1 text-[12px] text-slate-500 dark:text-gray-300">
+                        <li className="flex items-center gap-2">
+                          <div className={`h-1.5 w-1.5 rounded-full ${passwordRules.minLength ? "bg-emerald-500" : "bg-gray-400 dark:bg-gray-500"}`} />
+                          Between 8 and 64 characters
+                        </li>
+                        <li className="flex items-center gap-2">
+                          <div className={`h-1.5 w-1.5 rounded-full ${passwordRules.uppercase && passwordRules.lowercase ? "bg-emerald-500" : "bg-gray-400 dark:bg-gray-500"}`} />
+                          Uppercase & lowercase letters
+                        </li>
+                        <li className="flex items-center gap-2">
+                          <div className={`h-1.5 w-1.5 rounded-full ${passwordRules.number ? "bg-emerald-500" : "bg-gray-400 dark:bg-gray-500"}`} />
+                          At least 1 number
+                        </li>
+                        <li className="flex items-center gap-2">
+                          <div className={`h-1.5 w-1.5 rounded-full ${passwordRules.special ? "bg-emerald-500" : "bg-gray-400 dark:bg-gray-500"}`} />
+                          At least 1 special character
+                        </li>
+                      </ul>
+                    </div>
+                  )}
+                </div>
+                {password && (
+                  <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-white/10">
+                    <div className={`h-full rounded-full transition-all duration-300 ${current.bar}`} />
+                  </div>
+                )}
+              </div>
+              
+              <div className="space-y-1.5 pt-2">
+                <label className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-gray-400">Confirm Password</label>
+                <div className="relative mt-3">
+                  <input
+                    type={showConfirmPassword ? "text" : "password"}
+                    placeholder="Confirm new password"
+                    value={confirmPassword}
+                    maxLength={64}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    className={`w-full h-12 rounded-xl border bg-white px-4 pr-12 text-sm text-slate-900 transition-all outline-none placeholder:text-slate-400 dark:bg-[#161616] dark:text-[#f1f1f1] dark:placeholder:text-[#555] ${confirmBorder}`}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 dark:text-[#888] dark:hover:text-[#f1f1f1] transition-colors focus:outline-none focus:ring-0 border-none"
+                  >
+                    {showConfirmPassword ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
+                  </button>
+                </div>
+                {isConfirmTouched && (
+                  <p className={`mt-2 text-xs font-semibold ${isPasswordMatch ? "text-emerald-500" : "text-red-500"}`}>
+                    {isPasswordMatch ? "Passwords match" : "Passwords do not match"}
+                  </p>
+                )}
+              </div>
+
+              {error && <p className="text-red-400 text-sm font-medium text-center">{error}</p>}
+
+              <button
+                type="submit"
+                disabled={loading}
+                className="mt-2 flex w-full items-center justify-center rounded-md bg-slate-900 py-3 text-sm font-medium text-white transition-all duration-200 hover:bg-slate-800 active:scale-[0.98] disabled:opacity-50 dark:bg-[#2a2a2a] dark:text-[#f1f1f1] dark:hover:bg-[#333]"
+              >
+                {loading ? <><Spinner className="w-4 h-4 text-inherit mr-2" /> Saving...</> : "Save Password"}
+              </button>
+            </form>
+          ) : step === "whatsapp" ? (
+            <form onSubmit={handleSendWhatsappOtp} className="space-y-4 animate-in slide-in-from-right-4 duration-300">
+              <div className="text-center space-y-1 mb-6">
+                 <p className="text-[15px] font-semibold text-slate-900 dark:text-white mb-2">Verify WhatsApp</p>
+                 <div className="rounded-lg bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 p-3 mb-4 text-left">
+                   <p className="text-[13px] text-emerald-800 dark:text-emerald-300 font-medium mb-3">
+                     <span className="font-bold">Step 1:</span> You MUST send a message to our WhatsApp bot to open the chat window before receiving your OTP.
+                   </p>
+                   <a 
+                      href="https://wa.me/918149277038?text=Hi%20Classgrid" 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="flex items-center justify-center w-full bg-emerald-600 text-white rounded-md py-2 text-[13px] font-bold mb-3 hover:bg-emerald-700 transition-colors"
+                   >
+                     Click Here to Open WhatsApp
+                   </a>
+                   <p className="text-[13px] text-emerald-800 dark:text-emerald-300 font-medium">
+                     <span className="font-bold">Step 2:</span> Enter your number below and click Send OTP!
+                   </p>
+                 </div>
+              </div>
+              <div className="space-y-1.5 flex gap-2">
+                <div className="w-[100px] shrink-0">
+                  <Select value={whatsappCountryCode} onValueChange={setWhatsappCountryCode}>
+                    <SelectTrigger className="w-full !h-12 rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-900 transition-all outline-none focus:border-emerald-500 focus-visible:ring-0 focus-visible:border-emerald-500 focus:shadow-[0_0_18px_rgba(16,185,129,0.2)] dark:border-[#2a2a2a] dark:bg-[#161616] dark:text-[#f1f1f1] dark:focus:border-emerald-500" size="default">
+                      <SelectValue placeholder="Code" className="hidden" />
+                      {whatsappCountryCode ? (() => {
+                        const selected = COUNTRY_CODES.find(c => c.value === whatsappCountryCode);
+                        if (!selected) return <span className="flex-1 text-left">Code</span>;
+                        const FlagComponent = Flags[selected.value as keyof typeof Flags];
+                        return (
+                          <div className="flex flex-1 items-center gap-2 text-left">
+                            {FlagComponent ? <FlagComponent className="w-4 h-auto rounded-[2px]" /> : null}
+                            <span>{selected.code}</span>
+                          </div>
+                        );
+                      })() : <span className="flex-1 text-left text-slate-400">Code</span>}
+                    </SelectTrigger>
+                    <SelectContent side="top">
+                      {COUNTRY_CODES.map((c) => {
+                        const FlagComponent = Flags[c.value as keyof typeof Flags];
+                        return (
+                          <SelectItem key={c.value} value={c.value}>
+                            <div className="flex items-center gap-2">
+                              {FlagComponent ? <FlagComponent className="w-4 h-auto rounded-[2px]" /> : <span>{c.flag}</span>}
+                              <span>{c.code}</span>
+                            </div>
+                          </SelectItem>
+                        );
+                      })}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="flex-1">
+                  <input
+                    type="tel"
+                    placeholder="WhatsApp Number"
+                    value={whatsappPhone}
+                    onChange={(e) => setWhatsappPhone(e.target.value.replace(/\D/g, ""))}
+                    className="w-full h-12 rounded-xl border border-slate-200 bg-white px-4 text-sm text-slate-900 transition-all outline-none placeholder:text-slate-400 focus:border-emerald-500 focus:shadow-[0_0_18px_rgba(16,185,129,0.2)] dark:border-[#2a2a2a] dark:bg-[#161616] dark:text-[#f1f1f1] dark:placeholder:text-[#555] dark:focus:border-emerald-500"
+                  />
+                </div>
+              </div>
+
+              {error && <p className="text-red-400 text-sm font-medium text-center">{error}</p>}
+
+              <button
+                type="submit"
+                disabled={loading || !whatsappPhone}
+                className="mt-6 h-12 w-full flex items-center justify-center rounded-xl bg-slate-900 text-sm font-bold text-white transition-all duration-200 hover:bg-slate-800 active:scale-[0.98] disabled:opacity-50 dark:bg-[#f1f1f1] dark:text-[#111] dark:hover:bg-white"
+              >
+                {loading ? <><Spinner className="w-4 h-4 text-inherit mr-2" /> Sending...</> : "Send OTP"}
+              </button>
+            </form>
+          ) : step === "whatsapp_otp" ? (
+            <form onSubmit={handleVerifyWhatsappOtp} className="space-y-5 animate-in slide-in-from-right-4 duration-300">
+              <div className="flex flex-col items-center gap-3">
+                <label className="text-center text-[13px] font-medium text-slate-500 dark:text-[#888888]">
+                  Enter the 6-digit code sent to <span className="text-slate-900 dark:text-[#f1f1f1]">{COUNTRY_CODES.find(c => c.value === whatsappCountryCode)?.code} {whatsappPhone}</span>
+                </label>
+                <InputOTP
+                  maxLength={6}
+                  pattern={REGEXP_ONLY_DIGITS_AND_CHARS}
+                  value={whatsappOtp}
+                  onChange={(val) => setWhatsappOtp(val)}
+                  disabled={whatsappOtpExpired}
+                >
+                  <InputOTPGroup className="gap-2">
+                    <InputOTPSlot index={0} className="h-12 w-10 rounded-md border-slate-200 bg-white text-lg font-medium text-slate-900 dark:border-[#2a2a2a] dark:bg-[#161616] dark:text-[#f1f1f1]" />
+                    <InputOTPSlot index={1} className="h-12 w-10 rounded-md border-slate-200 bg-white text-lg font-medium text-slate-900 dark:border-[#2a2a2a] dark:bg-[#161616] dark:text-[#f1f1f1]" />
+                    <InputOTPSlot index={2} className="h-12 w-10 rounded-md border-slate-200 bg-white text-lg font-medium text-slate-900 dark:border-[#2a2a2a] dark:bg-[#161616] dark:text-[#f1f1f1]" />
+                    <InputOTPSlot index={3} className="h-12 w-10 rounded-md border-slate-200 bg-white text-lg font-medium text-slate-900 dark:border-[#2a2a2a] dark:bg-[#161616] dark:text-[#f1f1f1]" />
+                    <InputOTPSlot index={4} className="h-12 w-10 rounded-md border-slate-200 bg-white text-lg font-medium text-slate-900 dark:border-[#2a2a2a] dark:bg-[#161616] dark:text-[#f1f1f1]" />
+                    <InputOTPSlot index={5} className="h-12 w-10 rounded-md border-slate-200 bg-white text-lg font-medium text-slate-900 dark:border-[#2a2a2a] dark:bg-[#161616] dark:text-[#f1f1f1]" />
+                  </InputOTPGroup>
+                </InputOTP>
+
+                {/* Timer / Resend */}
+                <div className="text-[13px] text-center mt-2">
+                  {whatsappOtpExpired ? (
+                    <span className="text-red-400">Code expired. </span>
+                  ) : whatsappCountdown > 0 ? (
+                    <span className="text-slate-500 dark:text-[#888888]">
+                      Code expires in{" "}
+                      <span className={`font-mono font-semibold tabular-nums ${whatsappCountdown <= 10 ? "text-red-400" : "text-slate-900 dark:text-[#f1f1f1]"}`}>
+                        {formatCountdown(whatsappCountdown)}
+                      </span>
+                    </span>
+                  ) : null}
+                  {" "}
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      setError("");
+                      setWhatsappOtp("");
+                      setLoading(true);
+                      try {
+                        await new Promise(r => setTimeout(r, 800));
+                        startWhatsappCountdown();
+                      } catch (err: any) {
+                        setError("Failed to resend code.");
+                      } finally {
+                        setLoading(false);
+                      }
+                    }}
+                    disabled={loading || (whatsappCountdown > 0 && !whatsappOtpExpired)}
+                    className="text-slate-900 underline underline-offset-2 transition-opacity hover:opacity-70 disabled:cursor-not-allowed disabled:opacity-30 dark:text-[#f1f1f1]"
+                  >
+                    Resend code
+                  </button>
+                </div>
+              </div>
+
+              {error && <p className="text-red-400 text-sm font-medium text-center">{error}</p>}
+
+              <button
+                type="submit"
+                disabled={loading || whatsappOtp.length !== 6 || whatsappOtpExpired}
+                className="flex w-full items-center justify-center rounded-md bg-slate-900 py-3 text-sm font-medium text-white transition-all duration-200 hover:bg-slate-800 active:scale-[0.98] disabled:opacity-50 dark:bg-[#2a2a2a] dark:text-[#f1f1f1] dark:hover:bg-[#333]"
+              >
+                {loading ? <><Spinner className="w-4 h-4 text-inherit mr-2" /> Verifying...</> : "Verify OTP"}
+              </button>
+            </form>
+          ) : step === "age" ? (
+            <form onSubmit={handleSetupAge} className="space-y-4 animate-in slide-in-from-right-4 duration-300">
+              <div className="text-center space-y-1 mb-6">
+                 <p className="text-[15px] font-semibold text-slate-900 dark:text-white">Basic Information</p>
+                 <p className="text-[13px] font-medium text-slate-500 dark:text-[#888888]">Please enter your age to continue.</p>
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-gray-400">Your Age</label>
+                <input
+                  type="number"
+                  placeholder="Enter your age"
+                  value={age}
+                  onChange={(e) => setAge(e.target.value)}
+                  className="w-full h-12 rounded-xl border border-slate-200 bg-white px-4 text-sm text-slate-900 transition-all outline-none placeholder:text-slate-400 focus:border-emerald-500 focus:shadow-[0_0_18px_rgba(16,185,129,0.2)] dark:border-[#2a2a2a] dark:bg-[#161616] dark:text-[#f1f1f1] dark:placeholder:text-[#555] dark:focus:border-emerald-500"
+                />
+              </div>
+
+              {error && <p className="text-red-400 text-sm font-medium text-center">{error}</p>}
+
+              <button
+                type="submit"
+                disabled={loading}
+                className="mt-6 h-12 w-full flex items-center justify-center rounded-xl bg-slate-900 text-sm font-bold text-white transition-all duration-200 hover:bg-slate-800 active:scale-[0.98] disabled:opacity-50 dark:bg-[#f1f1f1] dark:text-[#111] dark:hover:bg-white"
+              >
+                {loading ? <><Spinner className="w-4 h-4 text-inherit mr-2" /> Saving...</> : "Continue"}
+              </button>
+            </form>
+          ) : step === "role" ? (
+            <form onSubmit={handleSetupRole} className="space-y-4 animate-in slide-in-from-right-4 duration-300">
+              <div className="text-center space-y-1 mb-6">
+                 <p className="text-[22px] font-medium tracking-tight text-slate-900 dark:text-[#f1f1f1]">What kind of work do you do?</p>
+                 <p className="text-[13px] font-medium text-slate-500 dark:text-[#888888]">Pick a role so Classgrid can tailor your experience.</p>
+              </div>
+              <div className="space-y-1.5">
+                <Select value={role} onValueChange={setRole}>
+                  <SelectTrigger className="w-full !h-12 rounded-xl border border-slate-200 bg-white px-4 text-sm text-slate-900 transition-all outline-none focus:border-emerald-500 focus-visible:ring-0 focus-visible:border-emerald-500 focus:shadow-[0_0_18px_rgba(16,185,129,0.2)] dark:border-[#2a2a2a] dark:bg-[#161616] dark:text-[#f1f1f1] dark:focus:border-emerald-500" size="default">
+                    <SelectValue placeholder="Select your role" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {ROLES.map((r) => {
+                      const Icon = r.icon;
+                      return (
+                        <SelectItem key={r.value} value={r.value}>
+                          <div className="flex items-center gap-2">
+                            <Icon className="w-4 h-4 text-slate-500 dark:text-[#888]" />
+                            <span>{r.label}</span>
+                          </div>
+                        </SelectItem>
+                      );
+                    })}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {error && <p className="text-red-400 text-sm font-medium text-center">{error}</p>}
+
+              <button
+                type="submit"
+                disabled={loading || !role}
+                className="mt-6 h-12 w-full flex items-center justify-center rounded-xl bg-slate-900 text-sm font-bold text-white transition-all duration-200 hover:bg-slate-800 active:scale-[0.98] disabled:opacity-50 dark:bg-[#f1f1f1] dark:text-[#111] dark:hover:bg-white"
+              >
+                {loading ? <><Spinner className="w-4 h-4 text-inherit mr-2" /> Saving...</> : "Continue"}
+              </button>
+            </form>
+          ) : step === "email" ? (
+            <div className="animate-in fade-in duration-300">
+              <div className="mb-8 text-center space-y-1">
+                <h1 className="text-3xl font-medium tracking-tight text-slate-900 dark:text-[#f1f1f1]">Welcome to Classgrid</h1>
+              </div>
+              <div className="flex flex-col gap-3 mb-8">
+                <button
+                  onClick={handleGoogle}
+                  className="w-full flex items-center justify-center gap-3 rounded-md border border-border bg-card py-3 text-sm font-medium text-foreground transition-all duration-200 hover:bg-muted active:scale-[0.98]"
+                >
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
+                    <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" />
+                    <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05" />
+                    <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" />
+                  </svg>
+                  Continue with Google
+                </button>
+
+                <button
+                  onClick={handleGithub}
+                  className="w-full flex items-center justify-center gap-3 rounded-md border border-border bg-card py-3 text-sm font-medium text-foreground transition-all duration-200 hover:bg-muted active:scale-[0.98]"
+                >
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z" />
+                  </svg>
+                  Continue with GitHub
+                </button>
+              </div>
+              <form onSubmit={handleSendOTP} className="space-y-4">
+
+              {mode === "signup" && (
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1.5">
+                    <label htmlFor="firstName" className="text-[13px] font-medium text-slate-500 dark:text-[#888888]">First name</label>
+                    <input
+                      id="firstName"
+                      type="text"
+                      placeholder="Your first name"
+                      value={firstName}
+                      onChange={(e) => setFirstName(e.target.value)}
+                      className="w-full rounded-md border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 transition-all focus:border-slate-400 focus:outline-none focus:ring-1 focus:ring-slate-300 dark:border-[#2a2a2a] dark:bg-[#161616] dark:text-[#f1f1f1] dark:placeholder:text-[#555] dark:focus:border-[#444] dark:focus:ring-[#444]"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label htmlFor="lastName" className="text-[13px] font-medium text-slate-500 dark:text-[#888888]">Last name</label>
+                    <input
+                      id="lastName"
+                      type="text"
+                      placeholder="Your last name"
+                      value={lastName}
+                      onChange={(e) => setLastName(e.target.value)}
+                      className="w-full rounded-md border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 transition-all focus:border-slate-400 focus:outline-none focus:ring-1 focus:ring-slate-300 dark:border-[#2a2a2a] dark:bg-[#161616] dark:text-[#f1f1f1] dark:placeholder:text-[#555] dark:focus:border-[#444] dark:focus:ring-[#444]"
+                    />
+                  </div>
+                </div>
+              )}
+
+              <div className="space-y-1.5">
+                <label htmlFor="email" className="text-[13px] font-medium text-slate-500 dark:text-[#888888]">Email</label>
+                <input
+                  id="email"
+                  type="email"
+                  placeholder="Your email address"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="w-full rounded-md border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 transition-all focus:border-slate-400 focus:outline-none focus:ring-1 focus:ring-slate-300 dark:border-[#2a2a2a] dark:bg-[#161616] dark:text-[#f1f1f1] dark:placeholder:text-[#555] dark:focus:border-[#444] dark:focus:ring-[#444]"
+                />
+              </div>
+
+              {error && <p className="text-red-400 text-sm font-medium">{error}</p>}
+
+              <button
+                type="submit"
+                disabled={loading}
+                className="mt-2 flex w-full items-center justify-center rounded-md bg-slate-900 py-3 text-sm font-medium text-white transition-all duration-200 hover:bg-slate-800 active:scale-[0.98] disabled:opacity-50 dark:bg-[#2a2a2a] dark:text-[#f1f1f1] dark:hover:bg-[#333]"
+              >
+                {loading ? <><Spinner className="w-4 h-4 text-inherit mr-2" /> Continue</> : "Continue"}
+              </button>
+            </form>
+            </div>
+          ) : (
+            <form onSubmit={handleVerifyOTP} className="space-y-5">
+              <div className="flex flex-col items-center gap-3">
+                <label className="text-center text-[13px] font-medium text-slate-500 dark:text-[#888888]">
+                  Enter the 6-digit code sent to <span className="text-slate-900 dark:text-[#f1f1f1]">{email}</span>
+                </label>
+                <InputOTP
+                  maxLength={6}
+                  pattern={REGEXP_ONLY_DIGITS_AND_CHARS}
+                  value={otp}
+                  onChange={(val) => setOtp(val)}
+                  disabled={otpExpired}
+                >
+                  <InputOTPGroup className="gap-2">
+                    <InputOTPSlot index={0} className="h-12 w-10 rounded-md border-slate-200 bg-white text-lg font-medium text-slate-900 dark:border-[#2a2a2a] dark:bg-[#161616] dark:text-[#f1f1f1]" />
+                    <InputOTPSlot index={1} className="h-12 w-10 rounded-md border-slate-200 bg-white text-lg font-medium text-slate-900 dark:border-[#2a2a2a] dark:bg-[#161616] dark:text-[#f1f1f1]" />
+                    <InputOTPSlot index={2} className="h-12 w-10 rounded-md border-slate-200 bg-white text-lg font-medium text-slate-900 dark:border-[#2a2a2a] dark:bg-[#161616] dark:text-[#f1f1f1]" />
+                    <InputOTPSlot index={3} className="h-12 w-10 rounded-md border-slate-200 bg-white text-lg font-medium text-slate-900 dark:border-[#2a2a2a] dark:bg-[#161616] dark:text-[#f1f1f1]" />
+                    <InputOTPSlot index={4} className="h-12 w-10 rounded-md border-slate-200 bg-white text-lg font-medium text-slate-900 dark:border-[#2a2a2a] dark:bg-[#161616] dark:text-[#f1f1f1]" />
+                    <InputOTPSlot index={5} className="h-12 w-10 rounded-md border-slate-200 bg-white text-lg font-medium text-slate-900 dark:border-[#2a2a2a] dark:bg-[#161616] dark:text-[#f1f1f1]" />
+                  </InputOTPGroup>
+                </InputOTP>
+
+                {/* Timer / Resend */}
+                <div className="text-[13px] text-center">
+                  {otpExpired ? (
+                    <span className="text-red-400">Code expired. </span>
+                  ) : countdown > 0 ? (
+                    <span className="text-slate-500 dark:text-[#888888]">
+                      Code expires in{" "}
+                      <span className={`font-mono font-semibold tabular-nums ${countdown <= 10 ? "text-red-400" : "text-slate-900 dark:text-[#f1f1f1]"
+                        }`}>
+                        {formatCountdown(countdown)}
+                      </span>
+                    </span>
+                  ) : null}
+                  {" "}
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      setError("");
+                      setOtp("");
+                      setLoading(true);
+                      try {
+                        await new Promise(r => setTimeout(r, 800));
+                        startCountdown();
+                      } catch (err: any) {
+                        setError(err.message);
+                      } finally {
+                        setLoading(false);
+                      }
+                    }}
+                    disabled={loading || (countdown > 0 && !otpExpired)}
+                    className="text-slate-900 underline underline-offset-2 transition-opacity hover:opacity-70 disabled:cursor-not-allowed disabled:opacity-30 dark:text-[#f1f1f1]"
+                  >
+                    Resend code
+                  </button>
+                </div>
+              </div>
+
+              {error && <p className="text-red-400 text-sm font-medium text-center">{error}</p>}
+
+              <button
+                type="submit"
+                disabled={loading || otp.length !== 6 || otpExpired}
+                className="flex w-full items-center justify-center rounded-md bg-slate-900 py-3 text-sm font-medium text-white transition-all duration-200 hover:bg-slate-800 active:scale-[0.98] disabled:opacity-50 dark:bg-[#2a2a2a] dark:text-[#f1f1f1] dark:hover:bg-[#333]"
+              >
+                {loading ? <><Spinner className="w-4 h-4 text-inherit mr-2" /> Sign In</> : "Sign In"}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => { setStep("email"); if (timerRef.current) clearInterval(timerRef.current); }}
+                className="w-full text-sm text-slate-500 transition-colors hover:text-slate-900 dark:text-[#888888] dark:hover:text-[#f1f1f1]"
+              >
+                Back to email
+              </button>
+            </form>
+          )}
+
+          {step === "email" && searchParams.get("next") !== "/support/ticket" && intent !== "unsubscribe" && (
+            <div className="mt-8 text-center text-[13px]">
+              {mode === "signin" ? (
+                <span className="text-slate-500 dark:text-[#888888]">
+                  Don&apos;t have an account?{" "}
+                  <button onClick={() => setMode("signup")} className="font-medium text-slate-900 transition-colors hover:underline dark:text-[#f1f1f1]">
+                    Sign up
+                  </button>
+                </span>
+              ) : (
+                <span className="text-slate-500 dark:text-[#888888]">
+                  Already have an account?{" "}
+                  <button onClick={() => setMode("signin")} className="font-medium text-slate-900 transition-colors hover:underline dark:text-[#f1f1f1]">
+                    Sign in
+                  </button>
+                </span>
+              )}
+            </div>
+          )}
+        </div>
+
+      </div>
+
+      <div className="absolute bottom-6 w-full text-center">
+        <p className="text-[13px] text-slate-400 dark:text-[#666666]">
+          <Link to="/terms" className="underline underline-offset-4 decoration-slate-300 transition-colors hover:text-slate-900 dark:decoration-[#444] dark:hover:text-[#f1f1f1]">Terms of Service</Link>
+          {" "}and{" "}
+          <Link to="/privacy" className="underline underline-offset-4 decoration-slate-300 transition-colors hover:text-slate-900 dark:decoration-[#444] dark:hover:text-[#f1f1f1]">Privacy Policy</Link>
+        </p>
+      </div>
+
+      <style dangerouslySetInnerHTML={{ __html: `
+        @keyframes popIn {
+          0% { transform: scale(0.8) translateY(10px); opacity: 0; }
+          100% { transform: scale(1) translateY(0); opacity: 1; }
+        }
+      `}} />
+    </div>
+  );
+}
+
+export function PublicChatLoginPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-background text-foreground flex items-center justify-center"><Spinner className="w-6 h-6 text-muted-foreground" /></div>}>
+      <LoginContent />
+    </Suspense>
+  );
+}

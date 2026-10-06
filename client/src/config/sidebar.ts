@@ -726,6 +726,30 @@ export const dashboardConfigs: DashboardConfig[] = [
       subtitle: "Student",
       menuItems: createDefaultMenuItems("/student")
     }
+  },
+
+  // ───────────────────────────────────────────────
+  // 12. PUBLIC CHAT
+  // ───────────────────────────────────────────────
+  {
+    role: "public_chat",
+    logo: "Classgrid AI",
+    sections: [
+      {
+        label: "AI Platform",
+        items: [
+          { label: "Agent", to: "/agent", icon: Play },
+          { label: "Chat History", to: "/chat/history", icon: MessageSquare },
+          { label: "Requests", to: "/requests", icon: Users },
+          { label: "Drive", to: "/drive", icon: Database }
+        ]
+      }
+    ],
+    identity: {
+      name: "User",
+      subtitle: "AI Member",
+      menuItems: createDefaultMenuItems("/agent")
+    }
   }
 ];
 
@@ -740,10 +764,17 @@ export const defaultTitlesByRole: Record<DashboardRole, string> = {
   hr_dept: "Agent",
   hostel_dept: "Agent",
   faculty: "Agent",
-  student: "Agent"
+  student: "Agent",
+  public_chat: "Agent"
 };
 
 export function resolveDashboardConfig(pathname: string): DashboardConfig {
+  const hostname = window.location.hostname;
+  const subdomain = hostname.split(".")[0];
+  if (subdomain === "chat") {
+    return dashboardConfigs[11]!;
+  }
+
   if (pathname.startsWith("/superadmin") || pathname.startsWith("/super-admin")) {
     return dashboardConfigs[0]!;
   }

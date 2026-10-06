@@ -55,7 +55,9 @@ export function DynamicRoleLayout() {
   
   if (!user) return <Navigate to="/login" replace />;
   
-  const role = (user.role as DashboardRole) || "student";
+  const hostname = window.location.hostname;
+  const subdomain = hostname.split(".")[0];
+  const role = subdomain === "chat" ? "public_chat" : ((user.role as DashboardRole) || "student");
   
   return (
     <DomainEnforcer 
