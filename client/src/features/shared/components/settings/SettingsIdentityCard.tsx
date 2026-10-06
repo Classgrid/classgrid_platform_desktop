@@ -12,16 +12,18 @@ export function SettingsIdentityCard() {
       <CopySnippetCard
         title="User ID"
         description="Your unique user identifier."
-        value={userProfile.id}
+        value={(userProfile as any)._id || userProfile.id || "N/A"}
       />
       
-      {userProfile.organization_id && (
-        <CopySnippetCard
-          title="Organization ID"
-          description="Use this ID to identify your organization when contacting support."
-          value={(userProfile.organization_id as any)?._id || userProfile.organization_id?.id || String(userProfile.organization_id)}
-        />
-      )}
+      <CopySnippetCard
+        title="Organization ID"
+        description="Use this ID to identify your organization when contacting support."
+        value={
+          (userProfile.organization_id as any)?._id || 
+          userProfile.organization_id?.id || 
+          (typeof userProfile.organization_id === 'string' ? userProfile.organization_id : "N/A")
+        }
+      />
     </>
   );
 }
