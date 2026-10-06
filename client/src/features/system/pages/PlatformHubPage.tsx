@@ -59,7 +59,7 @@ export function PlatformHubPage() {
           Classgrid Platform
         </h1>
         <p className="text-muted-foreground mb-8 text-sm leading-relaxed">
-          Welcome to the central Classgrid platform. If you are a student or faculty member, please access your institution's specific portal URL to log in.
+          Welcome to the central Classgrid hub. If you are a student or faculty member, please access your institution's specific portal URL to log in.
         </p>
 
         <a

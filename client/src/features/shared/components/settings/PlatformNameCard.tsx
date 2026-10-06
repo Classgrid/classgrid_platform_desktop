@@ -28,9 +28,9 @@
 /*
  * ─────────────────────────────────────────────────────────
  * 🚨 NAMING CONVENTION RULE 🚨
- * 1. "CLASSGRID PLATFORM" is strictly the REPO NAME.
+ * 1. "Classgrid" is strictly the REPO NAME.
  * 2. "CLASSGRID ERP" is the actual PRODUCT NAME.
- * 3. NEVER use "Classgrid Platform" anywhere in the frontend UI or user-facing text.
+ * 3. NEVER use "Classgrid" anywhere in the frontend UI or user-facing text.
  * ─────────────────────────────────────────────────────────
  */
 
@@ -62,7 +62,7 @@ export function PlatformNameCard() {
 
   useEffect(() => {
     if (profileData?.user) {
-      setLocalName(profileData.user.sidebar_name || profileData.user.name || "Classgrid Platform");
+      setLocalName(profileData.user.sidebar_name || profileData.user.name || "Classgrid");
     }
   }, [profileData]);
 
@@ -94,7 +94,7 @@ export function PlatformNameCard() {
         <div className="relative">
           <input
             type="text"
-            value={isEditing ? localName : (profileData?.user?.sidebar_name || profileData?.user?.name || "Classgrid Platform")}
+            value={isEditing ? localName : (profileData?.user?.sidebar_name || profileData?.user?.name || "Classgrid")}
             onChange={(e) => setLocalName(e.target.value)}
             disabled={!isEditing}
             className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm disabled:opacity-70 disabled:bg-muted/30 focus:ring-1 focus:ring-primary outline-none transition-all"
@@ -116,7 +116,7 @@ export function PlatformNameCard() {
               variant="outline" 
               onClick={() => {
                 setIsEditing(false);
-                setLocalName(profileData?.user?.sidebar_name || profileData?.user?.name || "Classgrid Platform");
+                setLocalName(profileData?.user?.sidebar_name || profileData?.user?.name || "Classgrid");
               }}
               className="px-3"
             >
