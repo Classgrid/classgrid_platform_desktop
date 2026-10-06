@@ -63,6 +63,7 @@ import { SettingsDeleteAccountCard } from "../components/settings/SettingsDelete
 import { SettingsRoleRequestCard } from "../components/settings/SettingsRoleRequestCard";
 
 export function SharedSettingsPage() {
+  const isChatApp = typeof window !== 'undefined' && window.location.hostname.startsWith('chat.');
   const { data: profileData, isLoading: isProfileLoading } = useUserProfile();
   const updateProfile = useUpdateProfile();
   

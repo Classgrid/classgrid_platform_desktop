@@ -755,7 +755,7 @@ export function SharedProfilePage({ publicUser, groupData, mode = "user", onClos
             {/* Dynamic Contextual Profile Data - Only shown to the user themselves */}
             {!isReadOnly && !isGroup && (
               <div className="mt-8 mb-6">
-                {(form.role === "super_admin" || form.role === "Super Admin" || form.role === "user") ? (
+                {(form.role === "super_admin" || form.role === "Super Admin" || form.role === "user" || window.location.hostname.startsWith('chat.')) ? (
                   <SuperAdminProfileView profileData={profileData?.user || {}} />
                 ) : (
                   <ContextualProfile 
