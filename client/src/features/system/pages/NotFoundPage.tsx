@@ -45,7 +45,15 @@
 import { Link } from "react-router-dom";
 import { AlertCircle, ArrowLeft, Home } from "lucide-react";
 
+import { Navigate } from "react-router-dom";
+
 export function NotFoundPage() {
+  const hostname = window.location.hostname;
+  const subdomain = hostname.split(".")[0];
+  
+  if (subdomain === "chat") {
+    return <Navigate to="/agent" replace />;
+  }
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4 relative overflow-hidden">
       {/* Background glow effects */}

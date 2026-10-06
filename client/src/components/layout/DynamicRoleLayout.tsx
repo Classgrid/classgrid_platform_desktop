@@ -59,6 +59,14 @@ export function DynamicRoleLayout() {
   const subdomain = hostname.split(".")[0];
   const role = subdomain === "chat" ? "public_chat" : ((user.role as DashboardRole) || "student");
   
+  if (role === "public_chat" || role === "user" || user.organization_id === "6ac4b95e0f8a97f45e98b0ff" || user.organization?._id === "6ac4b95e0f8a97f45e98b0ff") {
+    const path = window.location.pathname;
+    const isAllowed = path === "/agent" || path.startsWith("/agent/") || path === "/c" || path.startsWith("/c/") || path === "/chat" || path === "/requests" || path === "/drive" || path === "/profile" || path === "/settings" || path === "/classgrid-ai";
+    if (!isAllowed) {
+      return <Navigate to="/agent" replace />;
+    }
+  }
+  
   return (
     <DomainEnforcer 
       allowClassgridUrl={(user.organization?.erp_domain?.allow_classgrid_url ?? user.organization?.custom_domain?.allow_classgrid_url) !== false}
