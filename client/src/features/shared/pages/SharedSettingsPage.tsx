@@ -67,7 +67,7 @@ export function SharedSettingsPage() {
   const { data: profileData, isLoading: isProfileLoading } = useUserProfile();
   const updateProfile = useUpdateProfile();
   
-  const requiresPrefs = profileData?.role !== "org_admin" && profileData?.role !== "super_admin";
+  const requiresPrefs = profileData?.role !== "org_admin" && profileData?.role !== "super_admin" && !isChatApp;
   
   const { data: prefData, isLoading: isPrefLoading } = useEmailPreferences(requiresPrefs);
   const updatePrefs = useUpdateEmailPreferences();
@@ -154,7 +154,7 @@ export function SharedSettingsPage() {
         />
       )}
       
-      {!isProfileLoading && profileData?.role !== "org_admin" && profileData?.role !== "super_admin" && profileData?.role !== "user" && (
+      {!isProfileLoading && profileData?.role !== "org_admin" && profileData?.role !== "super_admin" && profileData?.role !== "user" && !isChatApp && (
         <SettingsPushCard 
           pushEnabled={pushEnabled} 
           onChange={handlePushChange} 
