@@ -252,13 +252,13 @@ export function AppRouter() {
 
       <Route path="/logout" element={<LogoutPage />} />
       {/* ── DYNAMIC AUTH ROUTES (Based on Subdomain) ── */}
-      <Route 
-        path="/login" 
+      <Route
+        path="/login"
         element={
-          subdomain === "chat" ? <PublicChatLoginPage /> : subdomain === "app" 
-            ? <PlatformHubPage /> 
+          subdomain === "chat" ? <PublicChatLoginPage /> : subdomain === "app"
+            ? <PlatformHubPage />
             : (isSuperAdmin ? <SuperAdminLoginPage /> : <UserLoginRouter />)
-        } 
+        }
       />
       <Route path="/auth/user" element={<UserLoginRouter />} />
       <Route path="/student/login" element={<UserLoginRouter preferredRole="student" />} />
@@ -295,7 +295,7 @@ export function AppRouter() {
         <Route path="/required-password-reset" element={<RequiredPasswordResetPage />} />
         <Route path="/enter-org-code" element={<EnterOrganizationCodePage />} />
         <Route path="/oauth/authorize" element={<OAuthConsentPage />} />
-        
+
         {/* NEW SUPER ADMIN SHELL */}
         <Route element={<SuperAdminLayout />}>
           <Route path="/superadmin/dashboard" element={<NavigateWithQuery to="/superadmin/agent" replace />} />
@@ -333,7 +333,7 @@ export function AppRouter() {
           <Route path="/superadmin/billing/revenue" element={<NavigateWithQuery to="/super-admin/billing/revenue" replace />} />
           <Route path="/superadmin/billing/transactions" element={<NavigateWithQuery to="/super-admin/billing/transactions" replace />} />
           <Route path="/superadmin/billing/failed-payments" element={<NavigateWithQuery to="/super-admin/billing/failed-payments" replace />} />
-          
+
           {/* LEGACY REDIRECTS (if users visit the old URLs) */}
           <Route path="/superadmin/revenue" element={<NavigateWithQuery to="/super-admin/billing/revenue" replace />} />
           <Route path="/superadmin/transactions" element={<NavigateWithQuery to="/super-admin/billing/transactions" replace />} />
@@ -365,7 +365,7 @@ export function AppRouter() {
           <Route path="/superadmin/chat" element={<ChatPage />} />
           <Route path="/superadmin/subscribers" element={<SubscribersPage />} />
           <Route path="/superadmin/subscribers/:email" element={<SubscriberDetailsPage />} />
-          
+
 
           <Route path="/superadmin/organizations" element={<NavigateWithQuery to="/superadmin/orgs" replace />} />
           <Route path="/superadmin/*" element={<NavigateWithQuery to="/superadmin/dashboard" replace />} />
@@ -401,7 +401,7 @@ export function AppRouter() {
           <Route path="/org/classrooms" element={<ClassroomsPage />} />
           <Route path="/org/admin/*" element={<ComingSoonPage />} />
           <Route path="/org/*" element={<ComingSoonPage />} />
-          
+
           {/* Legacy redirects for compatibility */}
           <Route path="/org/settings" element={<NavigateWithQuery to="/org/admin/settings" replace />} />
           <Route path="/org/profile" element={<NavigateWithQuery to="/org/admin/profile" replace />} />
@@ -417,8 +417,8 @@ export function AppRouter() {
           {/* PUBLIC CHAT DASHBOARD */}
           <Route path="/agent" element={<SharedChatPage />} />
           <Route path="/agent/chat" element={<ChatPage />} />
-          <Route path="/requests" element={<ComingSoonPage />} />
-          <Route path="/drive" element={<ComingSoonPage />} />
+          <Route path="/requests" element={<JoinRequestPage />} />
+          <Route path="/drive" element={<GenericPage title="Google Drive" />} />
           <Route path="/agent/profile" element={<SharedProfilePage />} />
           <Route path="/agent/settings" element={<SharedSettingsPage />} />
           {/* Website CMS */}
