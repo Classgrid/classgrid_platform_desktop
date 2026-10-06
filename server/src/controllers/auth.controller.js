@@ -380,37 +380,8 @@ const setTokenCookie = (res, token, req = null, rememberMe = false) => {
 // Helper: Send Welcome Email (First Login)
 // ─────────────────────────────────────────────
 const sendWelcomeEmail = async (user, provider = "manual") => {
-    try {
-        const dashboardUrl = `${getFrontendUrl()}/classroom`;
-        let html, text;
-
-        // Use organization name if available (otherwise generic org name for unassigned students)
-        let orgName = "Classgrid";
-        if (user.organization_id) {
-            const org = await Organization.findById(user.organization_id).select('name');
-            orgName = org ? org.name : "Classgrid";
-        }
-
-        if (user.role === 'faculty' || user.role === 'teacher') {
-            html = getFacultyWelcomeEmailHtml(user.name, orgName, dashboardUrl);
-            text = getFacultyWelcomePlainText(user.name, orgName, dashboardUrl);
-        } else {
-            // Default to Student welcome for any other role
-            html = getStudentWelcomeEmailHtml(user.name, dashboardUrl);
-            text = getStudentWelcomePlainText(user.name, dashboardUrl);
-        }
-
-        await sendEmail({
-            to: user.email,
-            subject: "🎉 Welcome to Classgrid - Account Created Successfully",
-            channel: "notification",
-            html: html,
-            text: text,
-        });
-        console.log(`📧 Welcome email sent to ${user.email} (${provider})`);
-    } catch (err) {
-        console.error("Welcome Email Error (non-critical):", err.message);
-    }
+    // Welcome emails permanently disabled
+    return;
 };
 
 // ─────────────────────────────────────────────
