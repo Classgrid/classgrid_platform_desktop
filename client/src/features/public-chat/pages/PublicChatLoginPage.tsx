@@ -958,10 +958,10 @@ function LoginContent() {
                       setWhatsappOtp("");
                       setLoading(true);
                       try {
-                        await new Promise(r => setTimeout(r, 800));
+                        await apiClient.post("/api/auth/chat/send-whatsapp-otp", { phoneNumber: `+${whatsappCountryCode}${whatsappPhone}` });
                         startWhatsappCountdown();
                       } catch (err: any) {
-                        setError("Failed to resend code.");
+                        setError(err?.response?.data?.message || "Failed to resend code.");
                       } finally {
                         setLoading(false);
                       }
@@ -1218,10 +1218,10 @@ function LoginContent() {
                       setOtp("");
                       setLoading(true);
                       try {
-                        await new Promise(r => setTimeout(r, 800));
+                        await apiClient.post("/api/auth/chat/send-email-otp", { email: email.trim() });
                         startCountdown();
                       } catch (err: any) {
-                        setError(err.message);
+                        setError(err?.response?.data?.message || err.message || "Failed to resend code.");
                       } finally {
                         setLoading(false);
                       }
