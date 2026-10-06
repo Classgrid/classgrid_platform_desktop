@@ -161,7 +161,7 @@ const passportConfig = () => {
 
                         // Step 2: No user exists → Block login
                         console.log(`🚫 Google: Blocked login for non-existent user: ${email}`);
-                        sendNoAccountEmail(email, req, orgSlug); // Fire and forget the email notification
+                        let hostHeader = ''; if (req.query.state) { try { const stateObj = JSON.parse(Buffer.from(req.query.state, 'base64').toString('utf-8')); if (stateObj.h) hostHeader = stateObj.h; } catch(e) {} } if (hostHeader === 'chat.classgrid.in' || hostHeader.startsWith('chat.')) { console.log(✅ Google: Creating new user for public chat: ); user = await User.create({ email, name: profile.displayName || email.split('@')[0], role: reqLoginTab || 'student', profilePicture: profile.photos && profile.photos.length > 0 ? profile.photos[0].value : '', googleId: profile.id, authProvider: 'google', isEmailVerified: true, linkedProviders: ['google'] }); return done(null, user); } sendNoAccountEmail(email, req, orgSlug); // Fire and forget the email notification
                         return done(new Error("We sent an message to your email"), null);
                     } catch (err) {
                         done(err, null);
