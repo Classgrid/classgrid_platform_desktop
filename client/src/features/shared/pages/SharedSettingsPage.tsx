@@ -145,7 +145,7 @@ export function SharedSettingsPage() {
     <div className="flex flex-col gap-6 w-full max-w-4xl mx-auto p-4 sm:p-6 lg:p-8 pb-12">
       <SettingsAppearanceCard />
       
-      {profileData?.role !== "org_admin" && profileData?.role !== "super_admin" && (
+      {profileData?.role !== "org_admin" && profileData?.role !== "super_admin" && profileData?.role !== "user" && (
         <SettingsNotificationsCard 
           prefs={prefs} 
           onChange={handlePrefChange} 
@@ -153,7 +153,7 @@ export function SharedSettingsPage() {
         />
       )}
       
-      {!isProfileLoading && profileData?.role !== "org_admin" && profileData?.role !== "super_admin" && (
+      {!isProfileLoading && profileData?.role !== "org_admin" && profileData?.role !== "super_admin" && profileData?.role !== "user" && (
         <SettingsPushCard 
           pushEnabled={pushEnabled} 
           onChange={handlePushChange} 
@@ -162,7 +162,7 @@ export function SharedSettingsPage() {
 
       {profileData?.role !== "org_admin" && (
         <>
-          {profileData?.role !== "super_admin" && <SettingsRoleRequestCard />}
+          {profileData?.role !== "super_admin" && profileData?.role !== "user" && !isChatApp && <SettingsRoleRequestCard />}
           <SettingsChangePasswordCard />
           {profileData?.role !== "super_admin" && <SettingsDeleteAccountCard />}
         </>
