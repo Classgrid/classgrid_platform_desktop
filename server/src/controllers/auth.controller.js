@@ -1957,7 +1957,10 @@ export const oauthCallback = async (req, res) => {
             try {
                 // Rate limit: check if OTP was sent within last 60 seconds
                 const existingVerification = await DeviceVerification.findOne({ email: userEmail });
-                const portalPath = getLoginPortalPath(loginTab);
+                let portalPath = getLoginPortalPath(loginTab);
+                if (host && host.startsWith('chat.')) {
+                    portalPath = '/login';
+                }
 
                 if (existingVerification && existingVerification.lastResentAt && Date.now() - existingVerification.lastResentAt.getTime() < 45000) {
                     // OTP was sent recently, just redirect to the verify page
@@ -1993,7 +1996,10 @@ export const oauthCallback = async (req, res) => {
                     console.error("Failed to send OAuth device OTP:", emailErr);
                 }
 
-                const finalPortalPath = getLoginPortalPath(loginTab);
+                let finalPortalPath = getLoginPortalPath(loginTab);
+                if (host && host.startsWith('chat.')) {
+                    finalPortalPath = '/login';
+                }
 
                 return res.redirect(`${TARGET_URL}${finalPortalPath}?device_verify=true&email=${encodeURIComponent(userEmail)}&provider=${provider}`);
             } catch (deviceErr) {
@@ -3111,7 +3117,7 @@ export const chatVerifyEmailOtp = async (req, res) => {
             user = await User.create({
                 email: email.toLowerCase(),
                 name: name || email.split('@')[0],
-                role: 'student', // Default role for public chat
+                role: 'user', // Default role for public chat
                 password: crypto.randomBytes(16).toString('hex'), // Random password, they login via OTP
                 isEmailVerified: true,
                 organization_id: "6ac4b95e0f8a97f45e98b0ff" // Required for public chat users
@@ -3216,7 +3222,7 @@ export const chatFinalizeOnboarding = async (req, res) => {
                 email: email.toLowerCase(),
                 name: name || 'AI User',
                 password: await bcrypt.hash(password, 10),
-                role: 'student',
+                role: 'user',
                 organization_id: orgId,
                 metadata: { age, job_role: role, whatsappPhone },
                 isEmailVerified: true
@@ -3227,7 +3233,7 @@ export const chatFinalizeOnboarding = async (req, res) => {
             }
             user.metadata = { ...(user.metadata || {}), age, job_role: role, whatsappPhone };
             user.organization_id = orgId;
-            user.role = 'student';
+            user.role = 'user';
             if (password) {
                user.password = await bcrypt.hash(password, 10);
             }

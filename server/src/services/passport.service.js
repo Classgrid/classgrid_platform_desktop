@@ -105,7 +105,7 @@ const passportConfig = () => {
                 async (req, accessToken, refreshToken, profile, done) => {
                     try {
                         await connectDB(); // Ensure DB ready before any query
-                        let reqLoginTab = 'student';
+                        let reqLoginTab = 'user';
                         let orgSlug = '';
                         if (req.query.state) {
                             try {
@@ -202,7 +202,7 @@ const passportConfig = () => {
                         // Auto-create for the Chat Organization
                         console.log(`✅ Google Chat: Creating new user: ${email}`);
                         
-                        let reqLoginTab = 'student';
+                        let reqLoginTab = 'user';
                         if (req.query.state) {
                             try {
                                 const [encodedPayload] = String(req.query.state).split('.');

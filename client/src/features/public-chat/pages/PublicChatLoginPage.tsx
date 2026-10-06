@@ -17,9 +17,6 @@ import { API_BASE_URL, apiClient } from "@/lib/apiClient";
 const Confetti = lazy(() => import("react-confetti"));
 
 const ROLES = [
-  { value: "student", label: "Student", icon: GraduationCap },
-  { value: "faculty", label: "Faculty", icon: BookOpen },
-  { value: "administrator", label: "Administrator", icon: Shield },
   { value: "software_engineer", label: "Software Engineer", icon: Code },
   { value: "designer", label: "Designer", icon: PenTool },
   { value: "data_scientist", label: "Data Scientist", icon: Database },
@@ -158,7 +155,7 @@ function LoginContent() {
   }, []);
 
   const handleGoogle = () => {
-    const loginTab = encodeURIComponent("student");
+    const loginTab = encodeURIComponent("user");
     const host = encodeURIComponent(window.location.hostname);
     const path = `/api/auth/google?loginTab=${loginTab}&host=${host}`;
     const url = (API_BASE_URL && !API_BASE_URL.startsWith('/')) ? new URL(path, API_BASE_URL).toString() : path;
@@ -198,7 +195,7 @@ function LoginContent() {
       return;
     }
 
-    // Platform users (student / faculty / admin) → raise ticket page
+    // Platform users (community/staff) → raise ticket page
     if (user.isPlatformUser) {
       router.replace("/support/ticket");
     } else {
@@ -339,7 +336,7 @@ function LoginContent() {
         email: email.trim(),
         password,
         audience: "user",
-        role: "student",
+        role: "user",
         rememberMe: true,
       });
 
