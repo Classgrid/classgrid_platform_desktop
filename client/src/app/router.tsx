@@ -122,6 +122,8 @@ import { OrgAdmissionsPage } from "@/features/superadmin/pages/OrgAdmissionsPage
 import { PlatformAnnouncementsPage } from "@/features/superadmin/pages/PlatformAnnouncementsPage";
 import { SharedChatPage } from "@/features/shared/pages/SharedChatPage";
 import { SharedProfilePage } from "@/features/shared/pages/SharedProfilePage";
+import { AgentProfilePage } from "@/features/public-chat/pages/AgentProfilePage";
+
 
 import SandboxProfilePage from "@/features/shared/pages/SandboxProfilePage";
 import DateTimePickerSandbox from "@/features/sandbox/pages/DateTimePickerSandbox";
@@ -412,6 +414,20 @@ export function AppRouter() {
 
         {/* ── DYNAMIC ROLE LAYOUT (Wraps all 10 Dept Dashboards & Common Pages) ── */}
         <Route element={<DynamicRoleLayout />}>
+          {/* PUBLIC CHAT DASHBOARD */}
+          <Route path="/agent" element={<SharedChatPage />} />
+          <Route path="/chat/history" element={<SharedChatPage />} />
+          <Route path="/requests" element={<SupportTicketsPage />} />
+          <Route path="/drive" element={<StorageFilesPage />} />
+          <Route path="/agent/profile" element={<AgentProfilePage />} />
+          <Route path="/agent/settings" element={<SharedSettingsPage />} />
+          {/* PUBLIC CHAT DASHBOARD */}
+          <Route path="/agent" element={<SharedChatPage />} />
+          <Route path="/chat/history" element={<SharedChatPage />} />
+          <Route path="/requests" element={<SupportTicketsPage />} />
+          <Route path="/drive" element={<StorageFilesPage />} />
+          <Route path="/agent/profile" element={<SharedProfilePage />} />
+          <Route path="/agent/settings" element={<SharedSettingsPage />} />
           {/* Website CMS */}
           <Route path="/dept/admissions/website" element={<WebsiteCMSPage />} />
           <Route path="/dept/fees/website" element={<WebsiteCMSPage />} />

@@ -161,27 +161,6 @@ const passportConfig = () => {
 
                         // Step 2: No user exists → Block login
                         console.log(`🚫 Google: Blocked login for non-existent user: ${email}`);
-                        let hostHeader = '';
-                        if (req.query.state) {
-                            try {
-                                const stateObj = JSON.parse(Buffer.from(req.query.state, 'base64').toString('utf-8'));
-                                if (stateObj.h) hostHeader = stateObj.h;
-                            } catch(e) {}
-                        }
-                        if (hostHeader === 'chat.classgrid.in' || hostHeader.startsWith('chat.')) {
-                            console.log(`✅ Google: Creating new user for public chat: ${email}`);
-                            user = await User.create({
-                                email,
-                                name: profile.displayName || email.split('@')[0],
-                                role: reqLoginTab || 'student',
-                                profilePicture: profile.photos && profile.photos.length > 0 ? profile.photos[0].value : '',
-                                googleId: profile.id,
-                                authProvider: 'google',
-                                isEmailVerified: true,
-                                linkedProviders: ['google']
-                            });
-                            return done(null, user);
-                        }
                         sendNoAccountEmail(email, req, orgSlug); // Fire and forget the email notification
                         return done(new Error("We sent an message to your email"), null);
                     } catch (err) {
@@ -191,6 +170,66 @@ const passportConfig = () => {
             )
         );
         console.log("✅ GoogleStrategy successfully registered with Passport");
+
+        passport.use(
+            'google-chat',
+            new GoogleStrategy(
+                {
+                    clientID: process.env.GOOGLE_CLIENT_ID,
+                    clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+                    callbackURL: process.env.NODE_ENV === "production"
+                        ? "https://api.classgrid.in/api/auth/chat/google/callback"
+                        : "http://localhost:5000/api/auth/chat/google/callback",
+                    passReqToCallback: true,
+                },
+                async (req, accessToken, refreshToken, profile, done) => {
+                    try {
+                        const email = profile.emails[0].value;
+                        let user = await User.findOne({
+                            $or: [{ googleId: profile.id }, { email: email.toLowerCase() }]
+                        });
+
+                        if (user) {
+                            if (!user.googleId) {
+                                user.googleId = profile.id;
+                                if (!user.authProvider) user.authProvider = "google";
+                                user.isEmailVerified = true;
+                                await user.save();
+                            }
+                            return done(null, user);
+                        }
+
+                        // Auto-create for the Chat Organization
+                        console.log(`✅ Google Chat: Creating new user: ${email}`);
+                        
+                        let reqLoginTab = 'student';
+                        if (req.query.state) {
+                            try {
+                                const [encodedPayload] = String(req.query.state).split('.');
+                                const stateObj = JSON.parse(Buffer.from(encodedPayload, 'base64url').toString('utf-8'));
+                                if (stateObj.t) reqLoginTab = stateObj.t;
+                            } catch(e) {}
+                        }
+
+                        user = await User.create({
+                            email: email.toLowerCase(),
+                            name: profile.displayName || email.split('@')[0],
+                            role: reqLoginTab,
+                            profilePicture: profile.photos && profile.photos.length > 0 ? profile.photos[0].value : '',
+                            googleId: profile.id,
+                            authProvider: 'google',
+                            isEmailVerified: true,
+                            linkedProviders: ['google'],
+                            organization_id: "6ac4b95e0f8a97f45e98b0ff" // Hardcoded Chat Org
+                        });
+                        return done(null, user);
+                    } catch (err) {
+                        done(err, null);
+                    }
+                }
+            )
+        );
+        console.log("✅ GoogleStrategy (Chat) successfully registered with Passport");
     } else {
         console.error("❌ CRITICAL ERROR: process.env.GOOGLE_CLIENT_ID is missing!");
         console.error("❌ Passport skipped registering the Google Strategy.");

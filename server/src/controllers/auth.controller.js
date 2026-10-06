@@ -3110,6 +3110,8 @@ export const chatVerifyEmailOtp = async (req, res) => {
                 name: name || email.split('@')[0],
                 role: 'student', // Default role for public chat
                 password: crypto.randomBytes(16).toString('hex'), // Random password, they login via OTP
+                isEmailVerified: true,
+                organization_id: "6ac4b95e0f8a97f45e98b0ff" // Required for public chat users
             });
         }
 

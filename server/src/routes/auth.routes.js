@@ -101,6 +101,58 @@ router.post("/chat/verify-email-otp", authController.chatVerifyEmailOtp);
 router.post("/chat/send-whatsapp-otp", authController.chatSendWhatsappOtp);
 router.post("/chat/finalize-onboarding", authController.chatFinalizeOnboarding);
 
+// Chat Agent Google OAuth
+router.get(
+    "/chat/google",
+    async (req, res, next) => {
+        const loginTab = req.query.loginTab || req.query.role || 'student';
+        const host = req.query.host || '';
+        try {
+            const { state, nonce } = await createOAuthState({ loginTab, host });
+            res.cookie(OAUTH_STATE_COOKIE, nonce, oauthStateCookieOptions());
+            passport.authenticate("google-chat", {
+                scope: ["profile", "email"],
+                state,
+                prompt: 'select_account consent'
+            })(req, res, next);
+        } catch (error) {
+            return res.status(400).json({ message: error.message || "Invalid login portal." });
+        }
+    }
+);
+router.get(
+    "/chat/google/callback",
+    async (req, res, next) => {
+        const stateRaw = req.query.state || null;
+        const defaultFrontendUrl = process.env.FRONTEND_URL?.trim() || (process.env.NODE_ENV === "production" ? "https://classgrid.in" : "https://classgrid.in");
+        let oauthState;
+        try {
+            oauthState = await verifyOAuthState(stateRaw, req.cookies?.[OAUTH_STATE_COOKIE]);
+        } catch (error) {
+            res.clearCookie(OAUTH_STATE_COOKIE, oauthStateCookieOptions({ clear: true }));
+            return res.redirect(`${defaultFrontendUrl}/login?error=invalid_oauth_state`);
+        }
+        res.clearCookie(OAUTH_STATE_COOKIE, oauthStateCookieOptions({ clear: true }));
+        req.oauthState = oauthState;
+
+        const { host, loginTab } = oauthState;
+        const scheme = process.env.NODE_ENV === "production" ? "https://" : "http://";
+        const TARGET_URL = host ? `${scheme}${host}` : defaultFrontendUrl;
+
+        passport.authenticate("google-chat", { session: false }, (err, user) => {
+            if (err) {
+                console.error("Google Chat OAuth Error Trace:", err.stack || err);
+                return res.redirect(`${TARGET_URL}/login?error=google_blocked&message=${encodeURIComponent(err.message)}`);
+            }
+            if (!user) {
+                return res.redirect(`${TARGET_URL}/login?error=AuthFailed`);
+            }
+            req.user = user;
+            return authController.oauthCallback(req, res);
+        })(req, res, next);
+    }
+);
+
 
     // Fake endpoints removed
 
