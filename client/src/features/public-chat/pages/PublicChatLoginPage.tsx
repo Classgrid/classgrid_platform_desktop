@@ -244,6 +244,25 @@ function LoginContent() {
     }
   }, [targetShortCode]);
 
+  // Handle OAuth users who need to complete onboarding
+  useEffect(() => {
+    const onboard = searchParams.get("onboard");
+    const token = searchParams.get("token");
+    const urlEmail = searchParams.get("email");
+    
+    if (onboard === "true" && token) {
+      localStorage.setItem("token", token);
+      if (urlEmail) setEmail(urlEmail);
+      setStep("whatsapp");
+      // Remove query params to clean up URL
+      const url = new URL(window.location.href);
+      url.searchParams.delete("onboard");
+      url.searchParams.delete("token");
+      url.searchParams.delete("email");
+      window.history.replaceState({}, document.title, url.pathname + url.search);
+    }
+  }, [searchParams]);
+
   // If there's an error in the URL but they are still authenticated, sign them out
   // so they can see the error message and log in with the correct account.
   useEffect(() => {
