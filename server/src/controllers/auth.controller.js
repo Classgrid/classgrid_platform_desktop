@@ -3021,13 +3021,17 @@ export const chatOnboard = async (req, res) => {
                 password: await bcrypt.hash(password, 10),
                 role: 'student',
                 organization_id: orgId,
-                metadata: { age, job_role: role, whatsappPhone },
+                metadata: { age, job_role: role, whatsappPhone, whatsapp_number: whatsappPhone },
                 isEmailVerified: true
             });
         } else {
-            user.metadata = { ...(user.metadata || {}), age, job_role: role, whatsappPhone };
-            user.organization_id = orgId;
-            user.role = 'student';
+            user.metadata = { ...(user.metadata || {}), age, job_role: role, whatsappPhone, whatsapp_number: whatsappPhone };
+            user.markModified("metadata");
+            
+            // Only set org and role if they don't have one (prevent downgrading admins)
+            if (!user.organization_id) user.organization_id = orgId;
+            if (!user.role) user.role = 'student';
+            
             if (password) {
                user.password = await bcrypt.hash(password, 10);
             }
