@@ -97,7 +97,7 @@ const userSchema = new mongoose.Schema(
     role: {
       type: String,
       enum: [
-        "student", "teacher", "faculty", "org_admin", "super_admin", "co_super_admin",
+        "user", "student", "teacher", "faculty", "org_admin", "super_admin", "co_super_admin",
         "library_manager", "hod", "principal", "vice_principal",
         "exam_controller", "fee_manager", "admission_head",
         "admission_verifier", "admission_counselor", "admission_clerk",
@@ -111,7 +111,7 @@ const userSchema = new mongoose.Schema(
     additional_roles: {
       type: [String],
       enum: [
-        "student", "teacher", "faculty", "org_admin", "super_admin", "co_super_admin",
+        "user", "student", "teacher", "faculty", "org_admin", "super_admin", "co_super_admin",
         "library_manager", "hod", "principal", "vice_principal",
         "exam_controller", "fee_manager", "admission_head",
         "admission_verifier", "admission_counselor", "admission_clerk",
