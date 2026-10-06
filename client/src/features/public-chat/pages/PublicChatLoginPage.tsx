@@ -163,7 +163,11 @@ function LoginContent() {
   };
 
   const handleGithub = () => {
-    toast.error("GitHub login is currently not available.");
+    const loginTab = encodeURIComponent("user");
+    const host = encodeURIComponent(window.location.hostname);
+    const path = `/api/auth/chat/github?loginTab=${loginTab}&host=${host}`;
+    const url = (API_BASE_URL && !API_BASE_URL.startsWith('/')) ? new URL(path, API_BASE_URL).toString() : path;
+    window.location.assign(url);
   };
 
   // ── Redirect already-logged-in users ──
@@ -253,7 +257,25 @@ function LoginContent() {
     if (onboard === "true" && token) {
       localStorage.setItem("token", token);
       if (urlEmail) setEmail(urlEmail);
-      setStep("whatsapp");
+      
+      // Force Email OTP even for OAuth users
+      const triggerOtp = async () => {
+        try {
+          await apiClient.post("/api/auth/chat/send-email-otp", { email: urlEmail });
+          setStep("otp");
+          startCountdown();
+        } catch (err) {
+          console.error("Failed to trigger OAuth Email OTP", err);
+          setStep("otp"); // still go to OTP step
+        }
+      };
+      
+      if (urlEmail) {
+         triggerOtp();
+      } else {
+         setStep("whatsapp");
+      }
+
       // Remove query params to clean up URL
       const url = new URL(window.location.href);
       url.searchParams.delete("onboard");
@@ -558,13 +580,19 @@ function LoginContent() {
   const handleSendWhatsappOtp = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+    if (!whatsappCountryCode) {
+       setError("Please select a country code.");
+       return;
+    }
     if (!whatsappPhone || whatsappPhone.length < 5) {
        setError("Please enter a valid WhatsApp number.");
        return;
     }
     setLoading(true);
     try {
-      await apiClient.post("/api/auth/chat/send-whatsapp-otp", { phoneNumber: `+${whatsappCountryCode}${whatsappPhone}` });
+      const selected = COUNTRY_CODES.find(c => c.value === whatsappCountryCode);
+      const code = selected ? selected.code.replace('+', '') : '';
+      await apiClient.post("/api/auth/chat/send-whatsapp-otp", { phoneNumber: `+${code}${whatsappPhone}` });
       setStep("whatsapp_otp");
       startWhatsappCountdown();
     } catch (err: any) {
