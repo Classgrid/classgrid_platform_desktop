@@ -124,7 +124,7 @@ export function SidebarSwitcher({ user }: { user: { role?: string; name?: string
                 </span>
                 {user?.metadata?.show_role_in_sidebar !== false && (
                   <span className="truncate text-xs text-muted-foreground">
-                    {formatRole(currentRole)}
+                    {formatRole(user?.metadata?.job_role || currentRole)}
                   </span>
                 )}
               </div>
@@ -149,7 +149,7 @@ export function SidebarSwitcher({ user }: { user: { role?: string; name?: string
               </div>
               <div className="flex flex-col gap-0.5">
                 <span className="font-medium text-sm text-foreground">{orgName}</span>
-                <span className="text-xs text-muted-foreground">{formatRole(currentRole)} (Active)</span>
+                <span className="text-xs text-muted-foreground">{formatRole(user?.metadata?.job_role || currentRole)} (Active)</span>
               </div>
             </DropdownMenuItem>
 
