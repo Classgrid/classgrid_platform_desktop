@@ -154,6 +154,57 @@ router.get(
     }
 );
 
+// Chat Agent GitHub OAuth
+router.get(
+    "/chat/github",
+    async (req, res, next) => {
+        const loginTab = req.query.loginTab || req.query.role || 'student';
+        const host = req.query.host || '';
+        try {
+            const { state, nonce } = await createOAuthState({ loginTab, host });
+            res.cookie(OAUTH_STATE_COOKIE, nonce, oauthStateCookieOptions());
+            passport.authenticate("github-chat", {
+                scope: ["user:email"],
+                state,
+            })(req, res, next);
+        } catch (error) {
+            return res.status(400).json({ message: error.message || "Invalid login portal." });
+        }
+    }
+);
+router.get(
+    "/chat/github/callback",
+    async (req, res, next) => {
+        const stateRaw = req.query.state || null;
+        const defaultFrontendUrl = process.env.FRONTEND_URL?.trim() || (process.env.NODE_ENV === "production" ? "https://classgrid.in" : "https://classgrid.in");
+        let oauthState;
+        try {
+            oauthState = await verifyOAuthState(stateRaw, req.cookies?.[OAUTH_STATE_COOKIE]);
+        } catch (error) {
+            res.clearCookie(OAUTH_STATE_COOKIE, oauthStateCookieOptions({ clear: true }));
+            return res.redirect(`${defaultFrontendUrl}/login?error=invalid_oauth_state`);
+        }
+        res.clearCookie(OAUTH_STATE_COOKIE, oauthStateCookieOptions({ clear: true }));
+        req.oauthState = oauthState;
+
+        const { host, loginTab } = oauthState;
+        const scheme = process.env.NODE_ENV === "production" ? "https://" : "http://";
+        const TARGET_URL = host ? `${scheme}${host}` : defaultFrontendUrl;
+
+        passport.authenticate("github-chat", { session: false }, (err, user) => {
+            if (err) {
+                console.error("GitHub Chat OAuth Error Trace:", err.stack || err);
+                return res.redirect(`${TARGET_URL}/login?error=google_blocked&message=${encodeURIComponent(err.message)}`);
+            }
+            if (!user) {
+                return res.redirect(`${TARGET_URL}/login?error=AuthFailed`);
+            }
+            req.user = user;
+            return authController.oauthCallback(req, res);
+        })(req, res, next);
+    }
+);
+
 
     // Fake endpoints removed
 

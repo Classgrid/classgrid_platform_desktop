@@ -44,6 +44,7 @@
 
 import passport from "passport";
 import { Strategy as GoogleStrategy } from "passport-google-oauth20";
+import { Strategy as GitHubStrategy } from "passport-github2";
 import axios from "axios";
 import User from "../models/User.js";
 import connectDB from "../../config/db.js";
@@ -234,6 +235,81 @@ const passportConfig = () => {
         console.error("❌ CRITICAL ERROR: process.env.GOOGLE_CLIENT_ID is missing!");
         console.error("❌ Passport skipped registering the Google Strategy.");
         console.error("❌ Fix: Add GOOGLE_CLIENT_ID to your Vercel Environment Variables immediately.");
+    }
+
+    // ═══════════════════════════════════════
+    // 2. GITHUB STRATEGY (CHAT)
+    // ═══════════════════════════════════════
+    if (process.env.GITHUB_CLIENT_ID) {
+        passport.use(
+            'github-chat',
+            new GitHubStrategy(
+                {
+                    clientID: process.env.GITHUB_CLIENT_ID,
+                    clientSecret: process.env.GITHUB_CLIENT_SECRET,
+                    callbackURL: process.env.GITHUB_CALLBACK_URL || "https://api.classgrid.in/api/auth/github/callback",
+                    scope: ['user:email'],
+                    passReqToCallback: true,
+                },
+                async (req, accessToken, refreshToken, profile, done) => {
+                    try {
+                        // GitHub might not provide email in profile if it's private, we need to extract it
+                        let email = profile.emails && profile.emails[0] ? profile.emails[0].value : null;
+                        
+                        if (!email) {
+                            return done(new Error("GitHub account has no public email address"), null);
+                        }
+                        
+                        email = email.toLowerCase();
+
+                        let user = await User.findOne({
+                            $or: [{ githubId: profile.id }, { email: email }]
+                        });
+
+                        if (user) {
+                            if (!user.githubId) {
+                                user.githubId = profile.id;
+                                if (!user.authProvider) user.authProvider = "github";
+                                user.isEmailVerified = true;
+                                await user.save();
+                            }
+                            return done(null, user);
+                        }
+
+                        // Auto-create for the Chat Organization
+                        console.log(`✅ GitHub Chat: Creating new user: ${email}`);
+                        
+                        let reqLoginTab = 'user';
+                        if (req.query.state) {
+                            try {
+                                const [encodedPayload] = String(req.query.state).split('.');
+                                const stateObj = JSON.parse(Buffer.from(encodedPayload, 'base64url').toString('utf-8'));
+                                if (stateObj.t) reqLoginTab = stateObj.t;
+                            } catch(e) {}
+                        }
+
+                        user = await User.create({
+                            email: email,
+                            name: profile.displayName || profile.username || email.split('@')[0],
+                            role: reqLoginTab,
+                            profilePicture: profile.photos && profile.photos.length > 0 ? profile.photos[0].value : '',
+                            githubId: profile.id,
+                            authProvider: 'github',
+                            isEmailVerified: true,
+                            linkedProviders: ['github'],
+                            organization_id: "6ac4b95e0f8a97f45e98b0ff" // Hardcoded Chat Org
+                        });
+                        return done(null, user);
+                    } catch (err) {
+                        done(err, null);
+                    }
+                }
+            )
+        );
+        console.log("✅ GitHubStrategy (Chat) successfully registered with Passport");
+    } else {
+        console.error("❌ CRITICAL ERROR: process.env.GITHUB_CLIENT_ID is missing!");
+        console.error("❌ Passport skipped registering the GitHub Strategy.");
     }
 
 };
