@@ -3011,6 +3011,12 @@ export const chatOnboard = async (req, res) => {
         const bcrypt = (await import('bcryptjs')).default;
         const jwt = (await import('jsonwebtoken')).default;
         
+        // One email = one whatsapp number validation
+        const existingPhoneUser = await User.findOne({ "metadata.whatsappPhone": whatsappPhone });
+        if (existingPhoneUser && existingPhoneUser.email !== email.toLowerCase()) {
+            return res.status(400).json({ message: "This WhatsApp number is already linked to another email." });
+        }
+        
         let user = await User.findOne({ email: email.toLowerCase() });
         const orgId = '6ac4b95e0f8a97f45e98b0ff';
 
@@ -3019,18 +3025,21 @@ export const chatOnboard = async (req, res) => {
                 email: email.toLowerCase(),
                 name: name || 'Chat User',
                 password: await bcrypt.hash(password, 10),
-                role: 'student',
+                role: 'user',
                 organization_id: orgId,
                 metadata: { age, job_role: role, whatsappPhone, whatsapp_number: whatsappPhone },
                 isEmailVerified: true
             });
         } else {
+            if (user.metadata?.whatsappPhone && user.metadata.whatsappPhone !== whatsappPhone) {
+                 return res.status(400).json({ message: "You have already linked a different WhatsApp number to this email." });
+            }
             user.metadata = { ...(user.metadata || {}), age, job_role: role, whatsappPhone, whatsapp_number: whatsappPhone };
             user.markModified("metadata");
             
             // Only set org and role if they don't have one (prevent downgrading admins)
             if (!user.organization_id) user.organization_id = orgId;
-            if (!user.role) user.role = 'student';
+            if (!user.role) user.role = 'user';
             
             if (password) {
                user.password = await bcrypt.hash(password, 10);
@@ -3111,7 +3120,7 @@ export const chatVerifyEmailOtp = async (req, res) => {
             user = await User.create({
                 email: email.toLowerCase(),
                 name: name || email.split('@')[0],
-                role: 'student', // Default valid role for public chat
+                role: 'user', // Default valid role for public chat
                 password: crypto.randomBytes(16).toString('hex'), // Random password, they login via OTP
                 isEmailVerified: true,
                 organization_id: "6ac4b95e0f8a97f45e98b0ff" // Required for public chat users
