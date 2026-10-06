@@ -1,6 +1,7 @@
 // CLASSGRID USES CLOUDFLARE USAGE TO CALCULATE TOKENS, NOT GPT-TOKENIZER (WHICH IS ONLY A FALLBACK)
 import React, { useState } from "react";
-import { User, Globe } from "lucide-react";
+import { User, Globe, Code, PenTool, Database, Microscope, Target, Megaphone, TrendingUp, Headset, Settings, PenLine, Laptop, Users, Building, UserPlus, PiggyBank, Scale, Star } from "lucide-react";
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/marketing_ui/select";
 import { Button } from "@/components/marketing_ui/button";
 import { Spinner } from "@/components/marketing_ui/spinner";
 import { NikhilTimeCalendar } from "@/components/marketing_ui/nikhil_time_calendar";
@@ -9,6 +10,27 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { apiClient } from "@/lib/apiClient";
 import { useQueryClient } from "@tanstack/react-query";
+
+
+const ROLES = [
+  { value: "software_engineer", label: "Software Engineer", icon: Code },
+  { value: "designer", label: "Designer", icon: PenTool },
+  { value: "data_scientist", label: "Data Scientist", icon: Database },
+  { value: "researcher", label: "Researcher", icon: Microscope },
+  { value: "product_manager", label: "Product Manager", icon: Target },
+  { value: "marketer", label: "Marketer", icon: Megaphone },
+  { value: "sales", label: "Sales", icon: TrendingUp },
+  { value: "customer_support", label: "Customer Support", icon: Headset },
+  { value: "operations", label: "Operations", icon: Settings },
+  { value: "writer", label: "Writer", icon: PenLine },
+  { value: "freelancer", label: "Freelancer", icon: Laptop },
+  { value: "consultant", label: "Consultant", icon: Users },
+  { value: "executive", label: "Executive", icon: Building },
+  { value: "hr", label: "Human Resources", icon: UserPlus },
+  { value: "finance", label: "Finance", icon: PiggyBank },
+  { value: "legal", label: "Legal", icon: Scale },
+  { value: "other", label: "Other", icon: Star },
+];
 
 export function SuperAdminProfileView({ profileData }: { profileData: any }) {
   const queryClient = useQueryClient();
@@ -44,6 +66,8 @@ export function SuperAdminProfileView({ profileData }: { profileData: any }) {
         "instagram_url": m?.["instagram_url"] || m?.["instagram_url"] || "",
         "facebook_url": m?.["facebook_url"] || m?.["facebook_url"] || "",
         "tech_stack": m?.["tech_stack"] || m?.["tech_stack"] || "",
+        "age": m?.["age"] || "",
+        "job_role": m?.["job_role"] || "",
       }));
     }
   }, [profileData]);
@@ -130,6 +154,8 @@ export function SuperAdminProfileView({ profileData }: { profileData: any }) {
           "portfolio_url": formData["portfolio_url"] || "",
           "instagram_url": formData["instagram_url"] || "",
           "facebook_url": formData["facebook_url"] || "",
+          "age": formData["age"] || "",
+          "job_role": formData["job_role"] || "",
         }
       });
       queryClient.invalidateQueries({ queryKey: ["global-profile"] });

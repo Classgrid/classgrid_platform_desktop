@@ -107,7 +107,7 @@ export function oauthStateCookieOptions({ clear = false } = {}) {
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
         sameSite: "Lax",
-        path: "/api/auth/google",
+        path: "/api/auth",
     };
     if (!clear) options.maxAge = STATE_TTL_MS;
     return options;
