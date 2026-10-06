@@ -417,8 +417,8 @@ export function AppRouter() {
           {/* PUBLIC CHAT DASHBOARD */}
           <Route path="/agent" element={<SharedChatPage />} />
           <Route path="/agent/chat" element={<ChatPage />} />
-          <Route path="/requests" element={<SupportTicketsPage />} />
-          <Route path="/drive" element={<StorageFilesPage />} />
+          <Route path="/requests" element={<ComingSoonPage />} />
+          <Route path="/drive" element={<ComingSoonPage />} />
           <Route path="/agent/profile" element={<SharedProfilePage />} />
           <Route path="/agent/settings" element={<SharedSettingsPage />} />
           {/* Website CMS */}
