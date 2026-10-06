@@ -3189,7 +3189,12 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
 
         if (data.sessionId && !sessionId) {
           setSessionId(data.sessionId);
-          window.history.pushState({}, "", `/superadmin/agent?session=${data.sessionId}`);
+          
+          const pathParts = window.location.pathname.split('/');
+          const agentIndex = pathParts.indexOf('agent');
+          const baseAgentPath = agentIndex !== -1 ? pathParts.slice(0, agentIndex + 1).join('/') : '/agent';
+          
+          window.history.pushState({}, "", `${baseAgentPath}?session=${data.sessionId}`);
           window.dispatchEvent(new Event("agent:refresh-sessions"));
         }
 

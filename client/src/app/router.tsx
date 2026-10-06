@@ -415,7 +415,15 @@ export function AppRouter() {
         {/* ── DYNAMIC ROLE LAYOUT (Wraps all 10 Dept Dashboards & Common Pages) ── */}
         <Route element={<DynamicRoleLayout />}>
           {/* PUBLIC CHAT DASHBOARD */}
-          <Route path="/agent" element={<GenericPage title="Classgrid AI" />} />
+          <Route path="/agent" element={<DashboardHomePage />} />
+          <Route path="/agent/:sessionId" element={<DashboardHomePage />} />
+          <Route path="/agent/:sessionId/*" element={<DashboardHomePage />} />
+          <Route path="/c/agent" element={<DashboardHomePage />} />
+          <Route path="/c/agent/:sessionId" element={<DashboardHomePage />} />
+          <Route path="/c/agent/:sessionId/*" element={<DashboardHomePage />} />
+          <Route path="/c" element={<DashboardHomePage />} />
+          <Route path="/c/:sessionId" element={<DashboardHomePage />} />
+          <Route path="/c/:sessionId/*" element={<DashboardHomePage />} />
           <Route path="/agent/chat" element={<ChatPage />} />
           <Route path="/requests" element={<JoinRequestPage />} />
           <Route path="/drive" element={<GenericPage title="Google Drive" />} />

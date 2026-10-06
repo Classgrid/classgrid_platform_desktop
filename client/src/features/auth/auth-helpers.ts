@@ -210,7 +210,7 @@ export function getAuthIntent(audience: AuthAudience, role: AuthLoginRole): Auth
 export function getRedirectPath(role: string | null | undefined) {
   if (typeof window !== 'undefined') {
     const subdomain = window.location.hostname.split('.')[0];
-    if (subdomain === 'chat') return '/agent';
+    if (subdomain === 'chat') return '/c/agent';
   }
   const normalized = normalizeAuthRole(role);
 
