@@ -2021,7 +2021,10 @@ export const oauthCallback = async (req, res) => {
     }
 
     // Role-based redirect
-    const target = getFrontendDashboardTarget(req.user);
+    let target = getFrontendDashboardTarget(req.user);
+    if (host && host.startsWith('chat.')) {
+        target = '/agent';
+    }
 
     const qs = isFirstLogin ? `?welcome=true&token=${token}` : `?token=${token}`;
     res.redirect(`${TARGET_URL}${target}${qs}`);

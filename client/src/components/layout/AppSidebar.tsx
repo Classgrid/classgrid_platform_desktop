@@ -318,7 +318,8 @@ export function AppSidebar({ role, user }: AppSidebarProps) {
                                     tabIndex={0}
                                     onClick={(e) => {
                                       e.preventDefault();
-                                      const loginPath = getLoginPathForPath(location.pathname);
+                                      const isChatSubdomain = window.location.hostname.startsWith('chat.');
+                                      const loginPath = isChatSubdomain ? '/login' : getLoginPathForPath(location.pathname);
                                       navigate(`/logout?redirectTo=${encodeURIComponent(loginPath)}`);
                                     }}
                                     className="flex items-center gap-3 w-full justify-between cursor-pointer"

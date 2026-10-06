@@ -68,7 +68,8 @@ export function SidebarUserMenu({ user, customTrigger }: { user: { name: string;
       : "";
 
   const handleLogout = () => {
-    const loginPath = getLoginPathForPath(location.pathname);
+    const isChatSubdomain = window.location.hostname.startsWith('chat.');
+    const loginPath = isChatSubdomain ? '/login' : getLoginPathForPath(location.pathname);
     navigate(`/logout?redirectTo=${encodeURIComponent(loginPath)}`);
   };
 
