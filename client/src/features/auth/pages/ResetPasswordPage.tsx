@@ -72,7 +72,7 @@ export function ResetPasswordPage() {
       setIsVerifying(false);
       return;
     }
-    
+
     // Check local storage first for instant feedback if they just set it
     if (localStorage.getItem(`reset_success_${token}`) === "true") {
       setIsVerifying(false);
@@ -163,8 +163,8 @@ export function ResetPasswordPage() {
   const confirmBorder = !isConfirmTouched
     ? "border-border dark:border-white/10"
     : isPasswordMatch
-    ? "border-emerald-500/80 shadow-[0_0_18px_rgba(16,185,129,0.22)]"
-    : "border-red-500/70 shadow-[0_0_18px_rgba(239,68,68,0.20)]";
+      ? "border-emerald-500/80 shadow-[0_0_18px_rgba(16,185,129,0.22)]"
+      : "border-red-500/70 shadow-[0_0_18px_rgba(239,68,68,0.20)]";
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -185,7 +185,7 @@ export function ResetPasswordPage() {
           ? String(error.message)
           : "Could not reset password right now.";
       setFeedback({ message, tone: "error" });
-      
+
       const lowerMsg = message.toLowerCase();
       if (lowerMsg.includes("expire") || lowerMsg.includes("invalid")) {
         setIsTokenDead(true);
@@ -205,9 +205,9 @@ export function ResetPasswordPage() {
 
   if (isTokenDead) {
     return (
-      <main 
-        className="relative flex min-h-screen flex-col items-center justify-center px-4" 
-        style={{ 
+      <main
+        className="relative flex min-h-screen flex-col items-center justify-center px-4"
+        style={{
           backgroundColor: "#111111",
           backgroundImage: "linear-gradient(135deg, rgba(255,255,255,0.03) 25%, transparent 25%), linear-gradient(225deg, rgba(255,255,255,0.03) 25%, transparent 25%), linear-gradient(45deg, rgba(255,255,255,0.03) 25%, transparent 25%), linear-gradient(315deg, rgba(255,255,255,0.03) 25%, #111111 25%)",
           backgroundPosition: "40px 0, 40px 0, 0 0, 0 0",
@@ -235,9 +235,9 @@ export function ResetPasswordPage() {
 
   if (isSuccess) {
     return (
-      <main 
-        className="relative flex min-h-screen flex-col items-center justify-center px-4" 
-        style={{ 
+      <main
+        className="relative flex min-h-screen flex-col items-center justify-center px-4"
+        style={{
           backgroundColor: "#111111",
           backgroundImage: "linear-gradient(135deg, rgba(255,255,255,0.03) 25%, transparent 25%), linear-gradient(225deg, rgba(255,255,255,0.03) 25%, transparent 25%), linear-gradient(45deg, rgba(255,255,255,0.03) 25%, transparent 25%), linear-gradient(315deg, rgba(255,255,255,0.03) 25%, #111111 25%)",
           backgroundPosition: "40px 0, 40px 0, 0 0, 0 0",
@@ -288,7 +288,7 @@ export function ResetPasswordPage() {
             100% { opacity: 1; }
           }
         `}</style>
-        
+
         <footer className="absolute bottom-6 text-center text-xs text-gray-500">
           Â© {new Date().getFullYear()}, Classgrid Education. All Rights Reserved.
         </footer>
@@ -297,9 +297,9 @@ export function ResetPasswordPage() {
   }
 
   return (
-    <main 
-      className="relative flex min-h-screen flex-col items-center justify-center px-4" 
-      style={{ 
+    <main
+      className="relative flex min-h-screen flex-col items-center justify-center px-4"
+      style={{
         backgroundColor: "#111111",
         backgroundImage: "linear-gradient(135deg, rgba(255,255,255,0.03) 25%, transparent 25%), linear-gradient(225deg, rgba(255,255,255,0.03) 25%, transparent 25%), linear-gradient(45deg, rgba(255,255,255,0.03) 25%, transparent 25%), linear-gradient(315deg, rgba(255,255,255,0.03) 25%, #111111 25%)",
         backgroundPosition: "40px 0, 40px 0, 0 0, 0 0",
@@ -412,9 +412,8 @@ export function ResetPasswordPage() {
 
               {isConfirmTouched && (
                 <p
-                  className={`mt-2 text-sm font-semibold ${
-                    isPasswordMatch ? "text-emerald-400" : "text-red-400"
-                  }`}
+                  className={`mt-2 text-sm font-semibold ${isPasswordMatch ? "text-emerald-400" : "text-red-400"
+                    }`}
                 >
                   {isPasswordMatch ? "Passwords match" : "Passwords do not match"}
                 </p>
@@ -423,11 +422,10 @@ export function ResetPasswordPage() {
 
             {feedback && (
               <div
-                className={`mt-4 rounded-[12px] border px-3 py-2 text-[12px] leading-5 ${
-                  feedback.tone === "error"
+                className={`mt-4 rounded-[12px] border px-3 py-2 text-[12px] leading-5 ${feedback.tone === "error"
                     ? "border-red-500/35 bg-red-500/10 text-red-200"
                     : "border-emerald-500/35 bg-emerald-500/10 text-emerald-200"
-                }`}
+                  }`}
               >
                 {feedback.message}
               </div>
@@ -438,11 +436,10 @@ export function ResetPasswordPage() {
             <button
               type="submit"
               disabled={!canSubmit}
-              className={`mt-7 h-14 w-full rounded-2xl font-bold transition-all duration-300 ${
-                canSubmit
+              className={`mt-7 h-14 w-full rounded-2xl font-bold transition-all duration-300 ${canSubmit
                   ? "bg-emerald-500 text-foreground dark:text-white shadow-[0_0_24px_rgba(16,185,129,0.28)] hover:bg-emerald-400"
                   : "cursor-not-allowed bg-emerald-700/60 text-gray-400"
-              }`}
+                }`}
             >
               {isSubmitting ? "Updating..." : "Update Password"}
             </button>

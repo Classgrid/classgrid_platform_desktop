@@ -183,6 +183,7 @@ import { SupportPage } from "@/features/support/pages/SupportPage";
 import { GenericPage } from "@/features/system/pages/GenericPage";
 import { GlobeDemoPage } from "@/features/system/pages/GlobeDemoPage";
 import { NotFoundPage } from "@/features/system/pages/NotFoundPage";
+import { PublicChatLoginPage } from "@/features/public-chat/pages/PublicChatLoginPage";
 import { AdminLoginRouter } from "@/features/auth/pages/AdminLoginRouter";
 import { UserLoginRouter } from "@/features/auth/pages/UserLoginRouter";
 import { SuperAdminLoginPage } from "@/features/auth/pages/SuperAdminLoginPage";
@@ -252,7 +253,7 @@ export function AppRouter() {
       <Route 
         path="/login" 
         element={
-          subdomain === "app" 
+          subdomain === "chat" ? <PublicChatLoginPage /> : subdomain === "app" 
             ? <PlatformHubPage /> 
             : (isSuperAdmin ? <SuperAdminLoginPage /> : <UserLoginRouter />)
         } 
