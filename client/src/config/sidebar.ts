@@ -739,7 +739,7 @@ export const dashboardConfigs: DashboardConfig[] = [
         label: "AI Platform",
         items: [
           { label: "Agent", to: "/agent", icon: Play },
-          { label: "Chat History", to: "/chat/history", icon: MessageSquare },
+          { label: "Grids", to: "/agent/chat", icon: ClassgridLogoIcon },
           { label: "Requests", to: "/requests", icon: Users },
           { label: "Drive", to: "/drive", icon: Database }
         ]

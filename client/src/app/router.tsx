@@ -416,14 +416,7 @@ export function AppRouter() {
         <Route element={<DynamicRoleLayout />}>
           {/* PUBLIC CHAT DASHBOARD */}
           <Route path="/agent" element={<SharedChatPage />} />
-          <Route path="/chat/history" element={<SharedChatPage />} />
-          <Route path="/requests" element={<SupportTicketsPage />} />
-          <Route path="/drive" element={<StorageFilesPage />} />
-          <Route path="/agent/profile" element={<AgentProfilePage />} />
-          <Route path="/agent/settings" element={<SharedSettingsPage />} />
-          {/* PUBLIC CHAT DASHBOARD */}
-          <Route path="/agent" element={<SharedChatPage />} />
-          <Route path="/chat/history" element={<SharedChatPage />} />
+          <Route path="/agent/chat" element={<ChatPage />} />
           <Route path="/requests" element={<SupportTicketsPage />} />
           <Route path="/drive" element={<StorageFilesPage />} />
           <Route path="/agent/profile" element={<SharedProfilePage />} />
