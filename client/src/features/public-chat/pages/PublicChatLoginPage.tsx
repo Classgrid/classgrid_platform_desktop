@@ -399,9 +399,14 @@ function LoginContent() {
       });
 
       if (res.data?.token) {
-        localStorage.setItem("token", res.data.token);
-        // Refresh the page or redirect so the app picks up the token and loads the chat session
-        window.location.href = "/";
+        if (mode === "signup") {
+          setStep("otp_verified");
+          setLoading(false);
+        } else {
+          localStorage.setItem("token", res.data.token);
+          // Refresh the page or redirect so the app picks up the token and loads the chat session
+          window.location.href = "/";
+        }
       } else {
         setError("Failed to retrieve login session.");
         setLoading(false);
@@ -495,7 +500,6 @@ function LoginContent() {
     }
     setLoading(true);
     try {
-      await new Promise(r => setTimeout(r, 800));
       setStep("whatsapp");
     } catch (err: any) {
       setError("Failed to setup password.");
@@ -513,7 +517,6 @@ function LoginContent() {
     }
     setLoading(true);
     try {
-      await new Promise(r => setTimeout(r, 800));
       setStep("role");
     } catch (err: any) {
       setError("Failed to save age.");
@@ -531,12 +534,11 @@ function LoginContent() {
     }
     setLoading(true);
     try {
-      await new Promise(r => setTimeout(r, 800));
       await apiClient.post("/api/auth/chat/send-whatsapp-otp", { phoneNumber: `+${whatsappCountryCode}${whatsappPhone}` });
       setStep("whatsapp_otp");
       startWhatsappCountdown();
     } catch (err: any) {
-      setError("Failed to send OTP.");
+      setError(err?.response?.data?.message || "Failed to send OTP.");
     } finally {
       setLoading(false);
     }
@@ -551,7 +553,6 @@ function LoginContent() {
     }
     setLoading(true);
     try {
-      await new Promise(r => setTimeout(r, 800));
       setStep("age");
     } catch (err: any) {
       setError("Failed to verify OTP.");
@@ -569,10 +570,21 @@ function LoginContent() {
     }
     setLoading(true);
     try {
-      await new Promise(r => setTimeout(r, 800));
+      const res = await apiClient.post("/api/auth/chat/finalize-onboarding", {
+        email: email.trim(),
+        name: `${firstName} ${lastName}`.trim(),
+        password,
+        age: Number(age),
+        role,
+        whatsappPhone: `+${whatsappCountryCode}${whatsappPhone}`,
+        whatsappOtp,
+      });
+      if (res.data?.token) {
+        localStorage.setItem("token", res.data.token);
+      }
       setStep("success");
     } catch (err: any) {
-      setError("Failed to save role.");
+      setError(err?.response?.data?.message || err?.message || "Failed to save role.");
     } finally {
       setLoading(false);
     }
@@ -639,7 +651,7 @@ function LoginContent() {
               className="flex flex-col items-center gap-5 mt-4"
             >
               <button
-                onClick={() => window.location.href = "/dashboard"}
+                onClick={() => window.location.href = "/"}
                 className="h-14 px-10 flex items-center justify-center text-base font-semibold rounded-full bg-white/10 hover:bg-white/20 text-white border border-white/20 backdrop-blur-sm transition-all duration-300 shadow-lg shadow-blue-500/10 cursor-pointer"
               >
                 Start Chatting <ChevronRight className="ml-2 size-5" />
