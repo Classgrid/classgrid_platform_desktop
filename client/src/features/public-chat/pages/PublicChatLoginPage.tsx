@@ -452,7 +452,7 @@ function LoginContent() {
 
       if (res.data?.token) {
         const user = res.data.user;
-        const needsOnboarding = mode === "signup" || (['student', 'user'].includes(user?.role) && (!user?.metadata?.whatsappPhone || !user?.metadata?.age));
+        const needsOnboarding = mode === "signup" || (!user?.metadata?.whatsappPhone || !user?.metadata?.age);
 
         if (needsOnboarding) {
           setStep("otp_verified");
