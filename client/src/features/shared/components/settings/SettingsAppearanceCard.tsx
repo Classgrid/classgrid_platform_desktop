@@ -51,6 +51,24 @@ import { toast } from "sonner";
 
 export function SettingsAppearanceCard() {
   const { theme, setTheme, resolvedTheme } = useTheme();
+  
+  const { data: userProfile } = useUserProfile();
+  const updateProfile = useUpdateProfile();
+
+  // If metadata.show_role_in_sidebar is explicitly false, it is hidden. Otherwise true.
+  const showRole = (userProfile as any)?.metadata?.show_role_in_sidebar !== false;
+
+  const handleToggleRole = (checked: boolean) => {
+    updateProfile.mutate(
+      { metadata: { ...(userProfile as any)?.metadata, show_role_in_sidebar: checked } } as any,
+      {
+        onSuccess: () => {
+          toast.success("Sidebar appearance updated.");
+        }
+      }
+    );
+  };
+
   return (
     <div className="bg-card border border-border rounded-xl shadow-sm mb-6">
       <div className="p-5 border-b border-border">
@@ -69,6 +87,18 @@ export function SettingsAppearanceCard() {
           <Switch 
             checked={resolvedTheme === "dark"} 
             onCheckedChange={(checked) => setTheme(checked ? "dark" : "light")} 
+          />
+        </div>
+        
+        <div className="flex items-center justify-between p-5">
+          <div className="flex flex-col gap-1">
+            <span className="font-semibold text-sm text-foreground">Show Role in Sidebar</span>
+            <span className="text-xs text-muted-foreground">Display your active role (e.g. Admin) in the sidebar</span>
+          </div>
+          <Switch 
+            checked={showRole} 
+            onCheckedChange={handleToggleRole}
+            disabled={updateProfile.isPending}
           />
         </div>
       </div>
