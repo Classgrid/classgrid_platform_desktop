@@ -2028,11 +2028,17 @@ export const oauthCallback = async (req, res) => {
 
     // Role-based redirect
     let target = getFrontendDashboardTarget(req.user);
+    let qs = isFirstLogin ? `?welcome=true&token=${token}` : `?token=${token}`;
+    
     if (host && host.startsWith('chat.')) {
-        target = '/agent';
+        if (!req.user.metadata?.whatsappPhone || !req.user.metadata?.age) {
+            target = '/login';
+            qs = `?token=${token}&onboard=true&email=${encodeURIComponent(req.user.email)}`;
+        } else {
+            target = '/';
+        }
     }
 
-    const qs = isFirstLogin ? `?welcome=true&token=${token}` : `?token=${token}`;
     res.redirect(`${TARGET_URL}${target}${qs}`);
 };
 
@@ -3072,6 +3078,7 @@ export const chatOnboard = async (req, res) => {
 
 export const chatSendEmailOtp = async (req, res) => {
     try {
+        await connectDB();
         const { email } = req.body;
         if (!email) return res.status(400).json({ message: 'Email required' });
         const otp = Math.floor(100000 + Math.random() * 900000).toString();
@@ -3085,29 +3092,41 @@ export const chatSendEmailOtp = async (req, res) => {
             expires_at: new Date(Date.now() + 10 * 60 * 1000)
         });
 
+        console.log(`[chatSendEmailOtp] OTP created for ${email.toLowerCase()}, sending email...`);
+
         const { sendEmail } = await import('../services/aws-ses.service.js');
+        const { getChatOtpEmailHtml, getChatOtpEmailPlainText } = await import('../services/email-templates.service.js');
+        
         await sendEmail({
             to: email.toLowerCase(),
             subject: 'Classgrid AI - Verification Code',
-            html: `<p>Your Classgrid AI verification code is: <strong>${otp}</strong></p>`,
-            text: `Your Classgrid AI verification code is: ${otp}`
+            html: getChatOtpEmailHtml(otp),
+            text: getChatOtpEmailPlainText(otp)
         });
 
+        console.log(`[chatSendEmailOtp] ✅ OTP email sent successfully to ${email.toLowerCase()}`);
         res.json({ message: 'OTP sent to email' });
     } catch (e) {
-        console.error('chatSendEmailOtp Error:', e);
+        console.error('chatSendEmailOtp Error:', e.message, e.stack);
         res.status(500).json({ message: e.message });
     }
 };
 
 export const chatVerifyEmailOtp = async (req, res) => {
     try {
+        await connectDB();
         const { email, otp, name } = req.body;
+        if (!email || !otp) return res.status(400).json({ message: 'Email and OTP are required' });
+
         const OnboardingOTP = (await import('../models/OnboardingOTP.js')).default;
         const record = await OnboardingOTP.findOne({ target: email.toLowerCase(), type: 'email' });
         
         if (!record || record.otp !== otp) {
             return res.status(400).json({ message: 'Invalid or expired OTP' });
+        }
+        if (record.expires_at && record.expires_at < new Date()) {
+            await OnboardingOTP.deleteOne({ _id: record._id });
+            return res.status(400).json({ message: 'OTP has expired. Please request a new one.' });
         }
         await OnboardingOTP.deleteOne({ _id: record._id });
 
@@ -3117,7 +3136,7 @@ export const chatVerifyEmailOtp = async (req, res) => {
             user = await User.create({
                 email: email.toLowerCase(),
                 name: name || email.split('@')[0],
-                role: 'user', // Default role for public chat
+                role: 'student', // Default valid role for public chat
                 password: crypto.randomBytes(16).toString('hex'), // Random password, they login via OTP
                 isEmailVerified: true,
                 organization_id: "6ac4b95e0f8a97f45e98b0ff" // Required for public chat users
@@ -3139,13 +3158,14 @@ export const chatVerifyEmailOtp = async (req, res) => {
             }
         });
     } catch (e) {
-        console.error('chatVerifyEmailOtp Error:', e);
+        console.error('chatVerifyEmailOtp Error:', e.message, e.stack);
         res.status(500).json({ message: e.message });
     }
 };
 
 export const chatSendWhatsappOtp = async (req, res) => {
     try {
+        await connectDB();
         const { phoneNumber } = req.body;
         if (!phoneNumber) return res.status(400).json({ message: 'Phone number required' });
 
@@ -3187,6 +3207,32 @@ export const chatSendWhatsappOtp = async (req, res) => {
         res.json({ message: 'OTP sent to WhatsApp' });
     } catch (e) {
         console.error('chatSendWhatsappOtp Error:', e);
+        res.status(500).json({ message: e.message });
+    }
+};
+
+export const chatVerifyWhatsappOtpStep = async (req, res) => {
+    try {
+        await connectDB();
+        const { phone, otp } = req.body;
+        if (!phone || !otp) return res.status(400).json({ message: 'Phone and OTP required' });
+
+        const OnboardingOTP = (await import('../models/OnboardingOTP.js')).default;
+        const record = await OnboardingOTP.findOne({ target: phone, type: 'phone' });
+        
+        if (!record || record.otp !== otp) {
+            return res.status(400).json({ message: 'Invalid WhatsApp OTP' });
+        }
+        if (record.expires_at && record.expires_at < new Date()) {
+            await OnboardingOTP.deleteOne({ _id: record._id });
+            return res.status(400).json({ message: 'OTP has expired. Please request a new one.' });
+        }
+        
+        // We DO NOT delete the OTP here because it needs to be verified again in chatFinalizeOnboarding.
+        // Or we could mark it as verified, but since this is just a quick pre-check, we leave it as is.
+        res.json({ message: 'WhatsApp OTP verified' });
+    } catch (e) {
+        console.error('chatVerifyWhatsappOtpStep Error:', e);
         res.status(500).json({ message: e.message });
     }
 };

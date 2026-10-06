@@ -3222,3 +3222,40 @@ export const getTopUpCreditsExhaustedHtml = (userName, resetDate, dashboardUrl) 
     `
   });
 };
+
+// ------------- CHAT OTP EMAIL -------------
+export const getChatOtpEmailHtml = (otp) => {
+  const content = `
+    <p>Hi there,</p>
+    <p>You requested a verification code to sign in to <strong>Classgrid AI</strong>.</p>
+    
+    <div class="box" style="margin-bottom: 24px; text-align: center;">
+      <p style="margin-bottom: 8px; color: #6b7280; font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Your 6-Digit Code</p>
+      <p style="margin-bottom: 0; font-size: 32px; font-weight: 800; letter-spacing: 6px; color: #111111;">${otp}</p>
+    </div>
+
+    <p style="font-size: 14px; color: #374151;">This code is valid for the next <strong>10 minutes</strong>. Please do not share it with anyone.</p>
+    
+    <p style="font-size: 13px; color: #6b7280; margin-top: 24px; margin-bottom: 0;">If you did not request this code, you can safely ignore this email.</p>
+  `;
+
+  return baseTemplate({
+    content,
+    title: "Classgrid AI Verification Code",
+    ignoreText: "This code expires in 10 minutes.",
+  });
+};
+
+export const getChatOtpEmailPlainText = (otp) => {
+  return \`Classgrid AI Verification Code
+
+Your 6-digit verification code is: \${otp}
+
+This code is valid for the next 10 minutes. Please do not share it with anyone.
+
+If you did not request this code, you can safely ignore this email.
+
+For contact, visit: https://chat.classgrid.in/support
+
+© \${new Date().getFullYear()} Classgrid. All rights reserved.\`;
+};

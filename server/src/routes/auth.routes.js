@@ -99,6 +99,7 @@ router.post("/logout", authController.logout);
 router.post("/chat/send-email-otp", authController.chatSendEmailOtp);
 router.post("/chat/verify-email-otp", authController.chatVerifyEmailOtp);
 router.post("/chat/send-whatsapp-otp", authController.chatSendWhatsappOtp);
+router.post("/chat/verify-whatsapp-otp-step", authController.chatVerifyWhatsappOtpStep);
 router.post("/chat/finalize-onboarding", authController.chatFinalizeOnboarding);
 
 // Chat Agent Google OAuth
@@ -221,5 +222,3 @@ router.get(
 );
 
 export default router;
-router.post('/chat/send-whatsapp-otp', authController.chatSendWhatsAppOtp);
-router.post('/chat/verify-whatsapp-otp', authController.chatVerifyWhatsAppOtp);
