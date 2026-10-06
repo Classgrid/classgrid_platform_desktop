@@ -307,17 +307,31 @@ function LoginContent() {
       if (mode === "signin") {
         const checkRes = await apiClient.post("/api/auth/check-email", { email: email.toLowerCase() });
         if (checkRes.data.exists) {
-          setStep("login_password");
+          if (checkRes.data.hasPassword) {
+            setStep("login_password");
+          } else {
+            // User exists but has no password (e.g. Google OAuth user) — send OTP for login
+            await apiClient.post("/api/auth/chat/send-email-otp", { email: email.toLowerCase() });
+            setStep("otp");
+            startCountdown();
+          }
         } else {
           setError("Account does not exist. Please sign up.");
         }
       } else {
-        await apiClient.post("/api/auth/chat/send-email-otp", { email: email.toLowerCase() });
-        setStep("otp");
-        startCountdown();
+        // Signup mode — check if account already exists first
+        const checkRes = await apiClient.post("/api/auth/check-email", { email: email.toLowerCase() });
+        if (checkRes.data.exists) {
+          setError("Account already exists. Please sign in instead.");
+        } else {
+          await apiClient.post("/api/auth/chat/send-email-otp", { email: email.toLowerCase() });
+          setStep("otp");
+          startCountdown();
+        }
       }
     } catch (err: any) {
-      setError(err?.message && typeof err.message === "string" ? err.message : "Failed to send OTP.");
+      const msg = err?.response?.data?.message || err?.message;
+      setError(msg && typeof msg === "string" ? msg : "Failed to send OTP.");
     } finally {
       setLoading(false);
     }
@@ -550,9 +564,13 @@ function LoginContent() {
     }
     setLoading(true);
     try {
+      await apiClient.post("/api/auth/chat/verify-whatsapp-otp-step", {
+        phone: `+${whatsappCountryCode}${whatsappPhone}`,
+        otp: whatsappOtp
+      });
       setStep("age");
     } catch (err: any) {
-      setError("Failed to verify OTP.");
+      setError(err?.response?.data?.message || err?.message || "Failed to verify OTP.");
     } finally {
       setLoading(false);
     }
