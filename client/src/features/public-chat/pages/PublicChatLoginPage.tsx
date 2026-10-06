@@ -1009,7 +1009,9 @@ function LoginContent() {
                       setWhatsappOtp("");
                       setLoading(true);
                       try {
-                        await apiClient.post("/api/auth/chat/send-whatsapp-otp", { phoneNumber: `+${whatsappCountryCode}${whatsappPhone}` });
+                        const selected = COUNTRY_CODES.find(c => c.value === whatsappCountryCode);
+                        const code = selected ? selected.code.replace('+', '') : '';
+                        await apiClient.post("/api/auth/chat/send-whatsapp-otp", { phoneNumber: `+${code}${whatsappPhone}` });
                         startWhatsappCountdown();
                       } catch (err: any) {
                         setError(err?.response?.data?.message || "Failed to resend code.");
