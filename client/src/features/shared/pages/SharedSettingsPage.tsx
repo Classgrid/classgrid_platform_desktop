@@ -46,6 +46,8 @@ import React, { useState, useEffect } from "react";
 import { Save } from "lucide-react";
 import { Button } from "@/components/marketing_ui/button";
 import { SettingsAppearanceCard } from "../components/settings/SettingsAppearanceCard";
+import { SettingsPushCard } from "../components/settings/SettingsPushCard";
+import { useEmailPreferences, useUpdateEmailPreferences, EmailPrefs } from "../queries/useSettingsQueries";
 import { useUserProfile, useUpdateProfile } from "../queries/useUserProfile";
 import { CustomDomainCard } from "../../org/components/settings/CustomDomainCard";
 import { OrgCodesCard } from "../../org/components/settings/OrgCodesCard";
@@ -64,9 +66,50 @@ export function SharedSettingsPage() {
   const { data: profileData, isLoading: isProfileLoading } = useUserProfile();
   const updateProfile = useUpdateProfile();
   
-  const isPending = updateProfile.isPending;
+  const requiresPrefs = profileData?.role !== "org_admin" && profileData?.role !== "super_admin" && !isChatApp;
+  
+  const { data: prefData, isLoading: isPrefLoading } = useEmailPreferences(requiresPrefs);
+  const updatePrefs = useUpdateEmailPreferences();
+
+  const [prefs, setPrefs] = useState<EmailPrefs>({
+    global: true,
+    announcements: true,
+    notes: true,
+    quizzes: true,
+    joinApproval: true,
+    emailOnPost: true,
+    digestMode: "instant",
+  });
+
+  const [pushEnabled, setPushEnabled] = useState(true);
+
+  useEffect(() => {
+    if (prefData) {
+      setPrefs((prev) => ({ ...prev, ...prefData }));
+    }
+  }, [prefData]);
+
+  useEffect(() => {
+    if (profileData?.pushNotifications) {
+      setPushEnabled(profileData.pushNotifications.global ?? true);
+    }
+  }, [profileData]);
+
+  const handlePrefChange = (field: keyof EmailPrefs, value: any) => {
+    const newPrefs = { ...prefs, [field]: value };
+    setPrefs(newPrefs);
+    updatePrefs.mutate(newPrefs);
+  };
+
+  const handlePushChange = (enabled: boolean) => {
+    setPushEnabled(enabled);
+    updateProfile.mutate({ pushNotifications: { global: enabled } });
+  };
+
+  const isPending = updatePrefs.isPending || updateProfile.isPending;
 
   // Only block the page render if we are waiting for the initial profile data.
+  // Email preferences loading state is handled by the SettingsNotificationsCard itself.
   if (!profileData && isProfileLoading) {
     return (
       <div className="flex flex-col gap-6 w-full max-w-4xl mx-auto p-4 sm:p-6 lg:p-8 pb-12 animate-in fade-in duration-500">
@@ -101,6 +144,13 @@ export function SharedSettingsPage() {
   return (
     <div className="flex flex-col gap-6 w-full max-w-4xl mx-auto p-4 sm:p-6 lg:p-8 pb-12">
       <SettingsAppearanceCard />
+      
+      {!isProfileLoading && profileData?.role !== "org_admin" && profileData?.role !== "super_admin" && profileData?.role !== "user" && !isChatApp && (
+        <SettingsPushCard 
+          pushEnabled={pushEnabled} 
+          onChange={handlePushChange} 
+        />
+      )}
 
       {profileData?.role !== "org_admin" && (
         <>
