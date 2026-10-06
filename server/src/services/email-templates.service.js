@@ -3247,9 +3247,9 @@ export const getChatOtpEmailHtml = (otp) => {
 };
 
 export const getChatOtpEmailPlainText = (otp) => {
-  return \`Classgrid AI Verification Code
+  return `Classgrid AI Verification Code
 
-Your 6-digit verification code is: \${otp}
+Your 6-digit verification code is: ${otp}
 
 This code is valid for the next 10 minutes. Please do not share it with anyone.
 
@@ -3257,5 +3257,5 @@ If you did not request this code, you can safely ignore this email.
 
 For contact, visit: https://chat.classgrid.in/support
 
-© \${new Date().getFullYear()} Classgrid. All rights reserved.\`;
+© ${new Date().getFullYear()} Classgrid. All rights reserved.`;
 };
