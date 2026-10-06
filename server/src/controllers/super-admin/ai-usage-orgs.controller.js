@@ -20,7 +20,12 @@ export const listOrgsWithAiUsage = async (req, res) => {
         }
 
         // 2. Fetch those specific users from MongoDB and populate their Organization
-        const users = await User.find({ email: { $in: activeEmails } })
+        const users = await User.find({ 
+            $or: [
+                { email: { $in: activeEmails } },
+                { organization_id: "6ac4b95e0f8a97f45e98b0ff" }
+            ]
+        })
             .select("name email role ai_tokens organization_id profilePicture platformLogo")
             .populate("organization_id", "name ai_config logo_url ownerEmail ownerName")
             .lean();
