@@ -60,6 +60,7 @@ import { DeleteOrgCard } from "../../org/components/settings/DeleteOrgCard";
 import { SettingsChangePasswordCard } from "../components/settings/SettingsChangePasswordCard";
 import { SettingsDeleteAccountCard } from "../components/settings/SettingsDeleteAccountCard";
 import { SettingsRoleRequestCard } from "../components/settings/SettingsRoleRequestCard";
+import { SettingsIdentityCard } from "../components/settings/SettingsIdentityCard";
 
 export function SharedSettingsPage() {
   const isChatApp = typeof window !== 'undefined' && window.location.hostname.startsWith('chat.');
@@ -169,6 +170,7 @@ export function SharedSettingsPage() {
 
       {profileData?.role === "org_admin" && (
         <>
+          <SettingsIdentityCard />
           <OrgBrandingCard />
           <CustomDomainCard />
           <OrgCodesCard />
