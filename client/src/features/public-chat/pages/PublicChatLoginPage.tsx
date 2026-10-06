@@ -308,7 +308,12 @@ function LoginContent() {
     setLoading(true);
     try {
       if (mode === "signin") {
-        setStep("login_password");
+        const checkRes = await apiClient.post("/api/auth/check-email", { email: email.toLowerCase() });
+        if (checkRes.data.exists) {
+          setStep("login_password");
+        } else {
+          setError("Account does not exist. Please sign up.");
+        }
       } else {
         await apiClient.post("/api/auth/chat/send-email-otp", { email: email.toLowerCase() });
         setStep("otp");
