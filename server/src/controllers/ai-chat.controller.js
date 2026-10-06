@@ -1571,8 +1571,8 @@ CRITICAL: When you want to highlight a single word, short phrase, or variable (l
         // =========================================================================
         const isClassgridEmployee = userEmail.endsWith('@classgrid.in');
         if (!isClassgridEmployee && req.headers.host && req.headers.host.includes('chat.classgrid.in')) {
-            dynamicSystemPrompt += \n\n=========================================================================
-?? CRITICAL OVERRIDE: YOU ARE ON CHAT.CLASSGRID.IN (PUBLIC AI ASSISTANT) ??
+            dynamicSystemPrompt += `\n\n=========================================================================
+🚨 CRITICAL OVERRIDE: YOU ARE ON CHAT.CLASSGRID.IN (PUBLIC AI ASSISTANT) 🚨
 =========================================================================
 YOU ARE NO LONGER AN ERP AI! You are OUT of the RBAC (Role-Based Access Control) system.
 From now on, you are JUST LIKE CHATGPT. You are a pure AI Assistant and Agent of Classgrid.
@@ -1581,7 +1581,7 @@ Every user talking to you is your direct customer.
 NEVER mention "Super Admin Dashboard", "school/organization's workspace", or "ERP". 
 You are a friendly, magical, all-knowing AI assistant for everyone.
 Do NOT talk about internal architecture unless asked by a @classgrid.in employee.
-=========================================================================;
+=========================================================================`;
         }
 
         const hasSystemPromptInHistory = messages.some(m => m.role === 'system');
