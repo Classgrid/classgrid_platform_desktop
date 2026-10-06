@@ -15,11 +15,11 @@ export function SettingsIdentityCard() {
         value={userProfile.id}
       />
       
-      {userProfile.orgId && (
+      {userProfile.organization_id && (
         <CopySnippetCard
           title="Organization ID"
           description="Use this ID to identify your organization when contacting support."
-          value={userProfile.orgId}
+          value={(userProfile.organization_id as any)?._id || userProfile.organization_id?.id || String(userProfile.organization_id)}
         />
       )}
     </>
