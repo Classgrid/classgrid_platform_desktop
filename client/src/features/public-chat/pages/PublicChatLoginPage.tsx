@@ -232,7 +232,7 @@ function LoginContent() {
   const [age, setAge] = useState("");
   const [role, setRole] = useState("");
   const [whatsappPhone, setWhatsappPhone] = useState("");
-  const [whatsappCountryCode, setWhatsappCountryCode] = useState("IN");
+  const [whatsappCountryCode, setWhatsappCountryCode] = useState("");
   const [whatsappOtp, setWhatsappOtp] = useState("");
   const [whatsappCountdown, setWhatsappCountdown] = useState(0);
   const [whatsappOtpExpired, setWhatsappOtpExpired] = useState(false);
@@ -611,8 +611,10 @@ function LoginContent() {
     }
     setLoading(true);
     try {
+      const selected = COUNTRY_CODES.find(c => c.value === whatsappCountryCode);
+      const code = selected ? selected.code.replace('+', '') : '';
       await apiClient.post("/api/auth/chat/verify-whatsapp-otp-step", {
-        phone: `+${whatsappCountryCode}${whatsappPhone}`,
+        phone: `+${code}${whatsappPhone}`,
         otp: whatsappOtp
       });
       setStep("age");
@@ -632,13 +634,15 @@ function LoginContent() {
     }
     setLoading(true);
     try {
+      const selected = COUNTRY_CODES.find(c => c.value === whatsappCountryCode);
+      const code = selected ? selected.code.replace('+', '') : '';
       const res = await apiClient.post("/api/auth/chat/finalize-onboarding", {
         email: email.trim(),
         name: `${firstName} ${lastName}`.trim(),
         password,
         age: Number(age),
         role,
-        whatsappPhone: `+${whatsappCountryCode}${whatsappPhone}`,
+        whatsappPhone: `+${code}${whatsappPhone}`,
         whatsappOtp,
       });
       if (res.data?.token) {
