@@ -3230,11 +3230,11 @@ export const chatFinalizeOnboarding = async (req, res) => {
         const bcrypt = (await import('bcryptjs')).default;
         const jwt = (await import('jsonwebtoken')).default;
 
-        // One email = one whatsapp number validation (DISABLED FOR TESTING)
-        // const existingPhoneUser = await User.findOne({ "metadata.whatsappPhone": whatsappPhone });
-        // if (existingPhoneUser && existingPhoneUser.email !== email.toLowerCase()) {
-        //     return res.status(400).json({ message: "This WhatsApp number is already linked to another email." });
-        // }
+        // One email = one whatsapp number validation
+        const existingPhoneUser = await User.findOne({ "metadata.whatsappPhone": whatsappPhone });
+        if (existingPhoneUser && existingPhoneUser.email !== email.toLowerCase()) {
+            return res.status(400).json({ message: "This WhatsApp number is already linked to another email." });
+        }
         
         let user = await User.findOne({ email: email.toLowerCase() });
         const orgId = '6ac4b95e0f8a97f45e98b0ff';
@@ -3250,10 +3250,9 @@ export const chatFinalizeOnboarding = async (req, res) => {
                 isEmailVerified: true
             });
         } else {
-            // DISABLED FOR TESTING
-            // if (user.metadata?.whatsappPhone && user.metadata.whatsappPhone !== whatsappPhone) {
-            //      return res.status(400).json({ message: "You have already linked a different WhatsApp number to this email." });
-            // }
+            if (user.metadata?.whatsappPhone && user.metadata.whatsappPhone !== whatsappPhone) {
+                 return res.status(400).json({ message: "You have already linked a different WhatsApp number to this email." });
+            }
             user.metadata = { ...(user.metadata || {}), age, job_role: role, whatsappPhone, whatsapp_number: whatsappPhone };
             user.markModified("metadata");
             
