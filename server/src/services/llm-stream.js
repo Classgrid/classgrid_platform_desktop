@@ -1,0 +1,286 @@
+// Streaming chat loop for OpenAI-compatible providers (Cloudflare Workers AI).
+// Mirrors the tool-loop behaviour of @classgrid/ai's tryProvider, but streams
+// reasoning and answer text as they are generated instead of waiting for the full reply.
+
+const INTERNAL_THOUGHT_TOOL = {
+    type: "function",
+    function: {
+        name: "internal_thought_process",
+        description: "CRITICAL: If you need to plan your response, analyze rules, or think step-by-step before answering the user, you MUST call this tool FIRST. Never output raw thoughts as text.",
+        parameters: {
+            type: "object",
+            properties: {
+                thought: { type: "string", description: "Your internal reasoning, step-by-step plan, or thought process." }
+            },
+            required: ["thought"]
+        }
+    }
+};
+
+export class StreamChatError extends Error {
+    constructor(message, { status, rateLimited = false } = {}) {
+        super(message);
+        this.name = "StreamChatError";
+        this.status = status;
+        this.rateLimited = rateLimited;
+    }
+}
+
+// Routes inline <think>...</think> spans in the content stream to the thought channel.
+// Tags can be split across chunks, so a possible partial tag is held back until resolved.
+function createThinkSplitter(emitText, emitThought) {
+    const OPEN = "<think>";
+    const CLOSE = "</think>";
+    let inThink = false;
+    let pending = "";
+
+    const partialTagLength = (str, tag) => {
+        for (let len = Math.min(tag.length - 1, str.length); len > 0; len--) {
+            if (tag.startsWith(str.slice(-len))) return len;
+        }
+        return 0;
+    };
+
+    const push = (piece) => {
+        pending += piece;
+        for (;;) {
+            const tag = inThink ? CLOSE : OPEN;
+            const emit = inThink ? emitThought : emitText;
+            const idx = pending.indexOf(tag);
+            if (idx >= 0) {
+                if (idx > 0) emit(pending.slice(0, idx));
+                pending = pending.slice(idx + tag.length);
+                inThink = !inThink;
+                continue;
+            }
+            const hold = partialTagLength(pending, tag);
+            const ready = pending.slice(0, pending.length - hold);
+            if (ready) emit(ready);
+            pending = pending.slice(pending.length - hold);
+            return;
+        }
+    };
+
+    const flush = () => {
+        if (pending) (inThink ? emitThought : emitText)(pending);
+        pending = "";
+    };
+
+    return { push, flush };
+}
+
+async function streamOneRound({ provider, messages, tools, temperature, maxTokens, timeoutMs, signal, onToken, onThought }) {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(new Error(`Timeout after ${timeoutMs}ms`)), timeoutMs);
+    const onOuterAbort = () => controller.abort(signal.reason);
+    signal?.addEventListener("abort", onOuterAbort, { once: true });
+
+    try {
+        const response = await fetch(provider.url, {
+            method: "POST",
+            signal: controller.signal,
+            headers: { Authorization: `Bearer ${provider.apiKey}`, "Content-Type": "application/json" },
+            body: JSON.stringify({
+                model: provider.model,
+                messages,
+                temperature,
+                max_tokens: maxTokens,
+                tools: tools.length > 0 ? tools : undefined,
+                stream: true,
+                stream_options: { include_usage: true }
+            })
+        });
+
+        if (!response.ok || !response.body) {
+            const body = await response.text().catch(() => "");
+            throw new StreamChatError(`HTTP ${response.status}: ${body.slice(0, 300)}`, {
+                status: response.status,
+                rateLimited: response.status === 429
+            });
+        }
+
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = "";
+        let text = "";
+        let reasoning = "";
+        let usage = null;
+        const toolCalls = [];
+        const emitReasoning = (piece) => {
+            reasoning += piece;
+            onThought?.(piece);
+        };
+        const splitter = createThinkSplitter(
+            (piece) => { text += piece; onToken?.(piece); },
+            emitReasoning
+        );
+
+        for (;;) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            buffer += decoder.decode(value, { stream: true });
+            const lines = buffer.split("\n");
+            buffer = lines.pop();
+
+            for (const line of lines) {
+                if (!line.startsWith("data:")) continue;
+                const data = line.slice(5).trim();
+                if (!data || data === "[DONE]") continue;
+
+                let chunk;
+                try { chunk = JSON.parse(data); } catch { continue; }
+
+                // Cloudflare attaches usage to every chunk; the largest total is the round's final count.
+                if (chunk.usage && (!usage || (chunk.usage.total_tokens || 0) >= (usage.total_tokens || 0))) {
+                    usage = chunk.usage;
+                }
+
+                const delta = chunk.choices?.[0]?.delta;
+                if (!delta) continue;
+
+                const reasoningPiece = delta.reasoning_content ?? delta.reasoning;
+                if (reasoningPiece) emitReasoning(reasoningPiece);
+                if (delta.content) splitter.push(delta.content);
+                for (const tc of delta.tool_calls || []) {
+                    const index = tc.index ?? toolCalls.length;
+                    const call = (toolCalls[index] ??= { id: "", type: "function", function: { name: "", arguments: "" } });
+                    if (tc.id) call.id = tc.id;
+                    if (tc.function?.name) call.function.name += tc.function.name;
+                    if (tc.function?.arguments) call.function.arguments += tc.function.arguments;
+                }
+            }
+        }
+        splitter.flush();
+
+        return { text: text.trim(), reasoning, usage, toolCalls: toolCalls.filter(Boolean) };
+    } finally {
+        clearTimeout(timeout);
+        signal?.removeEventListener("abort", onOuterAbort);
+    }
+}
+
+/**
+ * Runs the tool-calling loop with streaming.
+ * Throws StreamChatError on HTTP failures; `error.toolsRun` tells the caller whether
+ * any real tool already executed (in which case retrying elsewhere could repeat side effects).
+ */
+export async function streamChat({
+    provider,
+    messages,
+    tools = [],
+    toolHandlers = {},
+    temperature = 0.35,
+    maxTokens = 600,
+    maxToolDepth = 100,
+    timeoutMs = 300000,
+    signal,
+    onToken,
+    onThought,
+    onStatus
+}) {
+    const allTools = [INTERNAL_THOUGHT_TOOL, ...tools.filter(t => t?.function?.name !== "internal_thought_process")];
+    const conversation = [...messages];
+    const usage = { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 };
+    let depth = 0;
+    let toolsRun = 0;
+    let hadReasoning = false;
+
+    try {
+        for (;;) {
+            if (signal?.aborted) throw new StreamChatError("Request aborted");
+
+            // Keep reasoning from separate rounds visually separate in the thought stream.
+            const separateThought = (piece) => {
+                if (hadReasoning) { onThought?.("\n\n"); hadReasoning = false; }
+                onThought?.(piece);
+            };
+
+            const round = await streamOneRound({
+                provider, messages: conversation, tools: allTools, temperature, maxTokens, timeoutMs, signal,
+                onToken, onThought: separateThought
+            });
+            if (round.reasoning) hadReasoning = true;
+
+            if (round.usage) {
+                usage.prompt_tokens += round.usage.prompt_tokens || 0;
+                usage.completion_tokens += round.usage.completion_tokens || 0;
+                usage.total_tokens += round.usage.total_tokens || 0;
+            }
+
+            if (round.toolCalls.length === 0) {
+                return { answer: round.text || null, usage, toolsRun };
+            }
+
+            if (depth >= maxToolDepth) {
+                return { answer: "I searched but couldn't find a clear answer. Could you try rephrasing?", usage, toolsRun };
+            }
+
+            conversation.push({ role: "assistant", content: round.text || "", tool_calls: round.toolCalls });
+
+            let countsTowardDepth = false;
+            for (const call of round.toolCalls) {
+                const toolName = call.function.name;
+                let toolResult;
+
+                let args;
+                try {
+                    args = JSON.parse(call.function.arguments || "{}");
+                } catch {
+                    conversation.push({ role: "tool", tool_call_id: call.id, content: "Error: Invalid JSON arguments." });
+                    countsTowardDepth = true;
+                    continue;
+                }
+
+                if (toolName === "internal_thought_process") {
+                    const alreadyThought = conversation.slice(0, -1).some(
+                        (m) => m.tool_calls && m.tool_calls.some((tc) => tc.function.name === "internal_thought_process")
+                    );
+                    if (alreadyThought) {
+                        toolResult = "ERROR: You have ALREADY used the internal_thought_process tool. Provide your final answer now.";
+                        countsTowardDepth = true;
+                    } else {
+                        const thought = args.thought || args.details || "";
+                        if (thought) separateThought(thought);
+                        hadReasoning = true;
+                        onStatus?.("analyzing");
+                        toolResult = "Thought logged. Provide your final answer now.";
+                    }
+                    conversation.push({ role: "tool", tool_call_id: call.id, content: toolResult });
+                    continue;
+                }
+
+                countsTowardDepth = true;
+                const alreadyCalled = conversation.slice(0, -1).some(
+                    (m) => m.tool_calls && m.tool_calls.some(
+                        (tc) => tc.function.name === toolName && tc.function.arguments === call.function.arguments
+                    )
+                );
+                const handler = toolHandlers[toolName];
+
+                if (alreadyCalled) {
+                    toolResult = `ERROR: You have ALREADY called ${toolName} with these exact arguments. Use the data you already have.`;
+                } else if (!handler) {
+                    toolResult = `Error: Unknown tool ${toolName}.`;
+                } else {
+                    onStatus?.(toolName.replace(/_/g, " "));
+                    toolsRun++;
+                    try {
+                        toolResult = await handler(args);
+                    } catch (e) {
+                        toolResult = `Tool error: ${e instanceof Error ? e.message : String(e)}`;
+                    }
+                    onStatus?.("analyzing");
+                }
+
+                conversation.push({ role: "tool", tool_call_id: call.id, content: String(toolResult ?? "").slice(0, 6000) });
+            }
+
+            if (countsTowardDepth) depth++;
+        }
+    } catch (err) {
+        const wrapped = err instanceof StreamChatError ? err : new StreamChatError(err?.message || String(err));
+        wrapped.toolsRun = toolsRun;
+        wrapped.usage = usage;
+        throw wrapped;
+    }
+}

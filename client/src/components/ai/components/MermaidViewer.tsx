@@ -171,10 +171,11 @@ export const MermaidViewer = ({ chart, onRetry, isTyping }: { chart: string, onR
           document.querySelectorAll('svg[id^="dmermaid"]').forEach(el => el.remove());
           document.querySelectorAll('.error-icon').forEach(el => el.remove());
           
-          // Fallback: remove any SVG globally that contains the Mermaid error text
-          // Run immediately and also delayed to catch async injections
+          // Fallback: remove Mermaid error SVGs that Mermaid injects at the top of <body>.
+          // Run immediately and also delayed to catch async injections.
+          // Scoped to those SVGs: scanning every SVG on the page (all icons) is slow in long chats.
           const removeErrorSvgs = () => {
-             document.querySelectorAll('svg').forEach(svg => {
+             document.querySelectorAll('body > svg, body > div > svg, svg[id^="mermaid"]').forEach(svg => {
                 const text = svg.textContent || '';
                 if (text.includes('Syntax error') || text.includes('version 11.17.')) {
                     svg.remove();

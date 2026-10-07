@@ -1218,15 +1218,21 @@ const CraftingBlock = () => {
 };
 
 const AssistantMessageContent = memo(({ content, isTyping, onApprovalAction, isHistorical, onRetry, currentStepIndex, setActiveBuildSessionId }: { content: string, isTyping?: boolean, onApprovalAction?: (text: string) => void, isHistorical?: boolean, onRetry?: (error: string) => void, currentStepIndex?: number, setActiveBuildSessionId?: (id: string) => void }) => {
+  // `components` below must keep a stable identity: a new object makes ReactMarkdown remount
+  // every code block and Mermaid diagram. So it reads changing props from refs, which are
+  // assigned during render so the markdown rendered in this same pass sees current values.
   const onApprovalActionRef = React.useRef(onApprovalAction);
   const isTypingRef = React.useRef(isTyping);
   const onRetryRef = React.useRef(onRetry);
-
-  React.useEffect(() => {
-    onApprovalActionRef.current = onApprovalAction;
-    isTypingRef.current = isTyping;
-    onRetryRef.current = onRetry;
-  }, [onApprovalAction, isTyping, onRetry]);
+  const isHistoricalRef = React.useRef(isHistorical);
+  const currentStepIndexRef = React.useRef(currentStepIndex);
+  const contentRef = React.useRef(content);
+  onApprovalActionRef.current = onApprovalAction;
+  isTypingRef.current = isTyping;
+  onRetryRef.current = onRetry;
+  isHistoricalRef.current = isHistorical;
+  currentStepIndexRef.current = currentStepIndex;
+  contentRef.current = content;
 
   // Preprocess AI output:
   // 1. Convert fake bullet chars to real Markdown list markers
@@ -1333,8 +1339,8 @@ const AssistantMessageContent = memo(({ content, isTyping, onApprovalAction, isH
             const card = (
               <ApprovalCard
                 {...parsedProps}
-                isHistorical={isHistorical}
-                currentStepIndex={currentStepIndex}
+                isHistorical={isHistoricalRef.current}
+                currentStepIndex={currentStepIndexRef.current}
                 onApprove={(payload) => {
                   if (parsedProps.variant === "plan" && parsedProps.plan && Array.isArray(parsedProps.plan)) {
                     // Phase 1: Send the approved plan to the real Backend Control Plane!
@@ -1412,7 +1418,7 @@ const AssistantMessageContent = memo(({ content, isTyping, onApprovalAction, isH
             );
           }
         }
-        if (!inline && content.includes('"variant": "plan"') && typeof children === "string" && (className?.includes("language-html") || className?.includes("language-css") || className?.includes("language-js") || className?.includes("language-javascript"))) {
+        if (!inline && contentRef.current.includes('"variant": "plan"') && typeof children === "string" && (className?.includes("language-html") || className?.includes("language-css") || className?.includes("language-js") || className?.includes("language-javascript"))) {
           return null; // Hide code blocks in chat, they are shown in WorkspacePanel
         }
         return MarkdownComponents.code({ node, inline, className, children, ...props }, isTypingRef.current, onRetryRef.current);
@@ -1495,7 +1501,7 @@ const AssistantMessageContent = memo(({ content, isTyping, onApprovalAction, isH
         return <hr className="my-6 border-slate-100 dark:border-slate-800" {...props} />;
       }
     };
-  }, [isHistorical]); // isTyping removed in favor of isTypingRef to prevent unmount flashes
+  }, []);
 
 
   return (
@@ -2849,36 +2855,41 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
     return () => clearInterval(interval);
   }, [open, messages.length, messages[messages.length - 1]?.typing, thinking, submitting]);
 
-  // Word-by-word drain effect — releases one word at a time from the buffer
-  // This matches the sandbox simulation's word-by-word typing behavior
+  // Adaptive drain: reveals buffered stream text at a steady base pace, and speeds up
+  // when a burst lands so the screen never trails the stream by more than ~CATCH_UP_MS.
+  // Chunk size scales with elapsed time, so slow renders mean bigger chunks, not lag.
   useEffect(() => {
-    const interval = setInterval(() => {
-      // Drain token buffer one word at a time
-      if (tokenBufferRef.current.length > 0) {
-        const match = tokenBufferRef.current.match(/^\s*\S+\s?/);
-        if (match) {
-          const word = match[0];
-          tokenBufferRef.current = tokenBufferRef.current.slice(word.length);
-          setMessages((prev) => {
-            const lastMsg = prev[prev.length - 1];
-            if (!lastMsg || lastMsg.role !== 'assistant') return prev;
-            return [...prev.slice(0, -1), { ...lastMsg, content: (lastMsg.content || '') + word, typing: true }];
-          });
-        }
-      }
+    const BASE_CHARS_PER_SEC = 400;
+    const CATCH_UP_MS = 400;
+    let lastTick = performance.now();
 
-      // Drain thought buffer one word at a time
-      if (thoughtBufferRef.current.length > 0) {
-        const match = thoughtBufferRef.current.match(/^\s*\S+\s?/);
-        if (match) {
-          const word = match[0];
-          thoughtBufferRef.current = thoughtBufferRef.current.slice(word.length);
-          setMessages((prev) => {
-            const lastMsg = prev[prev.length - 1];
-            if (!lastMsg || lastMsg.role !== 'assistant') return prev;
-            return [...prev.slice(0, -1), { ...lastMsg, thought: (lastMsg.thought || '') + word }];
-          });
-        }
+    const takeChunk = (buffer: string, elapsedMs: number) => {
+      if (!buffer) return "";
+      if (document.hidden) return buffer;
+      const charsPerSec = Math.max(BASE_CHARS_PER_SEC, buffer.length / (CATCH_UP_MS / 1000));
+      return buffer.slice(0, Math.max(1, Math.round((charsPerSec * elapsedMs) / 1000)));
+    };
+
+    const interval = setInterval(() => {
+      const now = performance.now();
+      const elapsedMs = now - lastTick;
+      lastTick = now;
+
+      const tokenChunk = takeChunk(tokenBufferRef.current, elapsedMs);
+      const thoughtChunk = takeChunk(thoughtBufferRef.current, elapsedMs);
+      tokenBufferRef.current = tokenBufferRef.current.slice(tokenChunk.length);
+      thoughtBufferRef.current = thoughtBufferRef.current.slice(thoughtChunk.length);
+
+      if (tokenChunk || thoughtChunk) {
+        setMessages((prev) => {
+          const lastMsg = prev[prev.length - 1];
+          if (!lastMsg || lastMsg.role !== 'assistant') return prev;
+          return [...prev.slice(0, -1), {
+            ...lastMsg,
+            ...(tokenChunk ? { content: (lastMsg.content || '') + tokenChunk, typing: true } : {}),
+            ...(thoughtChunk ? { thought: (lastMsg.thought || '') + thoughtChunk } : {}),
+          }];
+        });
       }
 
       // When both buffers are empty and stream is done, mark typing as finished
@@ -2886,7 +2897,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
         // Reset the typing active ref so the queue engine can proceed
         wordTypingActiveRef.current = false;
       }
-    }, 80); // ~12 words per second — smooth word-by-word like the sandbox
+    }, 33);
 
     return () => clearInterval(interval);
   }, []);
@@ -2901,12 +2912,10 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
     });
   }
 
-  function getCharDelay(char: string) {
-    if (prefersReducedMotion) return 0;
-    if (/[.!?]/.test(char)) return 30;
-    if (/[,;:]/.test(char)) return 20;
-    if (char === " ") return 6;
-    return 11;
+  // Reveal is time-based (not per-character) so its total duration stays bounded
+  // no matter how expensive each markdown render becomes in a long chat.
+  function getRevealDurationMs(length: number) {
+    return Math.min(2000, 400 + length * 1.5);
   }
 
   async function typeAssistantResponse(answer: string) {
@@ -2929,23 +2938,39 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
       ];
     });
 
-    for (let index = 1; index <= answer.length; index += 1) {
-      if (runId !== typingRunRef.current) return;
-
+    const showText = (text: string) =>
       setMessages((current) => {
         const last = current[current.length - 1];
         if (!last || last.role !== "assistant") return current;
-        return current.map((message) =>
-          message.id === last.id
-            ? { ...message, content: answer.slice(0, index) }
-            : message
-        );
+        return [...current.slice(0, -1), { ...last, content: text }];
       });
 
-      const delay = getCharDelay(answer[index - 1]);
-      if (delay > 0) {
-        await wait(delay);
-      }
+    if (prefersReducedMotion || document.hidden) {
+      showText(answer);
+    } else {
+      const duration = getRevealDurationMs(answer.length);
+      const start = performance.now();
+      let shown = 0;
+
+      await new Promise<void>((resolve) => {
+        const step = (now: number) => {
+          if (runId !== typingRunRef.current) return resolve();
+
+          let target = Math.ceil(answer.length * Math.min(1, (now - start) / duration));
+          if (target < answer.length) {
+            const nextSpace = answer.indexOf(" ", target);
+            target = nextSpace === -1 ? answer.length : nextSpace + 1;
+          }
+          if (target > shown) {
+            shown = target;
+            showText(answer.slice(0, shown));
+          }
+
+          if (shown >= answer.length) return resolve();
+          requestAnimationFrame(step);
+        };
+        requestAnimationFrame(step);
+      });
     }
 
     if (runId !== typingRunRef.current) return;

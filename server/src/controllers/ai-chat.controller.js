@@ -17,6 +17,7 @@
 // Triggering test deployment for GitHub Actions (Backend) and Vercel (Frontend)
 import { usageStorage } from "../utils/fetch-interceptor.js";
 import { createLLMClient } from "@classgrid/ai/core";
+import { streamChat } from "../services/llm-stream.js";
 import { getPresignedUploadUrl, uploadBufferToR2 } from "../config/r2Client.js";
 import { primarySupabaseClient as supabase } from "../config/supabaseClient.js";
 import {
@@ -1563,10 +1564,7 @@ Furthermore, you are a helpful AI Assistant, NOT a pre-sales representative! NEV
         dynamicSystemPrompt += `\n\nINLINE CODE (BACKTICKS) RULE:
 CRITICAL: When you want to highlight a single word, short phrase, or variable (like \`cat\`, \`localStorage\`, \`id\`), ALWAYS wrap it in single backticks. This will render as a premium inline box with a grey background and red text. NEVER wrap entire sentences or paragraphs in single backticks. NEVER use bold or italics when backticks would be more appropriate for emphasizing technical or specific terms.`;
 
-        // PERFORMANCE: Only inject full system prompt on the FIRST message of a session.
-        // For subsequent messages, inject a lightweight context-only prompt since
-        // the full rules are already in conversation history from the first message.
-                // =========================================================================
+        // =========================================================================
         // PUBLIC CHAT (chat.classgrid.in) OVERRIDE RULES
         // =========================================================================
         const isClassgridEmployee = userEmail.endsWith('@classgrid.in');
@@ -1584,19 +1582,10 @@ Do NOT talk about internal architecture unless asked by a @classgrid.in employee
 =========================================================================`;
         }
 
-        const hasSystemPromptInHistory = messages.some(m => m.role === 'system');
-        if (!hasSystemPromptInHistory) {
-            // First message — inject the full system prompt with all rules
-            messages.unshift({ role: "system", content: dynamicSystemPrompt });
-        } else {
-            // Subsequent messages — only inject dynamic context (time, integrations)
-            const now2 = new Date();
-            const dateIST2 = now2.toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-            const timeIST2 = now2.toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit' });
-            let lightPrompt = `--- CONTEXT UPDATE ---\nCurrent time: ${timeIST2} on ${dateIST2} (IST).\nRemember all your rules and instructions from the first message. Follow them strictly.`;
-            if (pluginPrompt) lightPrompt += pluginPrompt;
-            messages.unshift({ role: "system", content: lightPrompt });
-        }
+        // The provider API is stateless and the system prompt is never stored in history,
+        // so the full prompt must be sent on every request. (History can contain role:'system'
+        // tool-memory notes, so their presence does not mean the rules were already sent.)
+        messages.unshift({ role: "system", content: dynamicSystemPrompt });
 
         // 3. Initialize the real LLM Client from the Classgrid SDK using the fallback hierarchy
         let accSteps = []; // hoisted here so tool wrappers can push to it
@@ -1604,7 +1593,7 @@ Do NOT talk about internal architecture unless asked by a @classgrid.in employee
         // 🚨 AI WARNING: DO NOT ADD NEW MODELS OR CHANGE EXISTING MODELS 🚨
         // CHANGING ANY AI MODEL IS STRICTLY BANNED BY PLATFORM POLICY.
         // NEVER CHANGE ANY AI MODEL. USING LLAMA IS STRICTLY FORBIDDEN (OTHER THAN FOR VISION).
-        const client = createLLMClient({
+        const llmConfig = {
             timeoutMs: 300000,
             providers: [
                 {
@@ -3028,12 +3017,15 @@ Do NOT talk about internal architecture unless asked by a @classgrid.in employee
                     }
                 ]))
             })()
-        });
+        };
+        const client = createLLMClient(llmConfig);
 
         let requestAborted = false;
+        const streamAbort = new AbortController();
 
         req.on('close', () => {
             requestAborted = true;
+            streamAbort.abort();
             if (!res.writableEnded) res.end();
         });
 
@@ -3073,27 +3065,66 @@ Do NOT talk about internal architecture unless asked by a @classgrid.in employee
 
                 console.log(`[AI-DEBUG] ===== GENERATE START ===== attempt=${attempt} question="${(body.question || '').slice(0, 100)}" messagesCount=${messages.length} timestamp=${new Date().toISOString()}`);
                 const generateStartTime = Date.now();
-                answer = await usageStorage.run(usageStore, () => currentClient.generate({
-                    messages,
-                    maxToolDepth: 100,
-                    timeoutMs: isDiagramRequest && attempt === 1 ? 15000 : 1200000,
-                    onStatus: (status) => {
-                        console.log(`[AI-DEBUG] onStatus: "${status}" at +${((Date.now() - generateStartTime) / 1000).toFixed(1)}s`);
-                        if (requestAborted || res.writableEnded) return;
-                        const mappedLabel = status === "search web" ? "searching" : status;
-                        try { res.write(`data: ${JSON.stringify({ type: "status", label: mappedLabel })}\n\n`); } catch (e) { }
-                    },
-                    onThought: (thought) => {
-                        if (!thought) return; // Skip undefined/null/empty thought chunks
-                        accThought += thought;
-                        if (requestAborted || res.writableEnded) return;
-                        try { res.write(`data: ${JSON.stringify({ type: "thought", thought })}\n\n`); } catch (e) { }
-                    },
-                    onToken: isDiagramRequest ? undefined : (token) => {
-                        if (requestAborted || res.writableEnded) return;
-                        try { res.write(`data: ${JSON.stringify({ type: "token", token })}\n\n`); } catch (e) { }
+                const onStatus = (status) => {
+                    console.log(`[AI-DEBUG] onStatus: "${status}" at +${((Date.now() - generateStartTime) / 1000).toFixed(1)}s`);
+                    if (requestAborted || res.writableEnded) return;
+                    const mappedLabel = status === "search web" ? "searching" : status;
+                    try { res.write(`data: ${JSON.stringify({ type: "status", label: mappedLabel })}\n\n`); } catch (e) { }
+                };
+                const onThought = (thought) => {
+                    if (!thought) return; // Skip undefined/null/empty thought chunks
+                    accThought += thought;
+                    if (requestAborted || res.writableEnded) return;
+                    try { res.write(`data: ${JSON.stringify({ type: "thought", thought })}\n\n`); } catch (e) { }
+                };
+                const onToken = isDiagramRequest ? undefined : (token) => {
+                    if (requestAborted || res.writableEnded) return;
+                    try { res.write(`data: ${JSON.stringify({ type: "token", token })}\n\n`); } catch (e) { }
+                };
+
+                // Primary path: stream reasoning and answer live from Cloudflare.
+                // The SDK (non-streaming, with Mistral fallback) is only used if streaming fails
+                // before any real tool ran — retrying after a tool ran could repeat its side effects.
+                let streamed = null;
+                if (attempt === 1) {
+                    try {
+                        streamed = await streamChat({
+                            provider: llmConfig.providers[0],
+                            messages,
+                            tools: llmConfig.tools,
+                            toolHandlers: llmConfig.toolHandlers,
+                            maxTokens: llmConfig.defaultMaxTokens,
+                            maxToolDepth: 100,
+                            timeoutMs: llmConfig.providers[0].timeoutMs,
+                            signal: streamAbort.signal,
+                            onStatus,
+                            onThought,
+                            onToken
+                        });
+                        if (streamed.usage.total_tokens > 0) usageStore.usage = streamed.usage;
+                        console.log(`[AI-STREAM] Streamed answer in ${((Date.now() - generateStartTime) / 1000).toFixed(1)}s, toolsRun=${streamed.toolsRun}`);
+                    } catch (streamErr) {
+                        if (requestAborted) return;
+                        if (streamErr.usage?.total_tokens > 0) usageStore.usage = streamErr.usage;
+                        if (streamErr.toolsRun > 0) {
+                            console.error(`[AI-STREAM] Streaming failed after ${streamErr.toolsRun} tool(s) ran; not retrying: ${streamErr.message}`);
+                            streamed = { answer: "Something went wrong while finishing this answer. The actions above were completed — please ask again if you need a summary." };
+                        } else {
+                            console.warn(`[AI-STREAM] Streaming failed, falling back to SDK: ${streamErr.message}`);
+                        }
                     }
-                }));
+                }
+
+                answer = streamed
+                    ? streamed.answer
+                    : await usageStorage.run(usageStore, () => currentClient.generate({
+                        messages,
+                        maxToolDepth: 100,
+                        timeoutMs: isDiagramRequest && attempt === 1 ? 15000 : 1200000,
+                        onStatus,
+                        onThought,
+                        onToken
+                    }));
 
                 const generateDuration = ((Date.now() - generateStartTime) / 1000).toFixed(1);
                 console.log(`[AI-DEBUG] ===== GENERATE END ===== duration=${generateDuration}s answer=${answer ? `"${String(answer).slice(0, 150)}..."` : 'NULL'} stepsCount=${accSteps.length} thoughtLength=${(accThought || '').length}`);
