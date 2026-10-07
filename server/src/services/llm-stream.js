@@ -204,6 +204,13 @@ export async function streamChat({
                 return { answer: "I searched but couldn't find a clear answer. Could you try rephrasing?", usage, toolsRun };
             }
 
+            // Duplicate checks look only at earlier rounds plus calls already handled in this round.
+            // Including the current assistant message would make every parallel call after the first match itself.
+            const earlierCalls = conversation.flatMap((m) => m.tool_calls || []);
+            const callsThisRound = [];
+            const wasCalled = (name, args) =>
+                [...earlierCalls, ...callsThisRound].some((tc) => tc.function.name === name && (args === undefined || tc.function.arguments === args));
+
             conversation.push({ role: "assistant", content: round.text || "", tool_calls: round.toolCalls });
 
             let countsTowardDepth = false;
@@ -221,9 +228,8 @@ export async function streamChat({
                 }
 
                 if (toolName === "internal_thought_process") {
-                    const alreadyThought = conversation.slice(0, -1).some(
-                        (m) => m.tool_calls && m.tool_calls.some((tc) => tc.function.name === "internal_thought_process")
-                    );
+                    const alreadyThought = wasCalled("internal_thought_process");
+                    callsThisRound.push(call);
                     if (alreadyThought) {
                         toolResult = "ERROR: You have ALREADY used the internal_thought_process tool. Provide your final answer now.";
                         countsTowardDepth = true;
@@ -239,11 +245,8 @@ export async function streamChat({
                 }
 
                 countsTowardDepth = true;
-                const alreadyCalled = conversation.slice(0, -1).some(
-                    (m) => m.tool_calls && m.tool_calls.some(
-                        (tc) => tc.function.name === toolName && tc.function.arguments === call.function.arguments
-                    )
-                );
+                const alreadyCalled = wasCalled(toolName, call.function.arguments);
+                callsThisRound.push(call);
                 const handler = toolHandlers[toolName];
 
                 if (alreadyCalled) {
