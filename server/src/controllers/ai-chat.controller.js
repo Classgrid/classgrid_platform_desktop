@@ -600,7 +600,34 @@ async function buildDeepContext(userEmail) {
     }
 }
 
+// Chat models (approved by the platform owner, 2026-10-07): V4 Pro answers anything non-trivial,
+// V4 Flash answers short simple messages faster. Set AI_FLASH_ROUTING=off to send everything to Pro.
+const CF_PRO_MODEL = "@cf/deepseek-ai/deepseek-v4-pro-0813";
+const CF_FLASH_MODEL = "@cf/deepseek-ai/deepseek-v4-flash-0731";
+const HARD_TASK_PATTERN = /\b(code|coding|debug|error|bug|function|script|sql|query|database|analy[sz]e|analysis|compare|explain|why|how (do|does|can|to)|step[- ]by[- ]step|plan|strategy|essay|report|pdf|document|file|diagram|flowchart|mermaid|chart|graph|calculate|solve|math|prove|design|architecture|write|draft|create|generate|build|deploy|schedule|email|summari[sz]e|translate|review|research|detail)/i;
+// "how do/does/can/to ..." asks for an explanation; "how are you" / "how is my day" stays on Flash.
+
+function pickChatModel({ question, fileUrls, scheduleContext }) {
+    if (process.env.AI_FLASH_ROUTING === "off") return CF_PRO_MODEL;
+    const q = (question || "").trim();
+    if (!q || q.startsWith("[SYSTEM") || (fileUrls && fileUrls.length > 0) || scheduleContext) return CF_PRO_MODEL;
+    if (q.length > 160 || q.includes("```") || q.split("\n").length > 3) return CF_PRO_MODEL;
+    if (HARD_TASK_PATTERN.test(q)) return CF_PRO_MODEL;
+    return CF_FLASH_MODEL;
+}
+
+// Cloudflare's native /ai/run endpoint starts streaming noticeably faster than /ai/v1/chat/completions
+// and returns the same OpenAI-style chunks (delta.content / reasoning_content / tool_calls).
+const cloudflareStreamProvider = (model) => ({
+    name: "cloudflare",
+    url: `https://api.cloudflare.com/client/v4/accounts/${process.env.CLOUDFLARE_ACCOUNT_ID}/ai/run/${model}`,
+    apiKey: process.env.CLOUDFLARE_WORKERS_AI_TOKEN || "",
+    model,
+    timeoutMs: 300000
+});
+
 export const streamAskAi = async (req, res) => {
+    const requestStartedAt = Date.now();
     const body = req.body || {};
 
     const userId = req.user?.id || body.userId;
@@ -664,7 +691,10 @@ export const streamAskAi = async (req, res) => {
         // historyDepth: how many messages to give the LLM context (default 25, max 500)
         let historyDepth = Math.min(parseInt(body.historyDepth, 10) || 25, 500);
         let messages = [];
-        let dynamicSystemPrompt = ""; // Initialize early so long_term_memory and schedule_context can append to it before SYSTEM_PROMPT is set at line 766
+        let dynamicSystemPrompt = "";
+        // Per-request / per-user context. Appended AFTER all fixed rules so the long fixed prefix
+        // stays byte-identical between requests and can be served from the provider's prompt cache.
+        let volatilePrompt = "";
 
         const userEmail = req.user?.email || body.userEmail || 'unknown@classgrid.in';
 
@@ -685,7 +715,7 @@ export const streamAskAi = async (req, res) => {
 
             // Inject Mistral long_term_memory if available
             if (sessionData.long_term_memory) {
-                dynamicSystemPrompt += `\n\n<long_term_memory>\n${sessionData.long_term_memory}\n</long_term_memory>`;
+                volatilePrompt += `\n\n<long_term_memory>\n${sessionData.long_term_memory}\n</long_term_memory>`;
                 historyDepth = Math.min(historyDepth, 5); // Prune history if memory exists
             }
 
@@ -695,13 +725,13 @@ export const streamAskAi = async (req, res) => {
 
         // --- INJECT SCHEDULE CONTEXT ---
         if (body.scheduleContext) {
-            dynamicSystemPrompt += `\n\n<schedule_context>\nThis conversation was triggered by a Scheduled Task firing. Here is the metadata for this schedule:\n`;
-            if (body.scheduleContext.schedule_id) dynamicSystemPrompt += `Schedule ID: ${body.scheduleContext.schedule_id}\n`;
-            if (body.scheduleContext.title) dynamicSystemPrompt += `Title: ${body.scheduleContext.title}\n`;
-            if (body.scheduleContext.scheduled_at) dynamicSystemPrompt += `Scheduled Time: ${body.scheduleContext.scheduled_at}\n`;
-            if (body.scheduleContext.summary) dynamicSystemPrompt += `Summary: ${body.scheduleContext.summary}\n`;
-            if (body.scheduleContext.action_info) dynamicSystemPrompt += `Action Info: ${body.scheduleContext.action_info}\n`;
-            dynamicSystemPrompt += `</schedule_context>\n\nYou can use the list_schedules, update_schedule, and delete_schedule tools to manage this schedule.`;
+            volatilePrompt += `\n\n<schedule_context>\nThis conversation was triggered by a Scheduled Task firing. Here is the metadata for this schedule:\n`;
+            if (body.scheduleContext.schedule_id) volatilePrompt += `Schedule ID: ${body.scheduleContext.schedule_id}\n`;
+            if (body.scheduleContext.title) volatilePrompt += `Title: ${body.scheduleContext.title}\n`;
+            if (body.scheduleContext.scheduled_at) volatilePrompt += `Scheduled Time: ${body.scheduleContext.scheduled_at}\n`;
+            if (body.scheduleContext.summary) volatilePrompt += `Summary: ${body.scheduleContext.summary}\n`;
+            if (body.scheduleContext.action_info) volatilePrompt += `Action Info: ${body.scheduleContext.action_info}\n`;
+            volatilePrompt += `</schedule_context>\n\nYou can use the list_schedules, update_schedule, and delete_schedule tools to manage this schedule.`;
         }
 
         // 2a. If not incognito and no session exists, create one
@@ -820,17 +850,11 @@ RULES:
   - Return results as: text + metadata.title + score.`;
 
         if (body.isEdit) {
-            dynamicSystemPrompt += `\n\nSYSTEM NOTE: The user edited their previous message to get a better answer. Please provide an improved response to this updated prompt.`;
+            volatilePrompt += `\n\nSYSTEM NOTE: The user edited their previous message to get a better answer. Please provide an improved response to this updated prompt.`;
         }
 
         if (body.userEmail === 'nikhil.shinde@classgrid.in') {
-            dynamicSystemPrompt += `\n\nEMPTY RESULTS & ANTI-LOOPING RULE (CRITICAL FOR INTEGRATIONS):
-CRITICAL: If you call ANY integration tool (e.g. Google Classroom, Gmail, Google Drive, Notion, Slack, etc.) and it returns empty results (like an empty array [], "0 results found", "no assignments", or "failed"), you MUST ACCEPT THIS REALITY. 
-1. Do NOT call the exact same tool with the exact same arguments again trying to force a different result. 
-2. Do NOT get stuck in an infinite retry loop.
-3. IMMEDIATELY stop and tell the user that no records were found or the action failed. You are STRICTLY FORBIDDEN from looping empty responses.
-
-CREATOR OVERRIDE RULE (CRITICAL):
+            volatilePrompt += `\n\nCREATOR OVERRIDE RULE (CRITICAL):
 You are currently talking to Nikhil Shinde (nikhil.shinde@classgrid.in), the CREATOR AND SUPER ADMIN of Classgrid AI. 
 1. He is NOT a normal user. He is actively testing and developing you. Do NOT act like a polite customer support bot with him; act like a senior backend developer reporting to a Tech Lead.
 2. NEVER argue with him. NEVER tell him he is wrong. 
@@ -855,7 +879,7 @@ You are currently talking to Nikhil Shinde (nikhil.shinde@classgrid.in), the CRE
             calendarStr += `- ${d.toLocaleDateString('en-US', { timeZone: 'UTC', weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}\n`;
         }
 
-        dynamicSystemPrompt += `\n\n--- CURRENT SYSTEM TIME ---\nThe current time in IST (India) is ${timeIST} on ${dateIST}. The current time in UTC is ${timeUTC} on ${dateUTC}.\n${calendarStr}\nIf the user asks for the time in ANY other timezone or city (like London or Tokyo), you MUST use the \`get_timezone_time\` tool to find the exact time. DO NOT attempt to calculate timezone math yourself, you will get it wrong. NEVER output placeholders like "[Your local time here]". DO NOT attempt to calculate calendar dates in your head; look at the reference list above.`;
+        volatilePrompt += `\n\n--- CURRENT SYSTEM TIME ---\nThe current time in IST (India) is ${timeIST} on ${dateIST}. The current time in UTC is ${timeUTC} on ${dateUTC}.\n${calendarStr}\nIf the user asks for the time in ANY other timezone or city (like London or Tokyo), you MUST use the \`get_timezone_time\` tool to find the exact time. DO NOT attempt to calculate timezone math yourself, you will get it wrong. NEVER output placeholders like "[Your local time here]". DO NOT attempt to calculate calendar dates in your head; look at the reference list above.`;
         dynamicSystemPrompt += `\nCRITICAL TIMEZONE RULE FOR MEETINGS: When scheduling a Zoom meeting or Google Calendar event, the APIs EXPECT the 'startTime' parameter to be in UTC format (with a 'Z' at the end). To ensure accuracy, YOU MUST ALWAYS USE the \`get_timezone_time\` tool to check the current time and UTC offset for the user's location BEFORE scheduling any future meetings. Use the offset returned by the tool (e.g. GMT+05:30) to calculate the correct UTC time for the meeting.`;
 
         dynamicSystemPrompt += `\n\nCRITICAL INSTRUCTION (HIGHEST PRIORITY): If a user asks you to perform ANY task (e.g. "make a flowchart", "write an email", "create a plan") BUT they do not provide the necessary data, topic, or context, your ONLY ALLOWED RESPONSE is a question asking for that information. Under NO circumstances should you generate placeholder content, guess the topic, or attempt to fulfill the request without the context.\nCRITICAL: NEVER say generic confirmation phrases like "I have completed the requested actions" or "I have executed the tool." Just provide the direct answer, summary, or link.\nCONVERSATIONAL FLOW RULE: If the user provides a brief acknowledgement (like "okay", "thanks", "got it", "no issue"), DO NOT repeat previous information or restate the previous answer. Keep your response extremely brief, conversational, and natural, such as "You're welcome!" or "Let me know if you need anything else!"\nERROR HANDLING & APOLOGY RULE: If the user points out that you made a mistake (e.g. you said something wasn't there but it was), you MUST simply apologize, admit the mistake, and say you will keep it in mind. DO NOT reprint the entire list, table, or context again to prove you fixed it. Repeating large blocks of text when apologizing is strictly forbidden.\nSTRICT FORMATTING BAN: You are STRICTLY BANNED from wrapping tool call outputs, markdown code blocks, or repository names in parentheses \`( )\`. Never do things like \`( \`\`\`code\`\`\` )\`. Do not use parentheses to enclose multiline content or blocks as it breaks the UI rendering. NEVER write around like this!`;
@@ -1029,40 +1053,47 @@ CRITICAL: If you call ANY integration tool (e.g. Google Classroom, Gmail, Google
 - If the user asks to generate a PDF, call \`generate_pdf\` immediately after your thought.
 - If the user asks to run code, call \`run_code\` immediately after your thought.`;
         }
-        if (body.userName || body.userEmail || body.userRole || body.subdomain) {
-            dynamicSystemPrompt += `\n\n--- USER CONTEXT ---\nVerified Name: ${body.userName || "[UNAVAILABLE] - Use neutral greeting"}`;
+        // These lookups are independent, so run them together instead of one after another.
+        const hasUserContext = !!(body.userName || body.userEmail || body.userRole || body.subdomain);
+        const UserModel = (await import("../models/User.js")).default;
+        const AiSkillModel = (await import("../models/AiSkill.js")).default;
+        const [deepContext, userPrefsDocResult, customSkillsResult, latestUserResult] = await Promise.all([
+            hasUserContext ? buildDeepContext(body.userEmail).catch((e) => { console.error("buildDeepContext failed:", e); return null; }) : null,
+            userId ? UserModel.findById(userId).select("ai_preferences").lean().catch((e) => { console.error("Error loading AI Preferences:", e); return null; }) : null,
+            userId ? AiSkillModel.find({ userId, is_active: true }).lean().catch((e) => { console.error("Error loading AI skills:", e); return []; }) : [],
+            req.user ? mongoose.model('User').findById(req.user._id).lean().catch((e) => { console.error("Error loading user for integrations:", e); return null; }) : null
+        ]);
+        console.log(`[AI-TIMING] user lookups done at +${Date.now() - requestStartedAt}ms`);
+
+        if (hasUserContext) {
+            volatilePrompt += `\n\n--- USER CONTEXT ---\nVerified Name: ${body.userName || "[UNAVAILABLE] - Use neutral greeting"}`;
             if (body.userEmail) {
-                dynamicSystemPrompt += `\nTheir Email: ${body.userEmail}`;
+                volatilePrompt += `\nTheir Email: ${body.userEmail}`;
                 if (body.userEmail.endsWith("@classgrid.in")) {
-                    dynamicSystemPrompt += ` (SUPER ADMIN / PLATFORM OWNER)`;
+                    volatilePrompt += ` (SUPER ADMIN / PLATFORM OWNER)`;
                 }
             }
             if (req.user && req.user._id) {
-                dynamicSystemPrompt += `\nTheir User ID: ${req.user._id}`;
+                volatilePrompt += `\nTheir User ID: ${req.user._id}`;
             }
-            if (body.userRole) dynamicSystemPrompt += `\nTheir Role: ${body.userRole}`;
+            if (body.userRole) volatilePrompt += `\nTheir Role: ${body.userRole}`;
             if (body.subdomain) {
-                dynamicSystemPrompt += `\nCurrent Dashboard Subdomain: ${body.subdomain}`;
+                volatilePrompt += `\nCurrent Dashboard Subdomain: ${body.subdomain}`;
                 if (body.subdomain !== "classgrid.in" && body.subdomain !== "superadmin.classgrid.in" && body.subdomain !== "localhost") {
-                    dynamicSystemPrompt += ` (This means they are using a school/organization's dashboard, not the super admin dashboard)`;
+                    volatilePrompt += ` (This means they are using a school/organization's dashboard, not the super admin dashboard)`;
                 }
             }
 
             // Inject Deep Context (Enrolled Classes, Subjects, Teachers)
-            const deepContext = await buildDeepContext(body.userEmail);
             if (deepContext) {
-                dynamicSystemPrompt += deepContext;
+                volatilePrompt += deepContext;
             }
         }
 
         // --- INJECT AI SKILLS & PREFERENCES ---
         if (userId) {
             try {
-                const User = (await import("../models/User.js")).default;
-                const AiSkill = (await import("../models/AiSkill.js")).default;
-                
-                const userPrefsDoc = await User.findById(userId).select("ai_preferences").lean();
-                const prefs = userPrefsDoc?.ai_preferences || {};
+                const prefs = userPrefsDocResult?.ai_preferences || {};
                 
                 let hasPrefs = false;
                 let prefsText = `\n\n<user_preferences>\n`;
@@ -1078,13 +1109,13 @@ CRITICAL: If you call ANY integration tool (e.g. Google Classroom, Gmail, Google
                 prefsText += `</user_preferences>\n`;
                 
                 if (hasPrefs) {
-                    dynamicSystemPrompt += prefsText;
+                    volatilePrompt += prefsText;
                 }
-                
+
                 // Inject Active Skills
                 const activeSkillIds = prefs.activeDefaults || [];
-                const customSkills = await AiSkill.find({ userId, is_active: true }).lean();
-                
+                const customSkills = customSkillsResult || [];
+
                 const DEFAULT_SKILLS_MAP = {
                     'dual_notify': 'When notifying users, automatically send email and WhatsApp notifications at the same time.',
                     'auto_meet': 'Automatically create a Google Meet link for every meeting scheduled.',
@@ -1099,16 +1130,16 @@ CRITICAL: If you call ANY integration tool (e.g. Google Classroom, Gmail, Google
                 };
                 
                 if (activeSkillIds.length > 0 || customSkills.length > 0) {
-                    dynamicSystemPrompt += `\n<active_skills_instructions>\nYOU MUST OBEY THESE CUSTOM INSTRUCTIONS:\n`;
+                    volatilePrompt += `\n<active_skills_instructions>\nYOU MUST OBEY THESE CUSTOM INSTRUCTIONS:\n`;
                     activeSkillIds.forEach(id => {
                         if (DEFAULT_SKILLS_MAP[id]) {
-                            dynamicSystemPrompt += `- ${DEFAULT_SKILLS_MAP[id]}\n`;
+                            volatilePrompt += `- ${DEFAULT_SKILLS_MAP[id]}\n`;
                         }
                     });
                     customSkills.forEach(skill => {
-                        dynamicSystemPrompt += `- ${skill.name}: ${skill.instructions}\n`;
+                        volatilePrompt += `- ${skill.name}: ${skill.instructions}\n`;
                     });
-                    dynamicSystemPrompt += `</active_skills_instructions>\n`;
+                    volatilePrompt += `</active_skills_instructions>\n`;
                 }
 
             } catch(e) {
@@ -1172,8 +1203,7 @@ CRITICAL: If you call ANY integration tool (e.g. Google Classroom, Gmail, Google
 
         if (req.user) {
             try {
-                const User = mongoose.model('User');
-                const latestUser = await User.findById(req.user._id).lean();
+                const latestUser = latestUserResult;
                 if (latestUser) {
                     const connectedMcps = latestUser.metadata?.connected_integrations || [];
                     const now = new Date();
@@ -1305,9 +1335,18 @@ CRITICAL: If you call ANY integration tool (e.g. Google Classroom, Gmail, Google
                     // If a refresh token exists in MongoDB, the integration IS connected.
                     // The tool handlers in tools.js already refresh expired tokens internally.
                     // We only ping Google because its tokeninfo endpoint is fast and we need scope verification.
-                    googleConnected = latestUser.google_access_token
-                        ? await verifyWithPing('Google', 'https://oauth2.googleapis.com/tokeninfo', latestUser.google_access_token, refreshGoogle)
-                        : false;
+                    // The Google ping is a network round trip (up to 5s, more if a refresh is needed)
+                    // in front of every reply, so a verified result is reused for 5 minutes.
+                    const googleVerifiedKey = `ai:google-verified:${latestUser._id}`;
+                    if (latestUser.google_access_token) {
+                        const cachedGoogle = await redis.get(googleVerifiedKey).catch(() => null);
+                        if (cachedGoogle === "1") {
+                            googleConnected = true;
+                        } else {
+                            googleConnected = await verifyWithPing('Google', 'https://oauth2.googleapis.com/tokeninfo', latestUser.google_access_token, refreshGoogle);
+                            if (googleConnected) redis.set(googleVerifiedKey, "1", "EX", 300).catch(() => {});
+                        }
+                    }
 
                     // Microsoft: trust the refresh token. Tool will refresh access token when needed.
                     msConnected = !!(latestUser.microsoft_refresh_token || latestUser.microsoft_access_token);
@@ -1460,7 +1499,7 @@ CRITICAL: If you call ANY integration tool (e.g. Google Classroom, Gmail, Google
         }
 
         if (pluginPrompt) {
-            dynamicSystemPrompt += pluginPrompt;
+            volatilePrompt += pluginPrompt;
         }
 
         dynamicSystemPrompt += `\n\nCRITICAL GOOGLE CLASSROOM RULE:\nYou MUST NEVER tell the user to check their assignments, courses, or submissions manually (e.g., by going to classroom.google.com). You have ALL READ PERMISSIONS for Google Classroom! You MUST ALWAYS use the \`google_workspace_connector\` tool (with \`list_classroom_courses\`, \`list_classroom_assignments\`, etc.) to fetch and display the data directly in the chat. Never reject a request to read Google Classroom!\nWORKFLOW REQUIRED: If the user asks for "assignments", do NOT just run list_classroom_courses and stop. You MUST FIRST run list_classroom_courses to get all active courseIds. Then you MUST call list_classroom_assignments MULTIPLE TIMES (once for EACH course) to fetch and display assignments for ALL subjects! Do not just pick one subject. Display full details for all assignments across all active courses.\nTIME FILTER: Only display assignments that were created or are due within the LAST 7 DAYS! Use the current date and time provided in your prompt to calculate this 7-day window. Do not show old assignments from weeks or months ago.\nINSTRUCTOR NAMES: Google Classroom API assignments only return generic group emails (e.g., teachers_xxx@pccoepune.org). If the user asks for the ACTUAL instructor's name, you MUST use the \`list_classroom_teachers\` tool with the courseId to fetch the real human name (fullName) of the instructor! Never say you cannot find the personal name.\nTOPICS AND ANNOUNCEMENTS: If the user asks for stream announcements, use \`list_classroom_announcements\`. If the user asks to filter by topic, use \`list_classroom_topics\` to map topicIds to their real names.\nMATERIALS AND QUESTION PAPERS: If the user asks for question papers, syllabus files, or materials, you MUST use the \`list_classroom_materials\` tool since they are uploaded as CourseWorkMaterials, not standard assignments.`;
@@ -1570,7 +1609,7 @@ CRITICAL: When you want to highlight a single word, short phrase, or variable (l
         // =========================================================================
         const isClassgridEmployee = userEmail.endsWith('@classgrid.in');
         if (!isClassgridEmployee && req.headers.host && req.headers.host.includes('chat.classgrid.in')) {
-            dynamicSystemPrompt += `\n\n=========================================================================
+            volatilePrompt += `\n\n=========================================================================
 🚨 CRITICAL OVERRIDE: YOU ARE ON CHAT.CLASSGRID.IN (PUBLIC AI ASSISTANT) 🚨
 =========================================================================
 YOU ARE NO LONGER AN ERP AI! You are OUT of the RBAC (Role-Based Access Control) system.
@@ -1586,14 +1625,14 @@ Do NOT talk about internal architecture unless asked by a @classgrid.in employee
         // The provider API is stateless and the system prompt is never stored in history,
         // so the full prompt must be sent on every request. (History can contain role:'system'
         // tool-memory notes, so their presence does not mean the rules were already sent.)
-        messages.unshift({ role: "system", content: dynamicSystemPrompt });
+        messages.unshift({ role: "system", content: dynamicSystemPrompt + volatilePrompt });
 
         // 3. Initialize the real LLM Client from the Classgrid SDK using the fallback hierarchy
         let accSteps = []; // hoisted here so tool wrappers can push to it
 
-        // 🚨 AI WARNING: DO NOT ADD NEW MODELS OR CHANGE EXISTING MODELS 🚨
-        // CHANGING ANY AI MODEL IS STRICTLY BANNED BY PLATFORM POLICY.
-        // NEVER CHANGE ANY AI MODEL. USING LLAMA IS STRICTLY FORBIDDEN (OTHER THAN FOR VISION).
+        // 🚨 AI WARNING: DO NOT ADD NEW MODELS OR CHANGE EXISTING MODELS WITHOUT THE PLATFORM OWNER'S APPROVAL 🚨
+        // Approved chat models: DeepSeek V4 Pro (main) and DeepSeek V4 Flash (simple messages), see pickChatModel;
+        // Mistral is the last-resort fallback. USING LLAMA IS STRICTLY FORBIDDEN (OTHER THAN FOR VISION).
         const llmConfig = {
             timeoutMs: 300000,
             providers: [
@@ -3051,6 +3090,7 @@ Do NOT talk about internal architecture unless asked by a @classgrid.in employee
         const isDiagramRequest = false; // Disabled aggressive Mermaid validation to fix prompt injection bug
 
         let answer = null;
+        let usedModel = CF_PRO_MODEL;
         let attempt = 1;
         const maxAttempts = 2;
         let currentClient = client;
@@ -3066,6 +3106,9 @@ Do NOT talk about internal architecture unless asked by a @classgrid.in employee
 
                 console.log(`[AI-DEBUG] ===== GENERATE START ===== attempt=${attempt} question="${(body.question || '').slice(0, 100)}" messagesCount=${messages.length} timestamp=${new Date().toISOString()}`);
                 const generateStartTime = Date.now();
+                console.log(`[AI-TIMING] prep done at +${generateStartTime - requestStartedAt}ms (before first model call)`);
+                let loggedFirstThought = false;
+                let loggedFirstToken = false;
                 const onStatus = (status) => {
                     console.log(`[AI-DEBUG] onStatus: "${status}" at +${((Date.now() - generateStartTime) / 1000).toFixed(1)}s`);
                     if (requestAborted || res.writableEnded) return;
@@ -3074,46 +3117,64 @@ Do NOT talk about internal architecture unless asked by a @classgrid.in employee
                 };
                 const onThought = (thought) => {
                     if (!thought) return; // Skip undefined/null/empty thought chunks
+                    if (!loggedFirstThought) {
+                        loggedFirstThought = true;
+                        console.log(`[AI-TIMING] first thought at +${Date.now() - requestStartedAt}ms`);
+                    }
                     accThought += thought;
                     if (requestAborted || res.writableEnded) return;
                     try { res.write(`data: ${JSON.stringify({ type: "thought", thought })}\n\n`); } catch (e) { }
                 };
                 const onToken = isDiagramRequest ? undefined : (token) => {
+                    if (!loggedFirstToken) {
+                        loggedFirstToken = true;
+                        console.log(`[AI-TIMING] first answer token at +${Date.now() - requestStartedAt}ms`);
+                    }
                     if (requestAborted || res.writableEnded) return;
                     try { res.write(`data: ${JSON.stringify({ type: "token", token })}\n\n`); } catch (e) { }
                 };
 
-                // Primary path: stream reasoning and answer live from Cloudflare.
-                // The SDK (non-streaming, with Mistral fallback) is only used if streaming fails
-                // before any real tool ran — retrying after a tool ran could repeat its side effects.
+                // Primary path: stream reasoning and answer live from Cloudflare (Flash for simple
+                // messages, Pro otherwise; Flash failures retry on Pro). The SDK (non-streaming, with
+                // Mistral fallback) is only used if streaming fails before any real tool ran —
+                // retrying after a tool ran could repeat its side effects.
                 let streamed = null;
                 if (attempt === 1) {
-                    try {
-                        streamed = await streamChat({
-                            provider: llmConfig.providers[0],
-                            messages,
-                            tools: llmConfig.tools,
-                            toolHandlers: llmConfig.toolHandlers,
-                            maxTokens: llmConfig.defaultMaxTokens,
-                            maxToolDepth: 100,
-                            timeoutMs: llmConfig.providers[0].timeoutMs,
-                            signal: streamAbort.signal,
-                            onStatus,
-                            onThought,
-                            onToken
-                        });
-                        if (streamed.usage.total_tokens > 0) usageStore.usage = streamed.usage;
-                        console.log(`[AI-STREAM] Streamed answer in ${((Date.now() - generateStartTime) / 1000).toFixed(1)}s, toolsRun=${streamed.toolsRun}`);
-                    } catch (streamErr) {
-                        if (requestAborted) return;
-                        if (streamErr.usage?.total_tokens > 0) usageStore.usage = streamErr.usage;
-                        if (streamErr.toolsRun > 0) {
-                            console.error(`[AI-STREAM] Streaming failed after ${streamErr.toolsRun} tool(s) ran; not retrying: ${streamErr.message}`);
-                            streamed = { answer: "Something went wrong while finishing this answer. The actions above were completed — please ask again if you need a summary." };
-                        } else {
-                            console.warn(`[AI-STREAM] Streaming failed, falling back to SDK: ${streamErr.message}`);
+                    const routedModel = pickChatModel(body);
+                    const modelsToTry = routedModel === CF_FLASH_MODEL ? [CF_FLASH_MODEL, CF_PRO_MODEL] : [CF_PRO_MODEL];
+                    console.log(`[AI-STREAM] routed to ${routedModel}`);
+                    for (const model of modelsToTry) {
+                        try {
+                            streamed = await streamChat({
+                                provider: cloudflareStreamProvider(model),
+                                messages,
+                                tools: llmConfig.tools,
+                                toolHandlers: llmConfig.toolHandlers,
+                                maxTokens: llmConfig.defaultMaxTokens,
+                                maxToolDepth: 100,
+                                timeoutMs: llmConfig.providers[0].timeoutMs,
+                                signal: streamAbort.signal,
+                                onStatus,
+                                onThought,
+                                onToken
+                            });
+                            usedModel = model;
+                            if (streamed.usage.total_tokens > 0) usageStore.usage = streamed.usage;
+                            console.log(`[AI-STREAM] ${model} streamed answer in ${((Date.now() - generateStartTime) / 1000).toFixed(1)}s, toolsRun=${streamed.toolsRun}`);
+                            break;
+                        } catch (streamErr) {
+                            if (requestAborted) return;
+                            if (streamErr.usage?.total_tokens > 0) usageStore.usage = streamErr.usage;
+                            if (streamErr.toolsRun > 0) {
+                                console.error(`[AI-STREAM] ${model} failed after ${streamErr.toolsRun} tool(s) ran; not retrying: ${streamErr.message}`);
+                                usedModel = model;
+                                streamed = { answer: "Something went wrong while finishing this answer. The actions above were completed — please ask again if you need a summary." };
+                                break;
+                            }
+                            console.warn(`[AI-STREAM] ${model} failed before any tool ran: ${streamErr.message}`);
                         }
                     }
+                    if (!streamed) console.warn(`[AI-STREAM] All streaming attempts failed, falling back to SDK`);
                 }
 
                 answer = streamed
@@ -3248,7 +3309,7 @@ Do NOT talk about internal architecture unless asked by a @classgrid.in employee
                         organization_id: orgId || null,
                         userId: userId,
                         provider: 'cloudflare',
-                        model: '@cf/deepseek-ai/deepseek-v4-pro-0813',
+                        model: usedModel,
                         feature: 'chat_ai',
                         promptTokens: inputTokens || 0,
                         completionTokens: outputTokens || 0,

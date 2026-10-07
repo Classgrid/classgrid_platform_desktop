@@ -1,21 +1,10 @@
 // Streaming chat loop for OpenAI-compatible providers (Cloudflare Workers AI).
 // Mirrors the tool-loop behaviour of @classgrid/ai's tryProvider, but streams
 // reasoning and answer text as they are generated instead of waiting for the full reply.
-
-const INTERNAL_THOUGHT_TOOL = {
-    type: "function",
-    function: {
-        name: "internal_thought_process",
-        description: "CRITICAL: If you need to plan your response, analyze rules, or think step-by-step before answering the user, you MUST call this tool FIRST. Never output raw thoughts as text.",
-        parameters: {
-            type: "object",
-            properties: {
-                thought: { type: "string", description: "Your internal reasoning, step-by-step plan, or thought process." }
-            },
-            required: ["thought"]
-        }
-    }
-};
+//
+// Unlike the SDK, the internal_thought_process tool is not offered: the model's native reasoning
+// already streams live, and a thought-tool call costs a whole extra model round before the answer.
+// A call to it is still handled if the model makes one anyway.
 
 export class StreamChatError extends Error {
     constructor(message, { status, rateLimited = false } = {}) {
@@ -178,7 +167,7 @@ export async function streamChat({
     onThought,
     onStatus
 }) {
-    const allTools = [INTERNAL_THOUGHT_TOOL, ...tools.filter(t => t?.function?.name !== "internal_thought_process")];
+    const allTools = tools.filter(t => t?.function?.name !== "internal_thought_process");
     const conversation = [...messages];
     const usage = { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 };
     let depth = 0;
