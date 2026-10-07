@@ -48,7 +48,7 @@ const resolveIcon = (iconName?: string) => {
   return undefined;
 };
 
-export function WorkflowAccordion({ title, steps, defaultExpanded = true }: WorkflowAccordionProps) {
+export function WorkflowAccordion({ title, steps, defaultExpanded = false }: WorkflowAccordionProps) {
   return (
     <AgentStepAccordion 
       title={`${steps.length} steps`}

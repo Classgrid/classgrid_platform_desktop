@@ -30,15 +30,17 @@ export function AgentStepAccordion({
   icon,
   executionTimeMs
 }: AgentStepAccordionProps) {
+  // Steps stay collapsed until the user opens them; they never open on their own while running.
   const [isExpanded, setIsExpanded] = useState(defaultExpanded);
+  // Heavy step bodies (terminal output, search results) are only mounted once opened.
+  const [hasOpened, setHasOpened] = useState(defaultExpanded);
   const [status, setStatus] = useState<StepStatus>(executionTimeMs ? 'loading' : propStatus);
   const containerRef = React.useRef<HTMLDivElement>(null);
 
-  React.useEffect(() => {
-    if (propStatus === 'loading') {
-      setIsExpanded(true);
-    }
-  }, [propStatus]);
+  const toggle = () => {
+    setHasOpened(true);
+    setIsExpanded(prev => !prev);
+  };
 
   React.useEffect(() => {
     if (!executionTimeMs) {
@@ -66,7 +68,7 @@ export function AgentStepAccordion({
       {/* Header */}
       <div 
         className="flex items-center gap-3 cursor-pointer group-hover/accordion:bg-muted/30 rounded-lg p-1 pr-3 -ml-1 transition-colors"
-        onClick={() => setIsExpanded(!isExpanded)}
+        onClick={toggle}
       >
         {/* Tiny Stepper Dot (matches ThoughtStepView) */}
         <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full py-1">
@@ -97,7 +99,7 @@ export function AgentStepAccordion({
       )}>
         <div className="overflow-hidden">
           <div className="pl-[36px] pr-2 pb-4">
-            {children}
+            {hasOpened && children}
           </div>
         </div>
       </div>

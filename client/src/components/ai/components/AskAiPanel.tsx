@@ -4019,9 +4019,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                                               <AgentStepAccordion
                                                 key={step.id}
                                                 title={step.tool === 'run_code' ? 'Executing Code' : 'OCR the attached identity card'}
-                                                status={step.status}
-                                                defaultExpanded={step.status === 'loading'}
-                                              >
+                                                status={step.status}                                              >
                                                 <TerminalToolView
                                                   command={step.args?.command || step.args?.code || 'Running...'}
                                                   output={step.result || 'Waiting for output...'}
@@ -4044,9 +4042,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                                               <AgentStepAccordion
                                                 key={step.id}
                                                 title="Querying Database"
-                                                status={step.status}
-                                                defaultExpanded={step.status === 'loading'}
-                                              >
+                                                status={step.status}                                              >
                                                 <DatabaseQueryView
                                                   query={JSON.stringify(step.args, null, 2)}
                                                   results={results}
@@ -4061,9 +4057,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                                               <AgentStepAccordion
                                                 key={step.id}
                                                 title="Uploaded File"
-                                                status={step.status}
-                                                defaultExpanded={step.status === 'loading'}
-                                              >
+                                                status={step.status}                                              >
                                                 <FileActionView fileName={step.args?.url?.split('/').pop() || 'document'} />
                                               </AgentStepAccordion>
                                             );
@@ -4075,9 +4069,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                                               <AgentStepAccordion
                                                 key={`${step.id}-draft`}
                                                 title={step.status === 'success' ? "Drafted email" : "Drafting email"}
-                                                status={step.status === 'success' ? 'success' : step.status}
-                                                defaultExpanded={step.status === 'loading'}
-                                              >
+                                                status={step.status === 'success' ? 'success' : step.status}                                              >
                                                 <EmailActionView
                                                   to={step.args?.to || "Unknown Recipient"}
                                                   subject={step.args?.subject || "No Subject"}
@@ -4098,7 +4090,6 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                                                     key={`${step.id}-sent`}
                                                     title="Sent email"
                                                     status="success"
-                                                    defaultExpanded={true}
                                                   >
                                                     <EmailSentView
                                                       toCount={toCount}
@@ -4134,9 +4125,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                                               <AgentStepAccordion
                                                 key={step.id}
                                                 title="Searched the web"
-                                                status={step.status}
-                                                defaultExpanded={step.status === 'loading'}
-                                              >
+                                                status={step.status}                                              >
                                                 <WebSearchView
                                                   query={step.args?.query}
                                                   searchDomain={step.args?.domain}
@@ -4161,9 +4150,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                                               <AgentStepAccordion
                                                 key={step.id}
                                                 title={step.tool === 'generate_pdf_from_db' ? "Generating database report" : "Generating PDF document"}
-                                                status={step.status}
-                                                defaultExpanded={step.status === 'loading'}
-                                              >
+                                                status={step.status}                                              >
                                                 <DocumentGenerationView
                                                   fileName={step.args?.title ? `${step.args.title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.pdf` : fileName}
                                                   pageCount={pageCount}
@@ -4179,9 +4166,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                                               <AgentStepAccordion
                                                 key={step.id}
                                                 title="Searched Knowledge Base"
-                                                status={step.status}
-                                                defaultExpanded={step.status === 'loading'}
-                                              >
+                                                status={step.status}                                              >
                                                 <KnowledgeBaseSearchView
                                                   results={[{
                                                     title: step.args?.query || "Search Query",
@@ -4202,9 +4187,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                                               <AgentStepAccordion
                                                 key={step.id}
                                                 title="Upload file to CDN"
-                                                status={step.status}
-                                                defaultExpanded={step.status === 'loading'}
-                                                icon={<UploadCloud className="h-4 w-4" />}
+                                                status={step.status}                                                icon={<UploadCloud className="h-4 w-4" />}
                                               >
                                                 <CdnUploadView
                                                   fileName={step.args?.fileName || "upload.file"}
