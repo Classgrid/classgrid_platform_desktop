@@ -45,6 +45,10 @@ export function AiChatSearchPalette({
   const location = useLocation();
   const effectiveMode = location.pathname.includes('/agent') ? 'chat' : mode;
   const debounceRef = useRef<ReturnType<typeof setTimeout>>();
+  // Only the newest search runs: an older one still in flight is cancelled.
+  const searchAbortRef = useRef<AbortController | null>(null);
+  const [searchFailed, setSearchFailed] = useState(false);
+  const [searchNotice, setSearchNotice] = useState("");
 
   // Focus input when opened
   useEffect(() => {
@@ -73,7 +77,12 @@ export function AiChatSearchPalette({
 
   // Debounced search
   const doSearch = useCallback(async (q: string) => {
-    if (q.trim().length < 2) {
+    searchAbortRef.current?.abort();
+    const controller = new AbortController();
+    searchAbortRef.current = controller;
+    setSearchFailed(false);
+    setSearchNotice("");
+    if (q.trim().length < 2 && (effectiveMode !== "chat" || q.trim().length > 0)) {
       setResults([]);
       setLoading(false);
       return;
@@ -106,8 +115,11 @@ export function AiChatSearchPalette({
           : "";
         if (q.trim()) {
           // Searches chat titles and every user and AI message on the server
-          const res = await fetch(`${endpointPrefix}/api/ai/sessions/search?q=${encodeURIComponent(q.trim())}`, { credentials: "include" });
+          const res = await fetch(`${endpointPrefix}/api/ai/sessions/search?q=${encodeURIComponent(q.trim())}`, { credentials: "include", signal: controller.signal });
+          if (!res.ok) throw new Error(`search failed (${res.status})`);
           const data = await res.json();
+          if (q.trim().length < 3) setSearchNotice("Type 3 or more letters to search inside messages.");
+          else if (data.messageSearch === "off" || data.messageSearch === "failed") setSearchNotice("Message search is unavailable right now. Showing chat title matches only.");
           chatResults = (data.results || []).map((r: any) => ({
             id: r.id,
             title: r.title,
@@ -130,12 +142,15 @@ export function AiChatSearchPalette({
         }
       }
 
+      if (controller.signal.aborted) return;
       setResults([...allPages, ...chatResults]);
       setActiveIndex(0);
-    } catch {
+    } catch (err: any) {
+      if (controller.signal.aborted || err?.name === "AbortError") return; // a newer search replaced this one
       setResults([]);
+      setSearchFailed(true);
     } finally {
-      setLoading(false);
+      if (!controller.signal.aborted) setLoading(false);
     }
   }, [location.pathname, effectiveMode]);
 
@@ -153,7 +168,7 @@ export function AiChatSearchPalette({
       return;
     }
     setLoading(true);
-    debounceRef.current = setTimeout(() => doSearch(query), 250);
+    debounceRef.current = setTimeout(() => doSearch(query), 400);
     return () => {
       if (debounceRef.current) clearTimeout(debounceRef.current);
     };
@@ -271,17 +286,31 @@ export function AiChatSearchPalette({
                   </div>
                 )}
 
+                {/* Search request failed: say so, instead of "no results" */}
+                {query.trim().length >= 2 && !loading && searchFailed && (
+                  <div className="flex flex-col items-center justify-center gap-2 py-12 text-center">
+                    <Search className="h-6 w-6 text-slate-900 dark:text-white/15" />
+                    <p className="text-[13px] text-red-500 dark:text-red-400">Search failed. Please try again.</p>
+                  </div>
+                )}
+
                 {/* No results */}
-                {query.trim().length >= 2 && !loading && results.length === 0 && (
+                {query.trim().length >= 2 && !loading && !searchFailed && results.length === 0 && (
                   <div className="flex flex-col items-center justify-center gap-2 py-12 text-center">
                     <Search className="h-6 w-6 text-slate-900 dark:text-white/15" />
                     <p className="text-[13px] text-slate-900 dark:text-white/40">
-                      {effectiveMode === "global" 
+                      {effectiveMode === "global"
                         ? `No pages found for "${query}"`
                         : `No chats found for "${query}"`
                       }
                     </p>
+                    {searchNotice && <p className="text-[12px] text-slate-500 dark:text-white/35">{searchNotice}</p>}
                   </div>
+                )}
+
+                {/* Notice above the results (e.g. message search unavailable, or under 3 letters) */}
+                {query.trim().length >= 2 && !loading && searchNotice && results.length > 0 && (
+                  <div className="px-4 pt-3 text-[12px] text-slate-500 dark:text-white/40">{searchNotice}</div>
                 )}
 
                 {/* Results list */}

@@ -390,37 +390,38 @@ export async function getSharedSnapshot(shareId) {
     return data;
 }
 
-/**
- * Retrieves all AI generated images for a user across all non-incognito sessions.
- */
-// Readable text of a saved message for search results: the JSON wrapper of assistant messages is
-// removed, and Markdown symbols and extra whitespace are dropped.
-function searchableText(content) {
-    return plainMessageText(content)
-        .replace(/```[a-z0-9+#-]*\n?/gi, " ")
+// A readable snippet from the raw text around a match: JSON escapes and keys of stored assistant messages
+// and Markdown symbols are removed, then ~60 characters before and ~160 after the match are kept.
+function cleanSnippet(raw, query) {
+    const text = String(raw || "")
+        .replace(/\\[nrt]/g, " ")
+        .replace(/\\"/g, '"')
+        .replace(/"?(classgrid_ai_message|content|steps|tool|args|result|status)"\s*:\s*(true|false)?\s*,?\s*"?/g, " ")
+        .replace(/```[a-z0-9+#-]*/gi, " ")
         .replace(/!\[[^\]]*\]\([^)]*\)/g, " ")
         .replace(/\[([^\]]*)\]\([^)]*\)/g, "$1")
-        .replace(/[*_~`>#|]+/g, " ")
+        .replace(/[*~`>#|{}]+/g, " ")
         .replace(/\s+/g, " ")
         .trim();
-}
-
-function snippetAround(text, query) {
     const at = text.toLowerCase().indexOf(query.toLowerCase());
-    if (at < 0) return null;
+    if (at < 0) return text.slice(0, 200);
     const start = Math.max(0, at - 60);
-    const end = Math.min(text.length, at + query.length + 100);
+    const end = Math.min(text.length, at + query.length + 160);
     return `${start > 0 ? "…" : ""}${text.slice(start, end).trim()}${end < text.length ? "…" : ""}`;
 }
 
+// Messages are only searched from 3 characters: shorter text can't use the trigram index.
+const MESSAGE_SEARCH_MIN_CHARS = 3;
+
 /**
- * Searches the user's own (non-incognito) chats: titles and the text of every user and AI message.
- * Returns up to `limit` chats, title matches first, then by newest matching message, each with a
- * snippet of the newest message that matched.
+ * Searches the user's own (non-incognito) chats. Title matches always come back (they need no message
+ * scan); message text is searched by the database function search_chat_messages
+ * (server/scripts/sql/search_chat_messages.sql), which returns one short snippet per chat.
+ * messageSearch: "ok" | "skipped" (query too short) | "off" (function not installed) | "failed".
  */
 export async function searchUserChats(userEmail, query, limit = 20) {
     const q = String(query || "").trim();
-    if (q.length < 2) return [];
+    if (q.length < 2) return { results: [], messageSearch: "skipped" };
 
     const { data: sessions, error } = await primarySupabaseClient
         .from('ai_chat_sessions')
@@ -428,61 +429,61 @@ export async function searchUserChats(userEmail, query, limit = 20) {
         .eq('user_email', userEmail)
         .eq('is_incognito', false);
     if (error) throw error;
-    if (!sessions || sessions.length === 0) return [];
+    if (!sessions || sessions.length === 0) return { results: [], messageSearch: "skipped" };
 
-    // LIKE wildcards in the query are searched as plain characters ("c++", "50%", "file_name")
-    const pattern = `%${q.replace(/[\\%_]/g, (c) => `\\${c}`)}%`;
-    const ids = sessions.map((s) => s.id);
-    const CHUNK_SIZE = 50;
-    const chunks = [];
-    for (let i = 0; i < ids.length; i += CHUNK_SIZE) chunks.push(ids.slice(i, i + CHUNK_SIZE));
-
-    const messageLists = await Promise.all(chunks.map(async (chunk) => {
-        const { data, error: msgError } = await primarySupabaseClient
-            .from('ai_chat_messages')
-            .select('session_id, role, content, created_at')
-            .in('session_id', chunk)
-            .ilike('content', pattern)
-            .order('created_at', { ascending: false })
-            .limit(100);
-        if (msgError) throw msgError;
-        return data || [];
-    }));
-
-    const hits = new Map(); // session id -> { latest matching message, count }
-    for (const m of messageLists.flat()) {
-        if (m.role !== 'user' && m.role !== 'assistant') continue;
-        // The match must be in the readable text, not only in stored tool data
-        const snippet = snippetAround(searchableText(m.content), q);
-        if (!snippet) continue;
-        const hit = hits.get(m.session_id);
-        if (!hit) hits.set(m.session_id, { message: m, snippet, count: 1 });
-        else {
-            hit.count++;
-            if (new Date(m.created_at) > new Date(hit.message.created_at)) Object.assign(hit, { message: m, snippet });
+    let messageSearch = "skipped";
+    let hits = [];
+    if (q.length >= MESSAGE_SEARCH_MIN_CHARS) {
+        const { data, error: rpcError } = await primarySupabaseClient.rpc('search_chat_messages', {
+            p_email: userEmail,
+            p_query: q,
+            p_limit: limit
+        });
+        if (rpcError) {
+            const notInstalled = rpcError.code === 'PGRST202' || /could not find the function|does not exist/i.test(rpcError.message || "");
+            messageSearch = notInstalled ? "off" : "failed";
+            console.warn(`[chat search] message search ${messageSearch}: ${rpcError.message}`);
+        } else {
+            messageSearch = "ok";
+            hits = data || [];
         }
     }
 
-    const results = [];
-    for (const s of sessions) {
-        const titleMatch = String(s.title || "").toLowerCase().includes(q.toLowerCase());
-        const hit = hits.get(s.id);
-        if (!titleMatch && !hit) continue;
-        results.push({
+    const byId = new Map(sessions.map((s) => [String(s.id), s]));
+    const results = new Map();
+    for (const h of hits) {
+        const s = byId.get(String(h.session_id));
+        if (!s) continue; // only the user's own chats
+        results.set(s.id, {
             id: s.id,
             title: s.title,
             created_at: s.created_at,
-            titleMatch,
-            matchCount: hit?.count || 0,
-            snippet: hit?.snippet || null,
-            snippetRole: hit ? (hit.message.role === 'user' ? 'user' : 'assistant') : null,
-            matchedAt: hit?.message.created_at || s.created_at,
+            titleMatch: false,
+            matchCount: Number(h.match_count) || 1,
+            snippet: cleanSnippet(h.snippet, q),
+            snippetRole: h.role === 'user' ? 'user' : 'assistant',
+            matchedAt: h.created_at || s.created_at,
         });
     }
-    results.sort((a, b) => (Number(b.titleMatch) - Number(a.titleMatch)) || (new Date(b.matchedAt) - new Date(a.matchedAt)));
-    return results.slice(0, limit);
+    const needle = q.toLowerCase();
+    for (const s of sessions) {
+        if (!String(s.title || "").toLowerCase().includes(needle)) continue;
+        const existing = results.get(s.id);
+        if (existing) existing.titleMatch = true;
+        else results.set(s.id, {
+            id: s.id, title: s.title, created_at: s.created_at, titleMatch: true,
+            matchCount: 0, snippet: null, snippetRole: null, matchedAt: s.created_at,
+        });
+    }
+
+    const list = [...results.values()];
+    list.sort((a, b) => (Number(b.titleMatch) - Number(a.titleMatch)) || (new Date(b.matchedAt) - new Date(a.matchedAt)));
+    return { results: list.slice(0, limit), messageSearch };
 }
 
+/**
+ * Retrieves all AI generated images for a user across all non-incognito sessions.
+ */
 export async function getUserGeneratedImages(userEmail) {
     const { data: sessions, error: sessionsError } = await primarySupabaseClient
         .from('ai_chat_sessions')

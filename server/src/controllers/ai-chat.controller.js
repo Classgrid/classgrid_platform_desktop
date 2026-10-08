@@ -4003,9 +4003,8 @@ export const searchChatSessions = async (req, res) => {
         const email = req.user?.email;
         if (!email) return res.status(401).json({ error: "Unauthorized" });
         const q = String(req.query.q || "").trim().slice(0, 100);
-        if (q.length < 2) return res.json({ results: [] });
-        const results = await searchUserChats(email, q);
-        res.json({ results });
+        if (q.length < 2) return res.json({ results: [], messageSearch: "skipped" });
+        res.json(await searchUserChats(email, q));
     } catch (e) {
         console.error("Error searching chats:", e);
         res.status(500).json({ error: "Failed to search chats" });
