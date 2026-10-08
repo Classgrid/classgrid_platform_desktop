@@ -19,6 +19,7 @@
 import { usageStorage } from "../utils/fetch-interceptor.js";
 import { createLLMClient } from "@classgrid/ai/core";
 import { streamChat } from "../services/llm-stream.js";
+import { streamClaudeChat, CLAUDE_CHAT_MODELS } from "../services/llm-stream-anthropic.js";
 import { getPresignedUploadUrl, uploadBufferToR2 } from "../config/r2Client.js";
 import { primarySupabaseClient as supabase } from "../config/supabaseClient.js";
 import {
@@ -616,11 +617,34 @@ function pickChatModel({ question, fileUrls, scheduleContext }) {
     return CF_FLASH_MODEL;
 }
 
+// Cloudflare models the user can pick in the model dropdown (each tested live for streaming and tool
+// calls on 2026-10-08). The value is the endpoint the model streams on: Mistral Small is only served on
+// the OpenAI-compatible endpoint (the native one returns 404 for it).
+const CF_PICKER_MODELS = new Map([
+    [CF_PRO_MODEL, "native"],
+    [CF_FLASH_MODEL, "native"],
+    ["@cf/openai/gpt-oss-120b", "native"],
+    ["@cf/openai/gpt-oss-20b", "native"],
+    ["@cf/moonshotai/kimi-k2.6", "native"],
+    ["@cf/moonshotai/kimi-k2.7-code", "native"],
+    ["@cf/zai-org/glm-5.3", "native"],
+    ["@cf/zai-org/glm-5.3-flash", "native"],
+    ["@cf/zai-org/glm-5.2", "native"],
+    ["@cf/zai-org/glm-4.7-flash", "native"],
+    ["@cf/qwen/qwen3.8-27b", "native"],
+    ["@cf/google/gemma-4-26b-a4b-it", "native"],
+    ["@cf/nvidia/nemotron-3-120b-a12b", "native"],
+    ["@cf/meta/llama-4-scout-17b-16e-instruct", "native"],
+    ["@cf/mistralai/mistral-small-3.1-24b-instruct", "openai"],
+]);
+
 // Cloudflare's native /ai/run endpoint starts streaming noticeably faster than /ai/v1/chat/completions
 // and returns the same OpenAI-style chunks (delta.content / reasoning_content / tool_calls).
 const cloudflareStreamProvider = (model) => ({
     name: "cloudflare",
-    url: `https://api.cloudflare.com/client/v4/accounts/${process.env.CLOUDFLARE_ACCOUNT_ID}/ai/run/${model}`,
+    url: CF_PICKER_MODELS.get(model) === "openai"
+        ? `https://api.cloudflare.com/client/v4/accounts/${process.env.CLOUDFLARE_ACCOUNT_ID}/ai/v1/chat/completions`
+        : `https://api.cloudflare.com/client/v4/accounts/${process.env.CLOUDFLARE_ACCOUNT_ID}/ai/run/${model}`,
     apiKey: process.env.CLOUDFLARE_WORKERS_AI_TOKEN || "",
     model,
     timeoutMs: 300000
@@ -3140,9 +3164,90 @@ Do NOT talk about internal architecture unless asked by a @classgrid.in employee
                 // retrying after a tool ran could repeat its side effects.
                 let streamed = null;
                 if (attempt === 1) {
-                    const routedModel = pickChatModel(body);
-                    const modelsToTry = routedModel === CF_FLASH_MODEL ? [CF_FLASH_MODEL, CF_PRO_MODEL] : [CF_PRO_MODEL];
-                    console.log(`[AI-STREAM] routed to ${routedModel}`);
+                    // A Claude model picked in the model dropdown runs on the Anthropic API. If it fails
+                    // before any tool ran or any thinking/answer text was shown, the Cloudflare routing below takes over.
+                    const requestedModel = typeof body.selectedModel === "string" ? body.selectedModel : "auto";
+
+                    // Claude spend that is not part of the answer the user ends up with (the request failed and
+                    // Cloudflare answered instead, or the user left mid-answer) is charged and logged on its own.
+                    const chargeDetachedClaudeUsage = (claudeUsage, claudeModel, errorMessage) => {
+                        if (!userId || !(claudeUsage?.total_tokens > 0)) return;
+                        deductTokens(userId, orgId, claudeUsage.total_tokens, tokenSource)
+                            .catch(err => console.error("[AI-TOKEN] Failed to deduct detached Claude usage:", err));
+                        AiUsageLog.create({
+                            organization_id: orgId || null,
+                            userId,
+                            provider: 'anthropic',
+                            model: claudeModel,
+                            feature: 'chat_ai',
+                            promptTokens: claudeUsage.prompt_tokens || 0,
+                            completionTokens: claudeUsage.completion_tokens || 0,
+                            totalTokens: claudeUsage.total_tokens,
+                            success: false,
+                            error: String(errorMessage || "").slice(0, 300),
+                            metadata: {
+                                cacheReadTokens: claudeUsage.cache_read_input_tokens || 0,
+                                cacheWriteTokens: claudeUsage.cache_creation_input_tokens || 0
+                            }
+                        }).catch(err => console.error("AiUsageLog Error:", err));
+                        console.log(`[AI-TOKEN] Charged detached ${claudeModel} usage: total=${claudeUsage.total_tokens}`);
+                    };
+
+                    if (CLAUDE_CHAT_MODELS.has(requestedModel)) {
+                        console.log(`[AI-STREAM] user selected ${requestedModel}`);
+                        try {
+                            streamed = await streamClaudeChat({
+                                model: requestedModel,
+                                messages,
+                                tools: llmConfig.tools,
+                                toolHandlers: llmConfig.toolHandlers,
+                                maxTokens: llmConfig.defaultMaxTokens,
+                                maxToolDepth: 100,
+                                timeoutMs: llmConfig.providers[0].timeoutMs,
+                                systemCacheBoundary: dynamicSystemPrompt.length,
+                                signal: streamAbort.signal,
+                                onStatus,
+                                onThought,
+                                onToken
+                            });
+                            usedModel = streamed.servedModel || requestedModel;
+                            if (!streamed.answer && !streamed.toolsRun) {
+                                // An empty Claude reply would otherwise fail the attempt and leave its usage uncharged.
+                                if (loggedFirstThought || loggedFirstToken) {
+                                    if (streamed.usage.total_tokens > 0) usageStore.usage = streamed.usage;
+                                    streamed = { answer: "Something went wrong while finishing this answer. Please ask again." };
+                                } else {
+                                    chargeDetachedClaudeUsage(streamed.usage, usedModel, "empty answer");
+                                    console.warn(`[AI-STREAM] ${usedModel} returned an empty answer, falling back to Cloudflare`);
+                                    usedModel = CF_PRO_MODEL;
+                                    streamed = null;
+                                }
+                            } else {
+                                if (streamed.usage.total_tokens > 0) usageStore.usage = streamed.usage;
+                                console.log(`[AI-STREAM] ${usedModel} streamed answer in ${((Date.now() - generateStartTime) / 1000).toFixed(1)}s, toolsRun=${streamed.toolsRun}, cacheRead=${streamed.usage.cache_read_input_tokens}, cacheWrite=${streamed.usage.cache_creation_input_tokens}`);
+                            }
+                        } catch (claudeErr) {
+                            const claudeModel = claudeErr.servedModel || requestedModel;
+                            const outputStarted = claudeErr.toolsRun > 0 || loggedFirstToken || loggedFirstThought;
+                            if (requestAborted || !outputStarted) chargeDetachedClaudeUsage(claudeErr.usage, claudeModel, claudeErr.message);
+                            if (requestAborted) return;
+                            if (outputStarted) {
+                                if (claudeErr.usage?.total_tokens > 0) usageStore.usage = claudeErr.usage;
+                                console.error(`[AI-STREAM] ${claudeModel} failed after output started (toolsRun=${claudeErr.toolsRun}); not retrying: ${claudeErr.message}`);
+                                usedModel = claudeModel;
+                                streamed = { answer: "Something went wrong while finishing this answer. The actions above were completed — please ask again if you need a summary." };
+                            } else {
+                                console.warn(`[AI-STREAM] ${claudeModel} failed before any output, falling back to Cloudflare: ${claudeErr.message}`);
+                            }
+                        }
+                    }
+
+                    // A Cloudflare model picked in the dropdown is tried first, with V4 Pro as its fallback;
+                    // otherwise ("auto" or a failed Claude request) the Flash/Pro router decides.
+                    const pickedCloudflareModel = CF_PICKER_MODELS.has(requestedModel) ? requestedModel : null;
+                    const routedModel = pickedCloudflareModel || pickChatModel(body);
+                    const modelsToTry = streamed ? [] : routedModel === CF_PRO_MODEL ? [CF_PRO_MODEL] : [routedModel, CF_PRO_MODEL];
+                    if (!streamed) console.log(`[AI-STREAM] ${pickedCloudflareModel ? "user selected" : "routed to"} ${routedModel}`);
                     for (const model of modelsToTry) {
                         try {
                             streamed = await streamChat({
@@ -3258,7 +3363,7 @@ Do NOT talk about internal architecture unless asked by a @classgrid.in employee
                     inputTokens = usageStore.usage.prompt_tokens;
                     outputTokens = usageStore.usage.completion_tokens;
                     calculatedTokens = usageStore.usage.total_tokens;
-                    console.log(`[AI-TOKEN] Using REAL Cloudflare usage: input=${inputTokens} output=${outputTokens} total=${calculatedTokens}`);
+                    console.log(`[AI-TOKEN] Using REAL ${String(usedModel).startsWith("claude-") ? "Anthropic" : "Cloudflare"} usage: input=${inputTokens} output=${outputTokens} total=${calculatedTokens}${usageStore.usage.cache_read_input_tokens !== undefined ? ` cacheRead=${usageStore.usage.cache_read_input_tokens} cacheWrite=${usageStore.usage.cache_creation_input_tokens}` : ""}`);
                 } else {
                     // Fallback to gpt-tokenizer if interceptor didn't capture usage (e.g. Mistral fallback)
                     try {
@@ -3308,13 +3413,19 @@ Do NOT talk about internal architecture unless asked by a @classgrid.in employee
                     AiUsageLog.create({
                         organization_id: orgId || null,
                         userId: userId,
-                        provider: 'cloudflare',
+                        provider: String(usedModel).startsWith("claude-") ? 'anthropic' : 'cloudflare',
                         model: usedModel,
                         feature: 'chat_ai',
                         promptTokens: inputTokens || 0,
                         completionTokens: outputTokens || 0,
                         totalTokens: estimatedTokens,
-                        success: true
+                        success: true,
+                        ...(usageStore.usage?.cache_read_input_tokens !== undefined ? {
+                            metadata: {
+                                cacheReadTokens: usageStore.usage.cache_read_input_tokens,
+                                cacheWriteTokens: usageStore.usage.cache_creation_input_tokens
+                            }
+                        } : {})
                     }).then(async () => {
                         try {
                             const { getIO } = await import('../services/socket.service.js');

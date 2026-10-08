@@ -183,6 +183,30 @@ export const getGlobalStats = async (req, res) => {
             "@cf/meta/llama-3.2-1b-instruct":           { prompt: 0.027, completion: 0.201 },
             "@cf/meta/llama-3.1-8b-instruct-fp8-fast":  { prompt: 0.045, completion: 0.384 },
             "@cf/meta/llama-3.3-70b-instruct-fp8-fast": { prompt: 0.293, completion: 2.253 },
+            // Models selectable in the AI chat model picker (Cloudflare catalog rates, 2026-10-08)
+            "@cf/deepseek-ai/deepseek-v4-flash-0731":   { prompt: 0.44,  completion: 1.32  },
+            "@cf/openai/gpt-oss-120b":                  { prompt: 0.35,  completion: 0.75  },
+            "@cf/openai/gpt-oss-20b":                   { prompt: 0.2,   completion: 0.3   },
+            "@cf/moonshotai/kimi-k2.6":                 { prompt: 0.95,  completion: 4     },
+            "@cf/moonshotai/kimi-k2.7-code":            { prompt: 0.95,  completion: 4     },
+            "@cf/zai-org/glm-5.3":                      { prompt: 1.4,   completion: 4.4   },
+            "@cf/zai-org/glm-5.3-flash":                { prompt: 0.15,  completion: 0.5   },
+            "@cf/zai-org/glm-5.2":                      { prompt: 1.4,   completion: 4.4   },
+            "@cf/zai-org/glm-4.7-flash":                { prompt: 0.0605, completion: 0.4  },
+            "@cf/qwen/qwen3.8-27b":                     { prompt: 0.45,  completion: 3.2   },
+            "@cf/google/gemma-4-26b-a4b-it":            { prompt: 0.1,   completion: 0.3   },
+            "@cf/nvidia/nemotron-3-120b-a12b":          { prompt: 0.5,   completion: 1.5   },
+            "@cf/meta/llama-4-scout-17b-16e-instruct":  { prompt: 0.27,  completion: 0.85  },
+            "@cf/mistralai/mistral-small-3.1-24b-instruct": { prompt: 0.351, completion: 0.555 },
+            // Claude API first-party rates (Anthropic models overview, 2026-10-08). cacheRead / cacheWrite
+            // are per million cached tokens; Haiku 5.5 rates are for prompts up to 100k tokens.
+            "claude-haiku-5-5":  { prompt: 0.1, completion: 0.5, cacheRead: 0.01, cacheWrite: 0.125 },
+            "claude-sonnet-5-5": { prompt: 2,   completion: 10,  cacheRead: 0.1,  cacheWrite: 2.5 },
+            "claude-opus-5-5":   { prompt: 4,   completion: 20,  cacheRead: 0.2,  cacheWrite: 5 },
+            "claude-fable-5-1":  { prompt: 10,  completion: 50,  cacheRead: 0.25, cacheWrite: 12.5 },
+            // Targets of the server-side refusal fallback; logged when one of them actually answered
+            "claude-opus-5":     { prompt: 5,   completion: 25,  cacheRead: 0.5,  cacheWrite: 6.25 },
+            "claude-opus-4-8":   { prompt: 5,   completion: 25,  cacheRead: 0.5,  cacheWrite: 6.25 },
             // Fallback: use the cheapest text model rates if model is unrecognised
             "default": { prompt: 0.027, completion: 0.201 }
         };
@@ -198,7 +222,10 @@ export const getGlobalStats = async (req, res) => {
                         model: "$model"
                     },
                     promptTokens:     { $sum: "$promptTokens" },
-                    completionTokens: { $sum: "$completionTokens" }
+                    completionTokens: { $sum: "$completionTokens" },
+                    // Claude rows store their cached part of promptTokens in metadata
+                    cacheReadTokens:  { $sum: { $ifNull: ["$metadata.cacheReadTokens", 0] } },
+                    cacheWriteTokens: { $sum: { $ifNull: ["$metadata.cacheWriteTokens", 0] } }
                 }
             }
         ]);
@@ -207,10 +234,20 @@ export const getGlobalStats = async (req, res) => {
         dailyUsageByModel.forEach(d => {
             const date  = d._id.date;
             const model = d._id.model;
-            const rates = CF_PRICING_USD_PER_M[model] || CF_PRICING_USD_PER_M["default"];
+            // Exact id first; otherwise the longest known id the logged one starts with (e.g. a dated snapshot).
+            const prefixKey = Object.keys(CF_PRICING_USD_PER_M)
+                .filter((k) => k !== "default" && typeof model === "string" && model.startsWith(k))
+                .sort((a, b) => b.length - a.length)[0];
+            const rates = CF_PRICING_USD_PER_M[model] || CF_PRICING_USD_PER_M[prefixKey] || CF_PRICING_USD_PER_M["default"];
 
-            // Cost = (real_tokens / 1,000,000) * price_per_million
-            const promptCostUSD     = ((d.promptTokens     || 0) / 1_000_000) * rates.prompt;
+            // Cost = (real_tokens / 1,000,000) * price_per_million.
+            // Models with cache rates bill cached prompt tokens at those rates and the rest at the prompt rate.
+            const cacheRead  = rates.cacheRead  !== undefined ? (d.cacheReadTokens  || 0) : 0;
+            const cacheWrite = rates.cacheWrite !== undefined ? (d.cacheWriteTokens || 0) : 0;
+            const uncachedPrompt = Math.max(0, (d.promptTokens || 0) - cacheRead - cacheWrite);
+            const promptCostUSD     = (uncachedPrompt / 1_000_000) * rates.prompt
+                                    + (cacheRead  / 1_000_000) * (rates.cacheRead  || 0)
+                                    + (cacheWrite / 1_000_000) * (rates.cacheWrite || 0);
             const completionCostUSD = ((d.completionTokens || 0) / 1_000_000) * rates.completion;
             const totalCostUSD = promptCostUSD + completionCostUSD;
             const totalCostINR = totalCostUSD * USD_TO_INR;
