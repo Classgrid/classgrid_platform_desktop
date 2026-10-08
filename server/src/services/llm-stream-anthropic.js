@@ -158,6 +158,39 @@ function nativeAttachmentKind(a) {
     return null;
 }
 
+// Downloads a file from trusted Classgrid storage; redirects are followed by hand, and only to another
+// trusted URL. Returns null when the file can't be fetched.
+async function fetchTrustedFile(startUrl, signal) {
+    const fetchSignal = signal ? AbortSignal.any([signal, AbortSignal.timeout(15000)]) : AbortSignal.timeout(15000);
+    let url = startUrl;
+    let res;
+    for (let hop = 0; hop < 3; hop++) {
+        res = await fetch(url, { signal: fetchSignal, redirect: "manual" });
+        if (res.status < 300 || res.status >= 400) break;
+        const next = res.headers.get("location");
+        const nextUrl = next ? new URL(next, url).toString() : "";
+        if (!nextUrl || !isTrustedAttachmentUrl(nextUrl)) { res = null; break; }
+        url = nextUrl;
+    }
+    if (!res || !res.ok) return null;
+    return Buffer.from(await res.arrayBuffer());
+}
+
+function imageBlockFromBuffer(buf) {
+    if (!buf || buf.length === 0 || buf.length > MAX_IMAGE_BYTES) return null;
+    const mediaType = sniffImageType(buf);
+    if (!mediaType) return null;
+    return { type: "image", source: { type: "base64", media_type: mediaType, data: buf.toString("base64") } };
+}
+
+// Images that come back from tools (view_image, a Classgrid image link in a tool's output, analyze_image on
+// a Classgrid link) are shown to Claude as real images. Every image is re-sent with the rest of the chat on
+// later rounds, so a run is capped by count and size (the API allows 32 MB per request).
+const TRUSTED_IMAGE_URL = /https:\/\/[^\s"'<>()\]]+?\.(?:png|jpe?g|gif|webp)(?:\?[^\s"'<>()\]]*)?/gi;
+const MAX_IMAGES_PER_TOOL_RESULT = 4;
+const MAX_TOOL_IMAGES_PER_RUN = 16;
+const MAX_TOOL_IMAGE_BYTES_PER_RUN = 18 * 1024 * 1024;
+
 // Attachments Claude can read natively: images (vision) and PDFs. The server downloads them and sends the
 // bytes (base64), so Claude never has to reach the URL itself. A file that can't be fetched is skipped
 // and stays a link in the message text.
@@ -167,20 +200,8 @@ async function toAttachmentBlocks(attachments, signal) {
         const kind = nativeAttachmentKind(a);
         if (!kind) continue;
         try {
-            const fetchSignal = signal ? AbortSignal.any([signal, AbortSignal.timeout(15000)]) : AbortSignal.timeout(15000);
-            // Redirects are followed by hand, and only to another trusted Classgrid storage URL.
-            let url = a.url;
-            let res;
-            for (let hop = 0; hop < 3; hop++) {
-                res = await fetch(url, { signal: fetchSignal, redirect: "manual" });
-                if (res.status < 300 || res.status >= 400) break;
-                const next = res.headers.get("location");
-                const nextUrl = next ? new URL(next, url).toString() : "";
-                if (!nextUrl || !isTrustedAttachmentUrl(nextUrl)) { res = null; break; }
-                url = nextUrl;
-            }
-            if (!res || !res.ok) continue;
-            const buf = Buffer.from(await res.arrayBuffer());
+            const buf = await fetchTrustedFile(a.url, signal);
+            if (!buf) continue;
             if (buf.length === 0 || buf.length > (kind === "image" ? MAX_IMAGE_BYTES : MAX_PDF_BYTES)) continue;
             const data = buf.toString("base64");
             if (kind === "image") {
@@ -308,6 +329,39 @@ export async function streamClaudeChat({
     const sentToolNames = new Set(claudeTools.map((t) => t.name));
     const deferredToolNames = new Set(claudeTools.filter((t) => t.defer_loading).map((t) => t.name));
     if (conversation.length === 0) throw new StreamChatError("No user message to send");
+
+    // Images a tool result carries: ones the handler returned ({ images: [{ data, mediaType }] }) and Classgrid
+    // image links in its text, within the per-result and per-run caps.
+    let toolImagesSent = 0;
+    let toolImageBytesSent = 0;
+    const seenImageUrls = new Set();
+    const toolResultImages = async (result, text) => {
+        const blocks = [];
+        const take = (block) => {
+            if (!block || blocks.length >= MAX_IMAGES_PER_TOOL_RESULT || toolImagesSent >= MAX_TOOL_IMAGES_PER_RUN) return;
+            const bytes = block.source.data.length;
+            if (toolImageBytesSent + bytes > MAX_TOOL_IMAGE_BYTES_PER_RUN) return;
+            toolImagesSent++;
+            toolImageBytesSent += bytes;
+            blocks.push(block);
+        };
+        for (const b of result?.imageBlocks || []) take(b);
+        for (const img of result?.images || []) {
+            try { take(imageBlockFromBuffer(Buffer.from(String(img?.data || ""), "base64"))); } catch { /* skip a bad image */ }
+        }
+        for (const url of String(text).match(TRUSTED_IMAGE_URL) || []) {
+            if (blocks.length >= MAX_IMAGES_PER_TOOL_RESULT) break;
+            if (seenImageUrls.has(url) || !isTrustedAttachmentUrl(url)) continue;
+            seenImageUrls.add(url);
+            try {
+                take(imageBlockFromBuffer(await fetchTrustedFile(url, signal)));
+            } catch (e) {
+                if (signal?.aborted) throw e;
+                console.warn(`[claude] could not load tool image ${url.slice(0, 80)}: ${e.message}`);
+            }
+        }
+        return blocks;
+    };
 
     const usage = {
         prompt_tokens: 0, completion_tokens: 0, total_tokens: 0,
@@ -446,7 +500,14 @@ export async function streamClaudeChat({
                     const isLoader = call.name === LOAD_TOOLS_TOOL;
                     if (!isLoader) { onStatus?.(call.name.replace(/_/g, " ")); toolsRun++; }
                     try {
-                        content = await toolHandlers[call.name](call.input ?? {});
+                        // analyze_image on a Classgrid image: Claude looks at the image itself instead of
+                        // reading another model's description of it.
+                        const nativeImage = call.name === "analyze_image" && isTrustedAttachmentUrl(String(call.input?.url || ""))
+                            ? imageBlockFromBuffer(await fetchTrustedFile(String(call.input.url), signal).catch(() => null))
+                            : null;
+                        content = nativeImage
+                            ? { text: `The image is attached below; look at it yourself to answer: ${String(call.input?.question || "describe it").slice(0, 500)}`, imageBlocks: [nativeImage] }
+                            : await toolHandlers[call.name](call.input ?? {});
                     } catch (e) {
                         content = `Tool error: ${e instanceof Error ? e.message : String(e)}`;
                         isError = true;
@@ -464,11 +525,14 @@ export async function streamClaudeChat({
                 const resultText = String((isObjectResult ? content.text : content) ?? "").slice(0, 6000);
                 // The tool_result can only hold the references, so a loaded group's rules follow as a text block.
                 if (refs.length > 0 && content.instructions) extraTexts.push(String(content.instructions));
+                const images = refs.length > 0 || isError ? [] : await toolResultImages(isObjectResult ? content : null, resultText);
                 toolResults.push({
                     type: "tool_result",
                     tool_use_id: call.id,
                     // The API requires a tool_result that carries tool_reference blocks to contain nothing else.
-                    content: refs.length > 0 ? refs.map((n) => ({ type: "tool_reference", tool_name: n })) : resultText,
+                    content: refs.length > 0
+                        ? refs.map((n) => ({ type: "tool_reference", tool_name: n }))
+                        : images.length > 0 ? [{ type: "text", text: resultText }, ...images] : resultText,
                     ...(isError ? { is_error: true } : {}),
                 });
             }

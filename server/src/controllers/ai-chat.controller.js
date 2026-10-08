@@ -445,6 +445,7 @@ If you generate a file (like an Excel sheet, PDF, or image) inside the sandbox a
 Do NOT write a Python script with boto3 to upload files.
 CRITICAL CDN UPLOAD WORKFLOW: You MUST use the \`upload_sandbox_file_to_cdn\` tool directly with the absolute path of the generated file inside the sandbox (e.g. \`/data/output.png\`). Do NOT try to read the file into base64 and print it. Just generate the file to disk using \`run_code\`, then call \`upload_sandbox_file_to_cdn\` with the path.
 Return the resulting \`cdn.classgrid.in\` URL to the user as a clickable markdown link.
+If you have the \`view_image\` tool, use it to look at images you created in the sandbox (video frames, charts, screenshots) before describing them. It shows you the real image. For video frames, extract them at full quality (ffmpeg -q:v 2, no downscaling) and skip the frame at 0 seconds, which is often black.
 
 NEVER generate or print fake "simulated" download links (like example.com) inside your python scripts. You must actually upload it to the CDN using the tool and give the user the real \`cdn.classgrid.in\` link.
 <</G>>
@@ -810,6 +811,22 @@ const MODEL_DISPLAY_NAMES = {
     "@cf/mistralai/mistral-small-3.1-24b-instruct": "Mistral Small 3.1",
 };
 const MODEL_IDENTITY_MARKER = "\n\nMODEL IN USE: ";
+
+// Sent to Claude models only: the image comes back as a real image (native vision), not as text.
+const VIEW_IMAGE_TOOL = {
+    type: "function",
+    function: {
+        name: "view_image",
+        description: "Look at an image file in the Sandbox (.png, .jpg, .gif, .webp, up to 3.75 MB) with your own vision, e.g. video frames you extracted with ffmpeg or a chart you drew. The image itself is returned to you. Use this instead of analyze_image for Sandbox files; check the image before describing it to the user.",
+        parameters: {
+            type: "object",
+            properties: {
+                sandboxFilePath: { type: "string", description: "Absolute path inside the Sandbox, e.g. /data/frames/f_03.jpg" }
+            },
+            required: ["sandboxFilePath"]
+        }
+    }
+};
 
 // The model's own name, added at the very end of the system prompt (after the cached part) just before each
 // model call, so "which model are you?" is answered from fact instead of guessed or dug out of server logs.
@@ -2427,6 +2444,38 @@ Do NOT talk about internal architecture unless asked by a @classgrid.in employee
                             return `FAILED to upload file: ${e.message}`;
                         }
                     },
+                    // Claude only (see VIEW_IMAGE_TOOL): returns the sandbox image itself so Claude sees it with its own vision.
+                    view_image: async (args) => {
+                        const path = String(args?.sandboxFilePath || "").trim();
+                        if (!/^\/data\/[\w./ -]+\.(png|jpe?g|gif|webp)$/i.test(path) || path.includes("..")) {
+                            return "FAILED: sandboxFilePath must be a .png, .jpg, .gif or .webp file under /data/ (e.g. /data/frames/f_03.jpg).";
+                        }
+                        if (!/^[\w-]+$/.test(String(sessionId))) return "FAILED: no sandbox for this chat yet. Create the image with run_code first.";
+                        const hostFilePath = `/home/ubuntu/sandbox_data/${sessionId}/${path.slice("/data/".length)}`;
+                        const { NodeSSH } = await import('node-ssh');
+                        const ssh = new NodeSSH();
+                        try {
+                            const isProd = process.env.NODE_ENV === 'production';
+                            await ssh.connect({
+                                host: isProd ? '172.31.6.98' : '13.63.34.197',
+                                username: 'ubuntu',
+                                ...(process.env.AGENT_SSH_KEY
+                                    ? { privateKey: process.env.AGENT_SSH_KEY.replace(/\\n/g, '\n') }
+                                    : { privateKeyPath: 'C:\\Users\\nikhi\\Downloads\\Nikhil.pem' })
+                            });
+                            const size = Number((await ssh.execCommand(`stat -c %s '${hostFilePath}' 2>/dev/null`)).stdout.trim());
+                            if (!Number.isFinite(size) || size <= 0) return `FAILED: ${path} does not exist in the sandbox (or is empty).`;
+                            if (size > 3.75 * 1024 * 1024) {
+                                return `FAILED: ${path} is ${(size / 1048576).toFixed(1)} MB; the limit is 3.75 MB. Make a smaller copy first (e.g. ffmpeg -i in.jpg -vf scale=1600:-1 -q:v 3 out.jpg) and view that.`;
+                            }
+                            const { stdout } = await ssh.execCommand(`base64 -w0 '${hostFilePath}'`);
+                            return { text: `Image ${path} (${Math.round(size / 1024)} KB) is attached below. Look at it yourself; describe only what you actually see.`, images: [{ data: stdout.trim() }] };
+                        } catch (e) {
+                            return `FAILED to read ${path}: ${e.message}`;
+                        } finally {
+                            ssh.dispose();
+                        }
+                    },
                     recall_session_context: async (args) => {
                         try {
                             const files = await redis.lrange(`ai:chat:files:${sessionId}`, 0, -1);
@@ -3580,13 +3629,16 @@ Do NOT talk about internal architecture unless asked by a @classgrid.in employee
                         console.log(`[AI-STREAM] user selected ${requestedModel}`);
                         if (messages[0]?.role === "system") messages[0] = { ...messages[0], content: withModelIdentity(messages[0].content, requestedModel, isStaffRole(req.user?.role), { selected: requestedModel, previousModel }) };
                         try {
+                            // view_image is Claude-only (native vision); it is loaded whenever the sandbox tools are.
+                            const claudeToolList = toolPlan.allowedToolNames.has("run_code") ? [...fullToolList, VIEW_IMAGE_TOOL] : fullToolList;
+                            const claudeLoadedNames = toolPlan.loadedNames.has("run_code") ? new Set([...toolPlan.loadedNames, "view_image"]) : toolPlan.loadedNames;
                             streamed = await streamClaudeChat({
                                 model: requestedModel,
                                 messages,
                                 // All allowed tools go to Claude; only the loaded ones enter its context, the rest
                                 // are deferred and reachable through tool search or load_tools.
-                                tools: fullToolList,
-                                loadedToolNames: toolPlan.loadedNames,
+                                tools: claudeToolList,
+                                loadedToolNames: claudeLoadedNames,
                                 groupNeedingLoad,
                                 toolHandlers: llmConfig.toolHandlers,
                                 maxTokens: llmConfig.defaultMaxTokens,
