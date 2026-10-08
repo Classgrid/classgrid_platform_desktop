@@ -602,7 +602,7 @@ function LoginContent() {
       setStep("whatsapp_otp");
       startWhatsappCountdown();
     } catch (err: any) {
-      setError(err?.response?.data?.message || "Failed to send OTP.");
+      setError(err?.message || err?.response?.data?.message || "Failed to send OTP.");
     } finally {
       setLoading(false);
     }
@@ -902,10 +902,13 @@ function LoginContent() {
                       href="https://wa.me/918149277038?text=Hi%20Classgrid" 
                       target="_blank" 
                       rel="noopener noreferrer"
-                      className="flex items-center justify-center w-full bg-emerald-600 text-white rounded-md py-2 text-[13px] font-bold mb-3 hover:bg-emerald-700 transition-colors"
+                      className="flex items-center justify-center w-full bg-emerald-600 text-white rounded-md py-2 text-[13px] font-bold mb-2 hover:bg-emerald-700 transition-colors"
                    >
                      Click Here to Open WhatsApp
                    </a>
+                   <p className="text-center text-[11px] text-emerald-800/80 dark:text-emerald-300/80 font-medium mb-3 mt-1">
+                     (Or send 'Hi' manually to <span className="font-bold">+91 81492 77038</span>)
+                   </p>
                    <p className="text-[13px] text-emerald-800 dark:text-emerald-300 font-medium">
                      <span className="font-bold">Step 2:</span> Enter your number below and click Send OTP!
                    </p>
@@ -1012,7 +1015,7 @@ function LoginContent() {
                         await apiClient.post("/api/auth/chat/send-whatsapp-otp", { phoneNumber: `+${code}${whatsappPhone}`, email });
                         startWhatsappCountdown();
                       } catch (err: any) {
-                        setError(err?.response?.data?.message || "Failed to resend code.");
+                        setError(err?.message || err?.response?.data?.message || "Failed to resend code.");
                       } finally {
                         setLoading(false);
                       }
