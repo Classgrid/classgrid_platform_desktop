@@ -14,6 +14,10 @@ type SearchResult = {
   title: string;
   created_at: string;
   type: "page" | "chat";
+  // Chat search: the newest matching message in that chat
+  snippet?: string | null;
+  snippetRole?: "user" | "assistant" | null;
+  matchCount?: number;
 };
 
 const ChatBubbleIcon = ({ className }: { className?: string }) => (
@@ -100,23 +104,29 @@ export function AiChatSearchPalette({
         const endpointPrefix = typeof import.meta !== "undefined" && import.meta.env
           ? (import.meta.env.VITE_API_URL || "https://api.classgrid.in")
           : "";
-        const res = await fetch(`${endpointPrefix}/api/ai/sessions`, { credentials: "include" });
-        const data = await res.json();
-        if (data.sessions) {
-          let filtered = data.sessions;
-          if (q.trim()) {
-            filtered = filtered.filter((s: any) => (s.title || "").toLowerCase().includes(q.toLowerCase()));
-          } else {
-            // If query is empty, only show top 3 recent chats
-            filtered = filtered.slice(0, 3);
-          }
-          
-          chatResults = filtered.map((s: any) => ({
-               id: s.id,
-               title: s.title,
-               created_at: s.created_at,
-               type: "chat"
-            }));
+        if (q.trim()) {
+          // Searches chat titles and every user and AI message on the server
+          const res = await fetch(`${endpointPrefix}/api/ai/sessions/search?q=${encodeURIComponent(q.trim())}`, { credentials: "include" });
+          const data = await res.json();
+          chatResults = (data.results || []).map((r: any) => ({
+            id: r.id,
+            title: r.title,
+            created_at: r.matchedAt || r.created_at,
+            type: "chat",
+            snippet: r.snippet,
+            snippetRole: r.snippetRole,
+            matchCount: r.matchCount,
+          }));
+        } else {
+          // If query is empty, only show top 3 recent chats
+          const res = await fetch(`${endpointPrefix}/api/ai/sessions`, { credentials: "include" });
+          const data = await res.json();
+          chatResults = (data.sessions || []).slice(0, 3).map((s: any) => ({
+            id: s.id,
+            title: s.title,
+            created_at: s.created_at,
+            type: "chat",
+          }));
         }
       }
 
@@ -189,8 +199,9 @@ export function AiChatSearchPalette({
     if (!q.trim()) return text;
     const regex = new RegExp(`(${q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")})`, "gi");
     const parts = text.split(regex);
+    const needle = q.toLowerCase();
     return parts.map((part, i) =>
-      regex.test(part) ? (
+      part.toLowerCase() === needle ? (
         <mark key={i} className="bg-emerald-100 text-emerald-700 dark:bg-emerald-500/25 dark:text-emerald-300 rounded-sm px-0.5 font-medium">
           {part}
         </mark>
@@ -235,7 +246,7 @@ export function AiChatSearchPalette({
                   onChange={(e) => setQuery(e.target.value)}
                   onKeyDown={handleKeyDown}
                   data-no-ring="true"
-                  placeholder={effectiveMode === "global" ? "Search pages..." : "Search chat history..."}
+                  placeholder={effectiveMode === "global" ? "Search pages..." : "Search all your chats and messages..."}
                   className="flex-1 bg-transparent text-[15px] text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-white/35 outline-none focus:ring-0 focus:outline-none focus-visible:ring-0 border-none"
                   autoComplete="off"
                   spellCheck={false}
@@ -320,9 +331,18 @@ export function AiChatSearchPalette({
                               {result.type === "page" ? result.created_at : "Chat History"}
                             </span>
                           </div>
+                          {result.type === "chat" && result.snippet && (
+                            <p className="mt-0.5 text-[12.5px] leading-relaxed text-slate-600 dark:text-white/55 line-clamp-2 break-words">
+                              <span className="font-medium text-slate-900 dark:text-white/75">
+                                {result.snippetRole === "user" ? "You: " : "AI: "}
+                              </span>
+                              {highlightMatch(result.snippet, query)}
+                            </p>
+                          )}
                           {result.type === "chat" && (
                             <p className="mt-0.5 text-[12px] leading-relaxed text-slate-900 dark:text-white/35">
                               {new Date(result.created_at).toLocaleDateString()}
+                              {(result.matchCount ?? 0) > 1 && ` · ${result.matchCount} matching messages`}
                             </p>
                           )}
                         </div>

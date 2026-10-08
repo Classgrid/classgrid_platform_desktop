@@ -393,6 +393,96 @@ export async function getSharedSnapshot(shareId) {
 /**
  * Retrieves all AI generated images for a user across all non-incognito sessions.
  */
+// Readable text of a saved message for search results: the JSON wrapper of assistant messages is
+// removed, and Markdown symbols and extra whitespace are dropped.
+function searchableText(content) {
+    return plainMessageText(content)
+        .replace(/```[a-z0-9+#-]*\n?/gi, " ")
+        .replace(/!\[[^\]]*\]\([^)]*\)/g, " ")
+        .replace(/\[([^\]]*)\]\([^)]*\)/g, "$1")
+        .replace(/[*_~`>#|]+/g, " ")
+        .replace(/\s+/g, " ")
+        .trim();
+}
+
+function snippetAround(text, query) {
+    const at = text.toLowerCase().indexOf(query.toLowerCase());
+    if (at < 0) return null;
+    const start = Math.max(0, at - 60);
+    const end = Math.min(text.length, at + query.length + 100);
+    return `${start > 0 ? "…" : ""}${text.slice(start, end).trim()}${end < text.length ? "…" : ""}`;
+}
+
+/**
+ * Searches the user's own (non-incognito) chats: titles and the text of every user and AI message.
+ * Returns up to `limit` chats, title matches first, then by newest matching message, each with a
+ * snippet of the newest message that matched.
+ */
+export async function searchUserChats(userEmail, query, limit = 20) {
+    const q = String(query || "").trim();
+    if (q.length < 2) return [];
+
+    const { data: sessions, error } = await primarySupabaseClient
+        .from('ai_chat_sessions')
+        .select('id, title, created_at')
+        .eq('user_email', userEmail)
+        .eq('is_incognito', false);
+    if (error) throw error;
+    if (!sessions || sessions.length === 0) return [];
+
+    // LIKE wildcards in the query are searched as plain characters ("c++", "50%", "file_name")
+    const pattern = `%${q.replace(/[\\%_]/g, (c) => `\\${c}`)}%`;
+    const ids = sessions.map((s) => s.id);
+    const CHUNK_SIZE = 50;
+    const chunks = [];
+    for (let i = 0; i < ids.length; i += CHUNK_SIZE) chunks.push(ids.slice(i, i + CHUNK_SIZE));
+
+    const messageLists = await Promise.all(chunks.map(async (chunk) => {
+        const { data, error: msgError } = await primarySupabaseClient
+            .from('ai_chat_messages')
+            .select('session_id, role, content, created_at')
+            .in('session_id', chunk)
+            .ilike('content', pattern)
+            .order('created_at', { ascending: false })
+            .limit(100);
+        if (msgError) throw msgError;
+        return data || [];
+    }));
+
+    const hits = new Map(); // session id -> { latest matching message, count }
+    for (const m of messageLists.flat()) {
+        if (m.role !== 'user' && m.role !== 'assistant') continue;
+        // The match must be in the readable text, not only in stored tool data
+        const snippet = snippetAround(searchableText(m.content), q);
+        if (!snippet) continue;
+        const hit = hits.get(m.session_id);
+        if (!hit) hits.set(m.session_id, { message: m, snippet, count: 1 });
+        else {
+            hit.count++;
+            if (new Date(m.created_at) > new Date(hit.message.created_at)) Object.assign(hit, { message: m, snippet });
+        }
+    }
+
+    const results = [];
+    for (const s of sessions) {
+        const titleMatch = String(s.title || "").toLowerCase().includes(q.toLowerCase());
+        const hit = hits.get(s.id);
+        if (!titleMatch && !hit) continue;
+        results.push({
+            id: s.id,
+            title: s.title,
+            created_at: s.created_at,
+            titleMatch,
+            matchCount: hit?.count || 0,
+            snippet: hit?.snippet || null,
+            snippetRole: hit ? (hit.message.role === 'user' ? 'user' : 'assistant') : null,
+            matchedAt: hit?.message.created_at || s.created_at,
+        });
+    }
+    results.sort((a, b) => (Number(b.titleMatch) - Number(a.titleMatch)) || (new Date(b.matchedAt) - new Date(a.matchedAt)));
+    return results.slice(0, limit);
+}
+
 export async function getUserGeneratedImages(userEmail) {
     const { data: sessions, error: sessionsError } = await primarySupabaseClient
         .from('ai_chat_sessions')
