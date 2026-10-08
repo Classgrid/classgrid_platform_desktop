@@ -2,6 +2,7 @@
 import cron from 'node-cron';
 import AiSchedule from '../models/AiSchedule.js';
 import { sendEmail } from '../services/aws-ses.service.js';
+import { normalizeWhatsappNumber } from '../services/ai-feature-limits.js';
 
 // Run every minute
 cron.schedule('* * * * *', async () => {
@@ -52,7 +53,7 @@ cron.schedule('* * * * *', async () => {
               body: JSON.stringify({
                 messaging_product: "whatsapp",
                 recipient_type: "individual",
-                to: schedule.whatsapp_phone_number,
+                to: normalizeWhatsappNumber(schedule.whatsapp_phone_number),
                 type: "text",
                 text: {
                   preview_url: false,
@@ -60,11 +61,16 @@ cron.schedule('* * * * *', async () => {
                 }
               })
             }).then(res => res.json()).then(data => {
+              // Failed WhatsApp parts are flagged so they don't count toward the user's weekly limit.
               if (data.error) {
                 console.warn(`[AiSchedule Worker] WhatsApp API error: ${JSON.stringify(data.error)}`);
+                return AiSchedule.updateOne({ _id: schedule._id }, { whatsapp_failed: true, error_message: `WhatsApp: ${JSON.stringify(data.error).slice(0, 300)}` });
               }
+              const messageId = data.messages?.[0]?.id;
+              if (messageId) return AiSchedule.updateOne({ _id: schedule._id }, { whatsapp_message_id: messageId });
             }).catch(waErr => {
               console.warn(`[AiSchedule Worker] WhatsApp fetch failed. Error: ${waErr.message}`);
+              AiSchedule.updateOne({ _id: schedule._id }, { whatsapp_failed: true, error_message: `WhatsApp: ${waErr.message}` }).catch(() => {});
             });
           } else {
              console.warn(`[AiSchedule Worker] Missing WhatsApp credentials in .env`);

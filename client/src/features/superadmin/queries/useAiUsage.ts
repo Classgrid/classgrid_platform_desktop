@@ -12,7 +12,8 @@ export const aiUsageApi = {
     if (year) url += `year=${year}&`;
     return api.get(url).then(res => res.data.data);
   },
-  getModelBreakdown: () => api.get("/api/super-admin/ai-usage/global/models").then(res => res.data.data),
+  getModelBreakdown: (params: { from: string; to: string; orgId?: string }) =>
+    api.get("/api/super-admin/ai-usage/global/models", { params }).then(res => res.data.data as ModelBreakdown),
   
   getOrgs: () => api.get("/api/super-admin/ai-usage/orgs").then(res => res.data.data),
   getOrgDetail: (orgId: string) => api.get(`/api/super-admin/ai-usage/orgs/${orgId}/detail`).then(res => res.data.data),
@@ -40,9 +41,18 @@ export const useGlobalAiStats = (orgId?: string, month?: number, year?: number) 
   queryFn: () => aiUsageApi.getGlobalStats(orgId, month, year),
 });
 
-export const useAiModelBreakdown = () => useQuery({
-  queryKey: ["ai-usage-models"],
-  queryFn: aiUsageApi.getModelBreakdown,
+export type ModelUsageTotals = { requests: number; tokens: number; costUSD: number };
+export type ModelBreakdown = {
+  from: string;
+  to: string;
+  bucket: "hour" | "day";
+  models: (ModelUsageTotals & { model: string; success: number; failed: number })[];
+  timeline: { bucket: string; models: Record<string, ModelUsageTotals> }[];
+};
+
+export const useAiModelBreakdown = (params: { from: string; to: string; orgId?: string }) => useQuery({
+  queryKey: ["ai-usage-models", params.from, params.to, params.orgId],
+  queryFn: () => aiUsageApi.getModelBreakdown(params),
 });
 
 export const useAiUsageOrgs = () => useQuery({

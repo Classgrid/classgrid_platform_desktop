@@ -1878,11 +1878,12 @@ export const handleToolCall = async (name, args, context = {}) => {
           if (!user) {
             return { content: [{ type: 'text', text: `Failed: Sign in to schedule WhatsApp messages.` }] };
           }
-          const { checkWhatsappLimit } = await import('../services/ai-feature-limits.js');
-          const { allowed, limit } = await checkWhatsappLimit(user);
+          const { checkWhatsappLimit, normalizeWhatsappNumber } = await import('../services/ai-feature-limits.js');
+          const { allowed, limit, used } = await checkWhatsappLimit(user);
           if (!allowed) {
-             return { content: [{ type: 'text', text: `Failed: Your account has reached the weekly WhatsApp limit of ${limit} messages. You cannot schedule more WhatsApp messages this week.` }] };
+             return { content: [{ type: 'text', text: `Failed: This user has used ${used} of ${limit} WhatsApp messages allowed in the last 7 days (the limit is set by Classgrid admins). Nothing was scheduled. Tell the user exactly this; do not guess other reasons.` }] };
           }
+          if (args.whatsapp_phone_number) args.whatsapp_phone_number = normalizeWhatsappNumber(args.whatsapp_phone_number);
         }
 
         const schedule = await AiSchedule.create({

@@ -14,6 +14,9 @@ const aiScheduleSchema = new mongoose.Schema({
   email_body: { type: String },
   whatsapp_phone_number: { type: String },
   whatsapp_message: { type: String },
+  // Meta's message id, and whether the WhatsApp part failed (failed ones don't count toward the weekly limit)
+  whatsapp_message_id: { type: String, index: true, sparse: true },
+  whatsapp_failed: { type: Boolean, default: false },
   status: { 
     type: String, 
     enum: ['pending', 'sent', 'failed', 'cancelled'], 

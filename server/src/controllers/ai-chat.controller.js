@@ -2624,10 +2624,14 @@ Do NOT talk about internal architecture unless asked by a @classgrid.in employee
                             if (!req.user?._id) {
                                 return "FAILED: Sign in to send WhatsApp messages.";
                             }
-                            const { checkWhatsappLimit, recordDirectWhatsappSend } = await import('../services/ai-feature-limits.js');
+                            const { checkWhatsappLimit, recordDirectWhatsappSend, normalizeWhatsappNumber } = await import('../services/ai-feature-limits.js');
                             const waLimit = await checkWhatsappLimit(req.user);
                             if (!waLimit.allowed) {
-                                return `FAILED: The weekly WhatsApp limit of ${waLimit.limit} messages has been reached. No message was sent.`;
+                                return `FAILED: This user has used ${waLimit.used} of ${waLimit.limit} WhatsApp messages allowed in the last 7 days (the limit is set by Classgrid admins). No message was sent. Tell the user exactly this; do not guess other reasons.`;
+                            }
+                            const recipient = normalizeWhatsappNumber(toPhoneNumber);
+                            if (recipient.length < 11 || recipient.length > 15) {
+                                return `FAILED: "${toPhoneNumber}" is not a valid WhatsApp number. Nothing was sent and nothing was counted. Ask the user for the number with country code.`;
                             }
 
                             const res = await fetch(`https://graph.facebook.com/v17.0/${process.env.WHATSAPP_PHONE_ID}/messages`, {
@@ -2639,7 +2643,7 @@ Do NOT talk about internal architecture unless asked by a @classgrid.in employee
                                 body: JSON.stringify({
                                     messaging_product: "whatsapp",
                                     recipient_type: "individual",
-                                    to: toPhoneNumber,
+                                    to: recipient,
                                     type: "text",
                                     text: {
                                         preview_url: false,
@@ -2650,11 +2654,12 @@ Do NOT talk about internal architecture unless asked by a @classgrid.in employee
 
                             if (!res.ok) {
                                 const err = await res.text();
-                                return `FAILED to send WhatsApp message: ${res.status} ${res.statusText} - ${err}`;
+                                return `FAILED to send WhatsApp message (not counted toward the limit): ${res.status} ${res.statusText} - ${err}`;
                             }
 
-                            await recordDirectWhatsappSend(req.user._id);
-                            return `SUCCESS: WhatsApp message sent successfully to ${toPhoneNumber}`;
+                            const sent = await res.json().catch(() => ({}));
+                            await recordDirectWhatsappSend(req.user._id, sent?.messages?.[0]?.id);
+                            return `SUCCESS: WhatsApp message sent to ${recipient} (${waLimit.used + 1} of ${waLimit.limit} used this week). Do not send it again.`;
                         } catch (e) {
                             return `FAILED to send WhatsApp message: ${e.message}`;
                         }

@@ -31,6 +31,42 @@ async function getLiveUsdToInrRate() {
     return cachedUsdToInr;
 }
 
+// Official per-million-token rates (USD) for every model logged in AiUsageLog.
+const MODEL_PRICING_USD_PER_M = {
+    // Official Cloudflare published rates (USD per million tokens)
+    "@cf/deepseek-ai/deepseek-v4-pro-0813": { prompt: 1.32,  completion: 3.96  },
+    "@cf/meta/llama-3.2-11b-vision-instruct": { prompt: 0.049, completion: 0.676 },
+    "@cf/meta/llama-3.2-1b-instruct":           { prompt: 0.027, completion: 0.201 },
+    "@cf/meta/llama-3.1-8b-instruct-fp8-fast":  { prompt: 0.045, completion: 0.384 },
+    "@cf/meta/llama-3.3-70b-instruct-fp8-fast": { prompt: 0.293, completion: 2.253 },
+    // Models selectable in the AI chat model picker (Cloudflare catalog rates, 2026-10-08)
+    "@cf/deepseek-ai/deepseek-v4-flash-0731":   { prompt: 0.44,  completion: 1.32  },
+    "@cf/openai/gpt-oss-120b":                  { prompt: 0.35,  completion: 0.75  },
+    "@cf/openai/gpt-oss-20b":                   { prompt: 0.2,   completion: 0.3   },
+    "@cf/moonshotai/kimi-k2.6":                 { prompt: 0.95,  completion: 4     },
+    "@cf/moonshotai/kimi-k2.7-code":            { prompt: 0.95,  completion: 4     },
+    "@cf/zai-org/glm-5.3":                      { prompt: 1.4,   completion: 4.4   },
+    "@cf/zai-org/glm-5.3-flash":                { prompt: 0.15,  completion: 0.5   },
+    "@cf/zai-org/glm-5.2":                      { prompt: 1.4,   completion: 4.4   },
+    "@cf/zai-org/glm-4.7-flash":                { prompt: 0.0605, completion: 0.4  },
+    "@cf/qwen/qwen3.8-27b":                     { prompt: 0.45,  completion: 3.2   },
+    "@cf/google/gemma-4-26b-a4b-it":            { prompt: 0.1,   completion: 0.3   },
+    "@cf/nvidia/nemotron-3-120b-a12b":          { prompt: 0.5,   completion: 1.5   },
+    "@cf/meta/llama-4-scout-17b-16e-instruct":  { prompt: 0.27,  completion: 0.85  },
+    "@cf/mistralai/mistral-small-3.1-24b-instruct": { prompt: 0.351, completion: 0.555 },
+    // Claude API first-party rates (Anthropic models overview, 2026-10-08). cacheRead / cacheWrite
+    // are per million cached tokens; Haiku 5.5 rates are for prompts up to 100k tokens.
+    "claude-haiku-5-5":  { prompt: 0.1, completion: 0.5, cacheRead: 0.01, cacheWrite: 0.125 },
+    "claude-sonnet-5-5": { prompt: 2,   completion: 10,  cacheRead: 0.1,  cacheWrite: 2.5 },
+    "claude-opus-5-5":   { prompt: 4,   completion: 20,  cacheRead: 0.2,  cacheWrite: 5 },
+    "claude-fable-5-1":  { prompt: 10,  completion: 50,  cacheRead: 0.25, cacheWrite: 12.5 },
+    // Targets of the server-side refusal fallback; logged when one of them actually answered
+    "claude-opus-5":     { prompt: 5,   completion: 25,  cacheRead: 0.5,  cacheWrite: 6.25 },
+    "claude-opus-4-8":   { prompt: 5,   completion: 25,  cacheRead: 0.5,  cacheWrite: 6.25 },
+    // Fallback: use the cheapest text model rates if model is unrecognised
+    "default": { prompt: 0.027, completion: 0.201 }
+};
+
 // PHASE 6: Super Admin Global AI Usage Controller
 
 export const getGlobalStats = async (req, res) => {
@@ -176,40 +212,7 @@ export const getGlobalStats = async (req, res) => {
         // Source: https://developers.cloudflare.com/workers-ai/models/
         // These are the ONLY models actually used in the codebase.
         // promptTokens + completionTokens are REAL values saved by gpt-tokenizer on each request.
-        const CF_PRICING_USD_PER_M = {
-            // Official Cloudflare published rates (USD per million tokens)
-            "@cf/deepseek-ai/deepseek-v4-pro-0813": { prompt: 1.32,  completion: 3.96  },
-            "@cf/meta/llama-3.2-11b-vision-instruct": { prompt: 0.049, completion: 0.676 },
-            "@cf/meta/llama-3.2-1b-instruct":           { prompt: 0.027, completion: 0.201 },
-            "@cf/meta/llama-3.1-8b-instruct-fp8-fast":  { prompt: 0.045, completion: 0.384 },
-            "@cf/meta/llama-3.3-70b-instruct-fp8-fast": { prompt: 0.293, completion: 2.253 },
-            // Models selectable in the AI chat model picker (Cloudflare catalog rates, 2026-10-08)
-            "@cf/deepseek-ai/deepseek-v4-flash-0731":   { prompt: 0.44,  completion: 1.32  },
-            "@cf/openai/gpt-oss-120b":                  { prompt: 0.35,  completion: 0.75  },
-            "@cf/openai/gpt-oss-20b":                   { prompt: 0.2,   completion: 0.3   },
-            "@cf/moonshotai/kimi-k2.6":                 { prompt: 0.95,  completion: 4     },
-            "@cf/moonshotai/kimi-k2.7-code":            { prompt: 0.95,  completion: 4     },
-            "@cf/zai-org/glm-5.3":                      { prompt: 1.4,   completion: 4.4   },
-            "@cf/zai-org/glm-5.3-flash":                { prompt: 0.15,  completion: 0.5   },
-            "@cf/zai-org/glm-5.2":                      { prompt: 1.4,   completion: 4.4   },
-            "@cf/zai-org/glm-4.7-flash":                { prompt: 0.0605, completion: 0.4  },
-            "@cf/qwen/qwen3.8-27b":                     { prompt: 0.45,  completion: 3.2   },
-            "@cf/google/gemma-4-26b-a4b-it":            { prompt: 0.1,   completion: 0.3   },
-            "@cf/nvidia/nemotron-3-120b-a12b":          { prompt: 0.5,   completion: 1.5   },
-            "@cf/meta/llama-4-scout-17b-16e-instruct":  { prompt: 0.27,  completion: 0.85  },
-            "@cf/mistralai/mistral-small-3.1-24b-instruct": { prompt: 0.351, completion: 0.555 },
-            // Claude API first-party rates (Anthropic models overview, 2026-10-08). cacheRead / cacheWrite
-            // are per million cached tokens; Haiku 5.5 rates are for prompts up to 100k tokens.
-            "claude-haiku-5-5":  { prompt: 0.1, completion: 0.5, cacheRead: 0.01, cacheWrite: 0.125 },
-            "claude-sonnet-5-5": { prompt: 2,   completion: 10,  cacheRead: 0.1,  cacheWrite: 2.5 },
-            "claude-opus-5-5":   { prompt: 4,   completion: 20,  cacheRead: 0.2,  cacheWrite: 5 },
-            "claude-fable-5-1":  { prompt: 10,  completion: 50,  cacheRead: 0.25, cacheWrite: 12.5 },
-            // Targets of the server-side refusal fallback; logged when one of them actually answered
-            "claude-opus-5":     { prompt: 5,   completion: 25,  cacheRead: 0.5,  cacheWrite: 6.25 },
-            "claude-opus-4-8":   { prompt: 5,   completion: 25,  cacheRead: 0.5,  cacheWrite: 6.25 },
-            // Fallback: use the cheapest text model rates if model is unrecognised
-            "default": { prompt: 0.027, completion: 0.201 }
-        };
+        const CF_PRICING_USD_PER_M = MODEL_PRICING_USD_PER_M;
         // USD to INR exchange rate fetched dynamically from a live API
         const USD_TO_INR = await getLiveUsdToInrRate();
 
@@ -371,8 +374,110 @@ export const getGlobalStats = async (req, res) => {
     }
 };
 
+// Exact id first; otherwise the longest known id the logged one starts with (e.g. a dated snapshot).
+function ratesFor(model) {
+    if (MODEL_PRICING_USD_PER_M[model]) return MODEL_PRICING_USD_PER_M[model];
+    const prefixKey = Object.keys(MODEL_PRICING_USD_PER_M)
+        .filter((k) => k !== "default" && typeof model === "string" && model.startsWith(k))
+        .sort((a, b) => b.length - a.length)[0];
+    return MODEL_PRICING_USD_PER_M[prefixKey] || MODEL_PRICING_USD_PER_M["default"];
+}
+
+function costUsdFor(model, t) {
+    const rates = ratesFor(model);
+    const cacheRead = rates.cacheRead !== undefined ? (t.cacheReadTokens || 0) : 0;
+    const cacheWrite = rates.cacheWrite !== undefined ? (t.cacheWriteTokens || 0) : 0;
+    const uncachedPrompt = Math.max(0, (t.promptTokens || 0) - cacheRead - cacheWrite);
+    return (uncachedPrompt / 1_000_000) * rates.prompt
+        + (cacheRead / 1_000_000) * (rates.cacheRead || 0)
+        + (cacheWrite / 1_000_000) * (rates.cacheWrite || 0)
+        + ((t.completionTokens || 0) / 1_000_000) * rates.completion;
+}
+
+const MAX_MODEL_RANGE_MS = 366 * 24 * 60 * 60 * 1000;
+
+// Per-model usage for a chosen time range (from/to as ISO date-times, default last 7 days) and org:
+// totals per model plus a timeline split by model (hourly for ranges up to 2 days, daily otherwise).
 export const getModelBreakdown = async (req, res) => {
-    res.status(200).json({ success: true, data: [] });
+    try {
+        const { from, to, orgId } = req.query;
+        const end = to ? new Date(to) : new Date();
+        const start = from ? new Date(from) : new Date(end.getTime() - 7 * 24 * 60 * 60 * 1000);
+        if (isNaN(start.getTime()) || isNaN(end.getTime()) || start > end) {
+            return res.status(400).json({ success: false, error: "Invalid date range" });
+        }
+        if (end - start > MAX_MODEL_RANGE_MS) {
+            return res.status(400).json({ success: false, error: "Date range can be at most 1 year" });
+        }
+
+        const logMatch = { createdAt: { $gte: start, $lte: end } };
+        if (orgId && orgId !== "all") {
+            if (orgId === "classgrid") logMatch.organization_id = null;
+            else if (mongoose.Types.ObjectId.isValid(orgId)) logMatch.organization_id = new mongoose.Types.ObjectId(orgId);
+            else return res.status(400).json({ success: false, error: "Invalid orgId" });
+        }
+
+        const bucket = end - start <= 2 * 24 * 60 * 60 * 1000 ? "hour" : "day";
+        const bucketFormat = bucket === "hour" ? "%Y-%m-%d %H:00" : "%Y-%m-%d";
+        const tokenSums = {
+            requests: { $sum: 1 },
+            tokens: { $sum: { $ifNull: ["$totalTokens", 0] } },
+            promptTokens: { $sum: { $ifNull: ["$promptTokens", 0] } },
+            completionTokens: { $sum: { $ifNull: ["$completionTokens", 0] } },
+            cacheReadTokens: { $sum: { $ifNull: ["$metadata.cacheReadTokens", 0] } },
+            cacheWriteTokens: { $sum: { $ifNull: ["$metadata.cacheWriteTokens", 0] } },
+        };
+
+        const [totals, timeline] = await Promise.all([
+            AiUsageLog.aggregate([
+                { $match: logMatch },
+                { $group: { _id: "$model", ...tokenSums, failed: { $sum: { $cond: [{ $eq: ["$success", false] }, 1, 0] } } } }
+            ]),
+            AiUsageLog.aggregate([
+                { $match: logMatch },
+                {
+                    $group: {
+                        _id: {
+                            bucket: { $dateToString: { format: bucketFormat, date: "$createdAt", timezone: "Asia/Kolkata" } },
+                            model: "$model"
+                        },
+                        ...tokenSums
+                    }
+                },
+                { $sort: { "_id.bucket": 1 } }
+            ])
+        ]);
+
+        const models = totals
+            .map((m) => ({
+                model: m._id || "unknown",
+                requests: m.requests,
+                tokens: m.tokens,
+                costUSD: parseFloat(costUsdFor(m._id, m).toFixed(6)),
+                success: m.requests - m.failed,
+                failed: m.failed
+            }))
+            .sort((a, b) => b.requests - a.requests);
+
+        const byBucket = new Map();
+        for (const row of timeline) {
+            const key = row._id.bucket;
+            if (!byBucket.has(key)) byBucket.set(key, { bucket: key, models: {} });
+            byBucket.get(key).models[row._id.model || "unknown"] = {
+                requests: row.requests,
+                tokens: row.tokens,
+                costUSD: parseFloat(costUsdFor(row._id.model, row).toFixed(6))
+            };
+        }
+
+        res.status(200).json({
+            success: true,
+            data: { from: start.toISOString(), to: end.toISOString(), bucket, models, timeline: [...byBucket.values()] }
+        });
+    } catch (error) {
+        console.error("Model breakdown error:", error);
+        res.status(500).json({ success: false, error: "Failed to fetch model breakdown" });
+    }
 };
 
 export const listActiveGrantedCredits = async (req, res) => {

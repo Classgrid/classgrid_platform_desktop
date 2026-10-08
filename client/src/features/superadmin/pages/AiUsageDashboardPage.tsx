@@ -53,6 +53,7 @@ import { DangerConfirmDialog } from "@/components/marketing_ui/danger-confirm-di
 import { Skeleton } from "@/components/marketing_ui/skeleton";
 import { formatNumber, formatRoleLabel } from "@/lib/utils";
 import { AiUserDetailPanel } from "@/features/superadmin/components/ai-usage/AiUserDetailPanel";
+import { ModelUsageSection } from "@/features/superadmin/components/ai-usage/ModelUsageSection";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, PieChart, Legend, Pie, Cell, ReferenceLine } from "recharts";
 
 const COLORS = ['#3b82f6', '#8b5cf6', '#10b981', '#f59e0b', '#ef4444', '#ec4899'];
@@ -698,26 +699,8 @@ export function AiUsageDashboardPage() {
           </Card>
 
           {/* Breakdowns Row */}
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {/* The Top Organizations and Top Users cards have been removed as requested */}
-
-            <Card className="col-span-1 lg:col-span-1">
-              <CardHeader><CardTitle>Requests by Model</CardTitle></CardHeader>
-              <CardContent>
-                <div className="h-[300px] w-full">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <Pie data={modelPieData} cx="50%" cy="50%" innerRadius={60} outerRadius={80} paddingAngle={5} dataKey="value" stroke="none">
-                        {modelPieData.map((e: any, i: number) => <Cell key={i} fill={e.color} />)}
-                      </Pie>
-                      <RechartsTooltip content={<UniversalTooltip />} />
-                      <Legend wrapperStyle={{ fontSize: "11px", paddingTop: "10px" }} />
-                    </PieChart>
-                  </ResponsiveContainer>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+          {/* The Top Organizations and Top Users cards have been removed as requested */}
+          <ModelUsageSection orgs={orgs?.map((o: any) => ({ id: o.id, name: o.name }))} />
 
           <GrantCreditsModal 
             isOpen={isGlobalGrantCreditsOpen} 

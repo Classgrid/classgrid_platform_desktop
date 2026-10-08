@@ -85,6 +85,12 @@ router.post("/webhook", async (req, res) => {
         const body = req.body;
         
         if (body.object) {
+            // Delivery reports: a message that failed to deliver no longer counts toward the AI WhatsApp limit.
+            const statuses = (body.entry || []).flatMap(e => (e.changes || []).flatMap(c => c.value?.statuses || []));
+            if (statuses.length > 0) {
+                const { handleWhatsappStatusUpdates } = await import("../services/ai-feature-limits.js");
+                await handleWhatsappStatusUpdates(statuses).catch(err => console.error("WhatsApp status update error:", err));
+            }
             if (body.entry && body.entry[0].changes && body.entry[0].changes[0].value.messages && body.entry[0].changes[0].value.messages[0]) {
                 const phoneNumber = body.entry[0].changes[0].value.contacts[0].wa_id;
                 const messageBody = body.entry[0].changes[0].value.messages[0].text.body;

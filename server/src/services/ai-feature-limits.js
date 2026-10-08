@@ -41,15 +41,15 @@ export async function checkWhatsappLimit(user) {
     const org = orgId ? await Organization.findById(orgId).select("ai_config").lean() : null;
     const limit = resolveFeatureLimit("whatsapp", org, globalConfig, orgId);
 
+    // Only messages still waiting to go out or actually sent count; failed or undelivered ones don't.
     const since = new Date(Date.now() - WEEK_MS);
     const scheduled = await AiSchedule.countDocuments({
         user_id: user._id,
         createdAt: { $gte: since },
-        status: { $ne: "cancelled" },
-        $or: [
-            { whatsapp_phone_number: { $exists: true, $ne: "" } },
-            { whatsapp_message: { $exists: true, $ne: "" } },
-        ],
+        status: { $in: ["pending", "sent"] },
+        whatsapp_failed: { $ne: true },
+        whatsapp_phone_number: { $exists: true, $ne: "" },
+        whatsapp_message: { $exists: true, $ne: "" },
     });
 
     let direct = 0;
@@ -63,12 +63,45 @@ export async function checkWhatsappLimit(user) {
     return { allowed: used < limit, limit, used };
 }
 
-/** Counts one WhatsApp message sent right away (not scheduled) toward the user's weekly limit. */
-export async function recordDirectWhatsappSend(userId) {
+const messageOwnerKey = (messageId) => `ai:wa-msg:${messageId}`;
+const EIGHT_DAYS_S = 8 * 24 * 60 * 60;
+
+/**
+ * Counts one WhatsApp message sent right away (not scheduled) toward the user's weekly limit. With Meta's
+ * message id, a later "failed" delivery report (handleWhatsappStatusUpdates) takes it off the count again.
+ */
+export async function recordDirectWhatsappSend(userId, messageId) {
     try {
         const key = directSendKey(userId);
         const now = Date.now();
-        await redis.zadd(key, now, `${now}-${Math.random().toString(36).slice(2, 8)}`);
-        await redis.expire(key, 8 * 24 * 60 * 60);
+        await redis.zadd(key, now, messageId ? `wamid:${messageId}` : `${now}-${Math.random().toString(36).slice(2, 8)}`);
+        await redis.expire(key, EIGHT_DAYS_S);
+        if (messageId) await redis.set(messageOwnerKey(messageId), String(userId), "EX", EIGHT_DAYS_S);
     } catch (e) { /* Redis down: the send is not counted */ }
+}
+
+/** 10-digit Indian numbers get the 91 country code; spaces, dashes, "+" and a leading 0 are removed. */
+export function normalizeWhatsappNumber(raw) {
+    let digits = String(raw || "").replace(/\D/g, "");
+    if (digits.length === 11 && digits.startsWith("0")) digits = digits.slice(1);
+    if (digits.length === 10) digits = `91${digits}`;
+    return digits;
+}
+
+/** Meta webhook delivery reports: a message Meta accepted but then failed to deliver stops counting. */
+export async function handleWhatsappStatusUpdates(statuses) {
+    const failed = (statuses || []).filter((s) => s?.status === "failed" && s.id);
+    if (failed.length === 0) return;
+    const { default: AiSchedule } = await import("../models/AiSchedule.js");
+    for (const s of failed) {
+        try {
+            const userId = await redis.get(messageOwnerKey(s.id));
+            if (userId) await redis.zrem(directSendKey(userId), `wamid:${s.id}`);
+        } catch (e) { /* Redis down: the direct send stays counted */ }
+        await AiSchedule.updateOne(
+            { whatsapp_message_id: s.id },
+            { whatsapp_failed: true, error_message: `WhatsApp delivery failed: ${JSON.stringify(s.errors || []).slice(0, 300)}` },
+        ).catch(() => {});
+        console.warn(`[WhatsApp] Delivery failed for ${s.id} to ${s.recipient_id}: ${JSON.stringify(s.errors || [])}`);
+    }
 }
