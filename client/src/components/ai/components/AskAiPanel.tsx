@@ -130,6 +130,7 @@ import {
 } from "./ui/accordion";
 import { cn } from "../utils";
 import { CodeBlockClient } from "./CodeBlockClient";
+import { ModelPicker, useSelectedModel } from "./ModelPicker";
 import { toast } from "sonner";
 import FilePreviewModal, { type FilePreviewSource } from "./FilePreviewModal";
 import { DocsImageViewer } from "./DocsImageViewer";
@@ -1581,6 +1582,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
   const [thinking, setThinking] = useState(false);
   const [sandboxFiles, setSandboxFiles] = useState<Record<string, string>>({});
   const [completedPlanSteps, setCompletedPlanSteps] = useState<string[]>([]);
+  const [selectedModel, setSelectedModel] = useSelectedModel();
 
   // --- Voice Dictation State ---
   const [isRecording, setIsRecording] = useState(false);
@@ -3275,6 +3277,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
         signal: controller.signal,
         body: JSON.stringify({
           question: apiQuestion,
+          selectedModel,
           userName: session?.user?.name ?? undefined,
           userEmail: session?.user?.email ?? undefined,
           userRole: session?.user?.role ?? undefined,
@@ -4978,7 +4981,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                     placeholder={attachedFiles.length > 0 ? "Add a message or send files..." : "Ask a question..."}
                     autoComplete="off"
                     className={cn(
-                      "w-full resize-none bg-transparent pb-12 pr-20 pl-24 text-sm focus:outline-none overflow-y-auto chat-scrollbar leading-relaxed transition-all duration-300",
+                      "w-full resize-none bg-transparent pb-12 pr-32 sm:pr-60 pl-24 text-sm focus:outline-none overflow-y-auto chat-scrollbar leading-relaxed transition-all duration-300",
                       (isRecording || isTranscribing) ? "text-transparent placeholder:text-transparent" : "text-foreground",
                       isExpandedBox ? "min-h-[60vh] max-h-[60vh]" : "min-h-[56px] max-h-[180px]",
                       (pageContext?.path?.startsWith("/docs") || attachedFiles.length > 0) ? "pt-3" : "pt-4 rounded-2xl"
@@ -5020,6 +5023,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
 
                   {/* Bottom Right action bar: send OR stop */}
                   <div className="absolute bottom-3 right-3 flex items-center gap-0.5">
+                    <ModelPicker value={selectedModel} onChange={setSelectedModel} disabled={isGenerating} />
                     <button
                       type="button"
                       onClick={isRecording ? stopRecording : startRecording}
@@ -5582,7 +5586,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                               placeholder="Ask a question..."
                               autoComplete="off"
                               className={cn(
-                                "w-full resize-none bg-transparent pb-12 pr-20 pl-24 pt-4 rounded-2xl text-sm focus:outline-none overflow-y-auto chat-scrollbar leading-relaxed transition-all duration-300",
+                                "w-full resize-none bg-transparent pb-12 pr-32 sm:pr-60 pl-24 pt-4 rounded-2xl text-sm focus:outline-none overflow-y-auto chat-scrollbar leading-relaxed transition-all duration-300",
                                 (isRecording || isTranscribing) ? "text-transparent placeholder:text-transparent" : "text-foreground",
                                 isExpandedBox ? "min-h-[60vh] max-h-[60vh]" : "min-h-[56px] max-h-[180px]"
                               )}
@@ -5621,6 +5625,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
 
                             {/* Bottom right: send */}
                             <div className="absolute bottom-3 right-3 flex items-center gap-0.5">
+                              <ModelPicker value={selectedModel} onChange={setSelectedModel} />
                               <button
                                 type="button"
                                 onClick={isRecording ? stopRecording : startRecording}
