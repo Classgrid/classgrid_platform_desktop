@@ -968,7 +968,8 @@ export const streamAskAi = async (req, res) => {
         // 2b. Save user message: to Supabase (source of truth) + Redis (cache) in parallel
         if (!isIncognito && sessionId && body.question) {
             saveMessage(sessionId, "user", body.question, body.fileUrls || []).catch(err => console.error("Failed to save user message:", err));
-            appendToHistory(sessionId, "user", body.question).catch(err => console.error("Failed to append user msg to Redis:", err));
+            // The file links go into the AI's history too, so follow-ups can re-open an uploaded file.
+            appendToHistory(sessionId, "user", body.question, body.fileUrls || []).catch(err => console.error("Failed to append user msg to Redis:", err));
 
             // Every TITLE_REFRESH_EVERY user messages, re-title the chat from its recent messages,
             // unless the user renamed it themselves.

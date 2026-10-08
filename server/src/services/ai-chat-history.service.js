@@ -48,6 +48,16 @@ const TOOL_NOTE_CHARS   = 600;
 const CACHE_TTL_SECONDS = 86400; // 24 hours
 
 /**
+ * Adds a message's file links back to its text for the model ("Attached Files:" is the same format the
+ * current message uses), so a follow-up like "show the full table" can re-open a file uploaded earlier.
+ */
+function withFileLinks(content, fileUrls) {
+    const files = Array.isArray(fileUrls) ? fileUrls.filter(u => typeof u === 'string' && u) : [];
+    if (files.length === 0) return content || '';
+    return `${content || ''}\n\nAttached Files:\n${files.join('\n')}`.trim();
+}
+
+/**
  * Build the Redis list key for a session.
  */
 function redisKey(sessionId) {
@@ -88,6 +98,10 @@ export async function getHistory(sessionId, depth = DEFAULT_DEPTH) {
         return raw.flatMap((item, itemIndex) => {
             try {
                 const parsed = JSON.parse(item);
+                if (parsed && parsed.fileUrls) {
+                    parsed.content = withFileLinks(parsed.content, parsed.fileUrls);
+                    delete parsed.fileUrls;
+                }
                 if (parsed && typeof parsed.content === 'string' && parsed.content.trim().startsWith('{')) {
                     try {
                         const inner = JSON.parse(parsed.content);
@@ -145,11 +159,13 @@ export async function getHistory(sessionId, depth = DEFAULT_DEPTH) {
  * @param {'user'|'assistant'} role
  * @param {string} content
  */
-export async function appendToHistory(sessionId, role, content) {
-    if (!sessionId || !role || !content) return;
+export async function appendToHistory(sessionId, role, content, fileUrls = []) {
+    const files = Array.isArray(fileUrls) ? fileUrls.filter(u => typeof u === 'string' && u) : [];
+    if (!sessionId || !role || (!content && files.length === 0)) return;
 
     const key = redisKey(sessionId);
-    const item = JSON.stringify({ role, content });
+    // File links are kept with the message so later turns can still open the file (see withFileLinks).
+    const item = JSON.stringify(files.length ? { role, content: content || '', fileUrls: files } : { role, content });
 
     try {
         await redis.rpush(key, item);
@@ -180,7 +196,10 @@ export async function warmCache(sessionId) {
         const pipeline = redis.pipeline();
         for (const msg of dbMessages) {
             if (msg.role === 'user' || msg.role === 'assistant') {
-                pipeline.rpush(key, JSON.stringify({ role: msg.role, content: msg.content || '' }));
+                const files = Array.isArray(msg.file_urls) ? msg.file_urls.filter(Boolean) : [];
+                pipeline.rpush(key, JSON.stringify(files.length
+                    ? { role: msg.role, content: msg.content || '', fileUrls: files }
+                    : { role: msg.role, content: msg.content || '' }));
             }
         }
         pipeline.ltrim(key, -MAX_HISTORY, -1);
@@ -233,7 +252,7 @@ async function getHistoryFromSupabase(sessionId, depth = DEFAULT_DEPTH) {
                         }
                     } catch {}
                 }
-                return { role: m.role, content: text };
+                return { role: m.role, content: withFileLinks(text, m.file_urls) };
             });
     } catch (err) {
         console.error(`[ChatHistory] Supabase fallback also failed for session ${sessionId}:`, err?.message);

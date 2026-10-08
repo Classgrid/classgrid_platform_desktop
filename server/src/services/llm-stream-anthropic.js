@@ -327,6 +327,10 @@ export async function streamClaudeChat({
             block_binding: { prefix_mismatch_behavior: "drop_block" },
         },
         output_config: { effort: effort || DEFAULT_EFFORT[model] || "medium" },
+        // Automatic cache point on the newest message: chat history and earlier rounds of this answer (tool
+        // calls and results, e.g. a long PDF the model wrote) are read from cache on the next round instead
+        // of being paid in full again. Together with the tools and system breakpoints that's 3 of the 4 allowed.
+        cache_control: { type: "ephemeral" },
         betas,
         ...(FALLBACK_MODELS.has(model) ? { fallbacks: "default" } : {}),
     };
