@@ -234,6 +234,7 @@ function LoginContent() {
   const [whatsappPhone, setWhatsappPhone] = useState("");
   const [whatsappCountryCode, setWhatsappCountryCode] = useState("");
   const [whatsappOtp, setWhatsappOtp] = useState("");
+  const [emailVerifiedTicket, setEmailVerifiedTicket] = useState("");
   const [whatsappCountdown, setWhatsappCountdown] = useState(0);
   const [whatsappOtpExpired, setWhatsappOtpExpired] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -455,6 +456,8 @@ function LoginContent() {
         const needsOnboarding = mode === "signup" || (!user?.metadata?.whatsappPhone || !user?.metadata?.age);
 
         if (needsOnboarding) {
+          // Proof of email verification, required by /chat/finalize-onboarding
+          setEmailVerifiedTicket(res.data.emailVerifiedTicket || "");
           setStep("otp_verified");
           setLoading(false);
         } else {
@@ -595,7 +598,7 @@ function LoginContent() {
     try {
       const selected = COUNTRY_CODES.find(c => c.value === whatsappCountryCode);
       const code = selected ? selected.code.replace('+', '') : '';
-      await apiClient.post("/api/auth/chat/send-whatsapp-otp", { phoneNumber: `+${code}${whatsappPhone}` });
+      await apiClient.post("/api/auth/chat/send-whatsapp-otp", { phoneNumber: `+${code}${whatsappPhone}`, email });
       setStep("whatsapp_otp");
       startWhatsappCountdown();
     } catch (err: any) {
@@ -647,9 +650,14 @@ function LoginContent() {
         role,
         whatsappPhone: `+${code}${whatsappPhone}`,
         whatsappOtp,
+        emailVerifiedTicket,
       });
       if (res.data?.token) {
         localStorage.setItem("token", res.data.token);
+      }
+      // The account already existed, so the password chosen here was not applied
+      if (res.data?.passwordSet === false && res.data?.notice) {
+        toast(res.data.notice);
       }
       setStep("success");
     } catch (err: any) {
@@ -1001,7 +1009,7 @@ function LoginContent() {
                       try {
                         const selected = COUNTRY_CODES.find(c => c.value === whatsappCountryCode);
                         const code = selected ? selected.code.replace('+', '') : '';
-                        await apiClient.post("/api/auth/chat/send-whatsapp-otp", { phoneNumber: `+${code}${whatsappPhone}` });
+                        await apiClient.post("/api/auth/chat/send-whatsapp-otp", { phoneNumber: `+${code}${whatsappPhone}`, email });
                         startWhatsappCountdown();
                       } catch (err: any) {
                         setError(err?.response?.data?.message || "Failed to resend code.");

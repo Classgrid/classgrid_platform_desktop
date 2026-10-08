@@ -5,6 +5,7 @@ import AiCreditTransaction from "../../models/AiCreditTransaction.js";
 import GlobalAiConfig from "../../models/GlobalAiConfig.js";
 import { primarySupabaseClient as supabase } from "../../config/supabaseClient.js";
 import mongoose from "mongoose";
+import { resolveFeatureLimit } from "../../services/ai-feature-limits.js";
 
 // PHASE 7: Super Admin AI Usage - Organizations Controller
 // Pulls real usage from Supabase and joins with MongoDB just like Agent Reviews!
@@ -135,9 +136,10 @@ export const getOrgAiDetail = async (req, res) => {
                 customLimitsEnabled = true;
                 poolLimit = globalConfig.classgrid_pro_pool_limit || globalConfig.global_pro_pool_limit;
                 userWeeklyLimit = globalConfig.classgrid_user_weekly_limit || globalConfig.global_user_weekly_limit;
-                imageLimit = globalConfig.classgrid_image_weekly_limit;
-                whatsappLimit = globalConfig.classgrid_whatsapp_scheduling_limit;
             }
+            // The limits the chat actually enforces (same rule as ai-feature-limits.js)
+            imageLimit = resolveFeatureLimit("image", null, globalConfig, null);
+            whatsappLimit = resolveFeatureLimit("whatsapp", null, globalConfig, null);
             userQuery = { 
                 $or: [{ role: 'super_admin' }, { organization_id: null }, { organization_id: { $exists: false } }] 
             };
@@ -156,8 +158,8 @@ export const getOrgAiDetail = async (req, res) => {
                 poolLimit = org.ai_config.pro_pool_limit || globalConfig?.global_pro_pool_limit;
                 userWeeklyLimit = org.ai_config.free_weekly_limit_per_user || globalConfig?.global_user_weekly_limit;
             }
-            imageLimit = org.ai_config?.image_generation_limit;
-            whatsappLimit = org.ai_config?.whatsapp_scheduling_limit;
+            imageLimit = resolveFeatureLimit("image", org, globalConfig, orgId);
+            whatsappLimit = resolveFeatureLimit("whatsapp", org, globalConfig, orgId);
             poolUsed = org.ai_config?.pro_used_this_period || 0;
             userQuery = { organization_id: orgId };
         }

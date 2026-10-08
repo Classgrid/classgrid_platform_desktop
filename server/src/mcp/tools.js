@@ -574,11 +574,11 @@ export const getMcpTools = () => [
   },
   {
     name: 'github_workspace_connector',
-    description: 'Interact with GitHub API to list repos, read/write files, manage issues/PRs, search code, read commit history, and more using the connected user token.',
+    description: 'Interact with GitHub API to list repos, read/write files, manage issues/PRs, search code, read commit history, and more using the connected user token. push_sandbox_files pushes every file you wrote to the sandbox (/data/) to a repo in ONE commit; the server reads the files itself, so do not read them back first.',
     inputSchema: {
       type: 'object',
       properties: {
-        operation: { type: 'string', enum: ['list_repos', 'read_file', 'create_issue', 'list_issues', 'create_repo', 'create_or_update_file', 'create_pull_request', 'list_pull_requests', 'add_issue_comment', 'search_code', 'list_commits', 'get_commit', 'list_branches'], description: 'The operation to perform.' },
+        operation: { type: 'string', enum: ['list_repos', 'read_file', 'create_issue', 'list_issues', 'create_repo', 'create_or_update_file', 'push_sandbox_files', 'create_pull_request', 'list_pull_requests', 'add_issue_comment', 'search_code', 'list_commits', 'get_commit', 'list_branches'], description: 'The operation to perform.' },
         owner: { type: 'string', description: 'The repository owner/organization.' },
         repo: { type: 'string', description: 'The repository name.' },
         path: { type: 'string', description: 'The path to the file/directory in the repository (for read_file, create_or_update_file, list_commits filtering).' },
@@ -588,8 +588,9 @@ export const getMcpTools = () => [
         repoName: { type: 'string', description: 'The name of the new repository (for create_repo).' },
         isPrivate: { type: 'boolean', description: 'Whether the new repository is private (for create_repo).' },
         content: { type: 'string', description: 'The raw text content of the file (for create_or_update_file).' },
-        message: { type: 'string', description: 'The commit message (for create_or_update_file).' },
-        branch: { type: 'string', description: 'The branch name (for create_or_update_file).' },
+        message: { type: 'string', description: 'The commit message (for create_or_update_file, push_sandbox_files).' },
+        branch: { type: 'string', description: 'The branch name (for create_or_update_file, push_sandbox_files; defaults to the repo default branch).' },
+        paths: { type: 'array', items: { type: 'string' }, description: 'For push_sandbox_files (required): every website file to push, relative to /data/ (e.g. ["index.html", "src/App.jsx", "README.md"]). Names only, never file content.' },
         sha: { type: 'string', description: 'The commit SHA or blob SHA (required for get_commit and updating files).' },
         head: { type: 'string', description: 'The name of the branch where your changes are implemented (for create_pull_request).' },
         base: { type: 'string', description: 'The name of the branch you want the changes pulled into (for create_pull_request).' },
@@ -1164,8 +1165,25 @@ export const getMcpTools = () => [
   }
 ];
 
+// The only server env vars the code sandbox (run_code / execute_terminal_command) gets. Everything else
+// (JWT secret, database URLs, payment keys, ...) stays on the API server.
+// - R2_*: the Classgrid Cloud website deploy.js (WEBSITE DEPLOYMENT INSTRUCTIONS in ai-chat.controller.js)
+// - VOYAGE_API_KEY: RAG embeddings script (RAG FAST-PATH prompt in ai-chat.controller.js)
+const SANDBOX_ENV_ALLOWLIST = ['R2_ACCOUNT_ID', 'R2_ACCESS_KEY_ID', 'R2_SECRET_ACCESS_KEY', 'VOYAGE_API_KEY'];
+// Staff only (database role super_admin / co_super_admin): the RAG FAST-PATH scripts write to MongoDB.
+const SANDBOX_STAFF_ENV = ['MONGO_URI'];
+const sandboxEnvFlags = (isStaff = false) => [...SANDBOX_ENV_ALLOWLIST, ...(isStaff ? SANDBOX_STAFF_ENV : [])]
+  .filter((key) => process.env[key])
+  .map((key) => ` -e ${key}="${process.env[key].replace(/"/g, '\\"').replace(/\n/g, '\\n').replace(/\r/g, '')}"`)
+  .join('');
+
+// Runner files live as hidden files in the session's /data folder, so they never clobber a site file
+// such as /data/script.js and never show up in the preview or a GitHub push.
+const SANDBOX_RUNNER_PREFIX = '.cg_run';
+
 export const handleToolCall = async (name, args, context = {}) => {
-  const { userEmail = 'unknown@classgrid.in', userRole = '', subdomain = '', sessionId = 'default' } = context;
+  // Unknown caller falls back to a reserved .invalid address: it must never end in @classgrid.in (staff checks below).
+  const { userEmail = 'unknown@unknown.invalid', userRole = '', subdomain = '', sessionId = 'default' } = context;
 
   const emitScheduleUpdate = async (userId, scheduleId) => {
     if (!userId) return;
@@ -1302,7 +1320,7 @@ export const handleToolCall = async (name, args, context = {}) => {
     if (name === 'get_my_profile') {
       try {
         const User = (await import('../models/User.js')).default;
-        const finalUserEmail = userEmail && userEmail.trim() !== '' ? userEmail : 'unknown@classgrid.in';
+        const finalUserEmail = userEmail && userEmail.trim() !== '' ? userEmail : 'unknown@unknown.invalid';
         const currentUser = await User.findOne({ email: finalUserEmail }).select('-password -verificationToken').lean();
         if (!currentUser) return { content: [{ type: 'text', text: 'Error: User profile not found.' }] };
         
@@ -1340,7 +1358,7 @@ export const handleToolCall = async (name, args, context = {}) => {
     if (orgTools.includes(name)) {
       try {
         const User = (await import('../models/User.js')).default;
-        const finalUserEmail = userEmail && userEmail.trim() !== '' ? userEmail : 'unknown@classgrid.in';
+        const finalUserEmail = userEmail && userEmail.trim() !== '' ? userEmail : 'unknown@unknown.invalid';
         const currentUser = await User.findOne({ email: finalUserEmail }).select('_id organization_id');
         if (!currentUser || !currentUser.organization_id) {
           return { content: [{ type: 'text', text: 'Error: You are not linked to an organization.' }] };
@@ -1431,7 +1449,7 @@ export const handleToolCall = async (name, args, context = {}) => {
     if (name === 'youtube_connector') {
       try {
         const User = (await import('../models/User.js')).default;
-        const finalUserEmail = userEmail && userEmail.trim() !== '' ? userEmail : 'unknown@classgrid.in';
+        const finalUserEmail = userEmail && userEmail.trim() !== '' ? userEmail : 'unknown@unknown.invalid';
         const currentUser = await User.findOne({ email: finalUserEmail }).select('metadata').lean();
         
         let youtubeToken = currentUser?.metadata?.youtube_tokens?.access_token;
@@ -1503,7 +1521,7 @@ export const handleToolCall = async (name, args, context = {}) => {
     if (name === 'supabase_connector') {
       try {
         const User = (await import('../models/User.js')).default;
-        const finalUserEmail = userEmail && userEmail.trim() !== '' ? userEmail : 'unknown@classgrid.in';
+        const finalUserEmail = userEmail && userEmail.trim() !== '' ? userEmail : 'unknown@unknown.invalid';
         const currentUser = await User.findOne({ email: finalUserEmail }).select('supabase_access_token supabase_refresh_token');
         if (!currentUser || !currentUser.supabase_access_token) {
            return { content: [{ type: 'text', text: 'Error: Supabase is not connected. Please connect it in the AI Hub.' }] };
@@ -1550,7 +1568,7 @@ export const handleToolCall = async (name, args, context = {}) => {
     if (name === 'sanity_connector') {
       try {
         const User = (await import('../models/User.js')).default;
-        const finalUserEmail = userEmail && userEmail.trim() !== '' ? userEmail : 'unknown@classgrid.in';
+        const finalUserEmail = userEmail && userEmail.trim() !== '' ? userEmail : 'unknown@unknown.invalid';
         const currentUser = await User.findOne({ email: finalUserEmail }).select('sanity_project_id sanity_access_token');
         if (!currentUser || !currentUser.sanity_project_id || !currentUser.sanity_access_token) {
            return { content: [{ type: 'text', text: 'Error: Sanity is not connected. Please connect it in the AI Hub.' }] };
@@ -1589,7 +1607,7 @@ export const handleToolCall = async (name, args, context = {}) => {
     if (name === 'facebook_connector') {
       try {
         const User = (await import('../models/User.js')).default;
-        const finalUserEmail = userEmail && userEmail.trim() !== '' ? userEmail : 'unknown@classgrid.in';
+        const finalUserEmail = userEmail && userEmail.trim() !== '' ? userEmail : 'unknown@unknown.invalid';
         const currentUser = await User.findOne({ email: finalUserEmail }).select('facebook_access_token facebook_page_id role');
         
         let token = currentUser?.facebook_access_token;
@@ -1703,7 +1721,7 @@ export const handleToolCall = async (name, args, context = {}) => {
     if (name === 'instagram_connector') {
       try {
         const User = (await import('../models/User.js')).default;
-        const finalUserEmail = userEmail && userEmail.trim() !== '' ? userEmail : 'unknown@classgrid.in';
+        const finalUserEmail = userEmail && userEmail.trim() !== '' ? userEmail : 'unknown@unknown.invalid';
         const currentUser = await User.findOne({ email: finalUserEmail }).select('instagram_access_token instagram_account_id role');
         
         let token = currentUser?.instagram_access_token;
@@ -1849,35 +1867,20 @@ export const handleToolCall = async (name, args, context = {}) => {
       try {
         const AiSchedule = (await import('../models/AiSchedule.js')).default;
         const User = (await import('../models/User.js')).default;
-        const finalUserEmail = userEmail && userEmail.trim() !== '' ? userEmail : 'unknown@classgrid.in';
-        const user = await User.findOne({ email: finalUserEmail }).select('_id organization_id');
+        const finalUserEmail = userEmail && userEmail.trim() !== '' ? userEmail : 'unknown@unknown.invalid';
+        // The signed-in user (context.userId) when the caller has one, so the WhatsApp limit can't be counted on someone else.
+        const user = context.userId
+          ? await User.findById(context.userId).select('_id organization_id')
+          : await User.findOne({ email: finalUserEmail }).select('_id organization_id');
 
         if (args.whatsapp_phone_number || args.whatsapp_message) {
-          const GlobalAiConfig = (await import('../models/GlobalAiConfig.js')).default;
-          const Organization = (await import('../models/Organization.js')).default;
-          
-          const globalConfig = await GlobalAiConfig.findOne();
-          let limit = globalConfig?.global_whatsapp_scheduling_limit || 0;
-          
-          if (user?.organization_id) {
-            const org = await Organization.findById(user.organization_id);
-            if (org && org.name === 'Classgrid') {
-              limit = globalConfig?.classgrid_whatsapp_scheduling_limit ?? limit;
-            } else if (org && org.ai_config && org.ai_config.whatsapp_scheduling_limit !== undefined) {
-              limit = org.ai_config.whatsapp_scheduling_limit;
-            }
+          if (!user) {
+            return { content: [{ type: 'text', text: `Failed: Sign in to schedule WhatsApp messages.` }] };
           }
-
-          const currentCount = await AiSchedule.countDocuments({
-            user_email: finalUserEmail,
-            $or: [
-              { whatsapp_phone_number: { $exists: true, $ne: '' } },
-              { whatsapp_message: { $exists: true, $ne: '' } }
-            ]
-          });
-
-          if (currentCount >= limit) {
-             return { content: [{ type: 'text', text: `Failed: Your account has reached the WhatsApp Scheduling limit of ${limit}. You cannot schedule any more WhatsApp messages.` }] };
+          const { checkWhatsappLimit } = await import('../services/ai-feature-limits.js');
+          const { allowed, limit } = await checkWhatsappLimit(user);
+          if (!allowed) {
+             return { content: [{ type: 'text', text: `Failed: Your account has reached the weekly WhatsApp limit of ${limit} messages. You cannot schedule more WhatsApp messages this week.` }] };
           }
         }
 
@@ -1908,7 +1911,7 @@ export const handleToolCall = async (name, args, context = {}) => {
     if (name === 'edit_schedule_time') {
       try {
         const AiSchedule = (await import('../models/AiSchedule.js')).default;
-        const finalUserEmail = userEmail && userEmail.trim() !== '' ? userEmail : 'unknown@classgrid.in';
+        const finalUserEmail = userEmail && userEmail.trim() !== '' ? userEmail : 'unknown@unknown.invalid';
 
         const schedule = await AiSchedule.findOne({ _id: args.schedule_id, user_email: finalUserEmail });
         if (!schedule) {
@@ -1930,7 +1933,7 @@ export const handleToolCall = async (name, args, context = {}) => {
     if (name === 'edit_schedule_title') {
       try {
         const AiSchedule = (await import('../models/AiSchedule.js')).default;
-        const finalUserEmail = userEmail && userEmail.trim() !== '' ? userEmail : 'unknown@classgrid.in';
+        const finalUserEmail = userEmail && userEmail.trim() !== '' ? userEmail : 'unknown@unknown.invalid';
 
         const schedule = await AiSchedule.findOne({ _id: args.schedule_id, user_email: finalUserEmail });
         if (!schedule) {
@@ -1949,7 +1952,7 @@ export const handleToolCall = async (name, args, context = {}) => {
     if (name === 'edit_schedule_email_subject') {
       try {
         const AiSchedule = (await import('../models/AiSchedule.js')).default;
-        const finalUserEmail = userEmail && userEmail.trim() !== '' ? userEmail : 'unknown@classgrid.in';
+        const finalUserEmail = userEmail && userEmail.trim() !== '' ? userEmail : 'unknown@unknown.invalid';
 
         const schedule = await AiSchedule.findOne({ _id: args.schedule_id, user_email: finalUserEmail });
         if (!schedule) {
@@ -1968,7 +1971,7 @@ export const handleToolCall = async (name, args, context = {}) => {
     if (name === 'edit_schedule_email_body') {
       try {
         const AiSchedule = (await import('../models/AiSchedule.js')).default;
-        const finalUserEmail = userEmail && userEmail.trim() !== '' ? userEmail : 'unknown@classgrid.in';
+        const finalUserEmail = userEmail && userEmail.trim() !== '' ? userEmail : 'unknown@unknown.invalid';
 
         const schedule = await AiSchedule.findOne({ _id: args.schedule_id, user_email: finalUserEmail });
         if (!schedule) {
@@ -1987,7 +1990,7 @@ export const handleToolCall = async (name, args, context = {}) => {
     if (name === 'edit_schedule_summary') {
       try {
         const AiSchedule = (await import('../models/AiSchedule.js')).default;
-        const finalUserEmail = userEmail && userEmail.trim() !== '' ? userEmail : 'unknown@classgrid.in';
+        const finalUserEmail = userEmail && userEmail.trim() !== '' ? userEmail : 'unknown@unknown.invalid';
 
         const schedule = await AiSchedule.findOne({ _id: args.schedule_id, user_email: finalUserEmail });
         if (!schedule) {
@@ -2006,7 +2009,7 @@ export const handleToolCall = async (name, args, context = {}) => {
     if (name === 'edit_schedule_description') {
       try {
         const AiSchedule = (await import('../models/AiSchedule.js')).default;
-        const finalUserEmail = userEmail && userEmail.trim() !== '' ? userEmail : 'unknown@classgrid.in';
+        const finalUserEmail = userEmail && userEmail.trim() !== '' ? userEmail : 'unknown@unknown.invalid';
 
         const schedule = await AiSchedule.findOne({ _id: args.schedule_id, user_email: finalUserEmail });
         if (!schedule) {
@@ -2025,7 +2028,7 @@ export const handleToolCall = async (name, args, context = {}) => {
     if (name === 'edit_schedule_action_info') {
       try {
         const AiSchedule = (await import('../models/AiSchedule.js')).default;
-        const finalUserEmail = userEmail && userEmail.trim() !== '' ? userEmail : 'unknown@classgrid.in';
+        const finalUserEmail = userEmail && userEmail.trim() !== '' ? userEmail : 'unknown@unknown.invalid';
 
         const schedule = await AiSchedule.findOne({ _id: args.schedule_id, user_email: finalUserEmail });
         if (!schedule) {
@@ -2044,7 +2047,7 @@ export const handleToolCall = async (name, args, context = {}) => {
     if (name === 'delete_schedule_attachment') {
       try {
         const AiSchedule = (await import('../models/AiSchedule.js')).default;
-        const finalUserEmail = userEmail && userEmail.trim() !== '' ? userEmail : 'unknown@classgrid.in';
+        const finalUserEmail = userEmail && userEmail.trim() !== '' ? userEmail : 'unknown@unknown.invalid';
 
         const schedule = await AiSchedule.findOne({ _id: args.schedule_id, user_email: finalUserEmail });
         if (!schedule) {
@@ -2067,7 +2070,7 @@ export const handleToolCall = async (name, args, context = {}) => {
     if (name === 'list_schedules') {
       try {
         const AiSchedule = (await import('../models/AiSchedule.js')).default;
-        const finalUserEmail = userEmail && userEmail.trim() !== '' ? userEmail : 'unknown@classgrid.in';
+        const finalUserEmail = userEmail && userEmail.trim() !== '' ? userEmail : 'unknown@unknown.invalid';
         let query = { user_email: finalUserEmail };
         if (args.status) query.status = args.status;
         const schedules = await AiSchedule.find(query).sort({ scheduled_at: -1 });
@@ -2082,7 +2085,7 @@ export const handleToolCall = async (name, args, context = {}) => {
         const AiSchedule = (await import('../models/AiSchedule.js')).default;
         if (!args.schedule_id) throw new Error("schedule_id is required");
 
-        const finalUserEmail = userEmail && userEmail.trim() !== '' ? userEmail : 'unknown@classgrid.in';
+        const finalUserEmail = userEmail && userEmail.trim() !== '' ? userEmail : 'unknown@unknown.invalid';
         const schedule = await AiSchedule.findOne({ _id: args.schedule_id, user_email: finalUserEmail });
 
         if (!schedule) {
@@ -3191,7 +3194,7 @@ export const handleToolCall = async (name, args, context = {}) => {
     if (name === 'unified_db_query') {
       let { source, collectionOrTable, operation, query = {}, data = {} } = args;
       const { userEmail = '', userRole = '', subdomain = '' } = context;
-      const isSuperAdmin = userEmail.endsWith('@classgrid.in') || userRole === 'super_admin';
+      const isSuperAdmin = userEmail.endsWith('@classgrid.in') || ['super_admin', 'co_super_admin'].includes(userRole);
 
       if (source === 'mongodb') {
         if (!mongoose.connection.db) {
@@ -3567,22 +3570,16 @@ export const handleToolCall = async (name, args, context = {}) => {
         // 2. Runs the exact command inside
         // 3. Destroys the container instantly (--rm)
         // We use -v to mount a shared /data folder specific to this chat session!
-        const scriptPath = `/home/ubuntu/sandbox_data/${sessionId}/script.sh`;
+        const scriptPath = `/home/ubuntu/sandbox_data/${sessionId}/${SANDBOX_RUNNER_PREFIX}_terminal.sh`;
 
         const writeCommand = `mkdir -p /home/ubuntu/sandbox_data/${sessionId} && cat << 'EOF_SCRIPT' > ${scriptPath}\n${command}\nEOF_SCRIPT`;
         await ssh.execCommand(writeCommand);
 
-        // Dynamically inject ALL uppercase application environment variables to sandbox
-        const systemVars = ['PATH', 'HOME', 'USER', 'PWD', 'SHELL', 'SHLVL', 'LOGNAME', 'MAIL', 'TERM', 'HOSTNAME', 'LS_COLORS', 'LESSOPEN', 'LESSCLOSE', 'XDG_SESSION_ID', 'XDG_RUNTIME_DIR', 'DBUS_SESSION_BUS_ADDRESS', 'npm_config_user_agent', 'npm_lifecycle_event', 'npm_node_execpath', 'npm_package_json', 'npm_config_metrics_registry', 'AGENT_SSH_KEY'];
-        let envVars = '';
-        for (const [key, value] of Object.entries(process.env)) {
-          if (/^[A-Z_][A-Z0-9_]*$/.test(key) && !systemVars.includes(key) && !key.startsWith('npm_')) {
-            envVars += ` -e ${key}="${(value || '').replace(/"/g, '\\"').replace(/\n/g, '\\n').replace(/\r/g, '')}"`;
-          }
-        }
+        // Only the allowlisted keys go into the sandbox (SANDBOX_ENV_ALLOWLIST), never the whole server env
+        const envVars = sandboxEnvFlags(context.isStaff === true);
 
         console.log(`[Sandbox] Securely injecting credentials and running Docker container for terminal command...`);
-        const dockerCommand = `docker run --rm ${envVars} -v /home/ubuntu/sandbox_data/${sessionId}:/data classgrid-ai-sandbox bash /data/script.sh`;
+        const dockerCommand = `docker run --rm ${envVars} -v /home/ubuntu/sandbox_data/${sessionId}:/data classgrid-ai-sandbox bash /data/${SANDBOX_RUNNER_PREFIX}_terminal.sh`;
         const result = await ssh.execCommand(dockerCommand);
 
         console.log(`\n=================================================`);
@@ -3667,23 +3664,17 @@ export const handleToolCall = async (name, args, context = {}) => {
 
         // Create the directory on the host, write the file from the code string (using a heredoc to preserve exact contents),
         // and then run the docker container which maps that directory to /data and executes the file.
-        const scriptPath = `/home/ubuntu/sandbox_data/${sessionId}/script.${ext}`;
+        const scriptPath = `/home/ubuntu/sandbox_data/${sessionId}/${SANDBOX_RUNNER_PREFIX}.${ext}`;
 
         // We use EOF heredoc to safely write the script without quote escaping issues
         const writeCommand = `mkdir -p /home/ubuntu/sandbox_data/${sessionId} && cat << 'EOF_SCRIPT' > ${scriptPath}\n${finalCode}\nEOF_SCRIPT`;
         await ssh.execCommand(writeCommand);
 
-        // Dynamically inject ALL uppercase application environment variables to sandbox
-        const systemVars = ['PATH', 'HOME', 'USER', 'PWD', 'SHELL', 'SHLVL', 'LOGNAME', 'MAIL', 'TERM', 'HOSTNAME', 'LS_COLORS', 'LESSOPEN', 'LESSCLOSE', 'XDG_SESSION_ID', 'XDG_RUNTIME_DIR', 'DBUS_SESSION_BUS_ADDRESS', 'npm_config_user_agent', 'npm_lifecycle_event', 'npm_node_execpath', 'npm_package_json', 'npm_config_metrics_registry', 'AGENT_SSH_KEY'];
-        let envVars = '';
-        for (const [key, value] of Object.entries(process.env)) {
-          if (/^[A-Z_][A-Z0-9_]*$/.test(key) && !systemVars.includes(key) && !key.startsWith('npm_')) {
-            envVars += ` -e ${key}="${(value || '').replace(/"/g, '\\"').replace(/\n/g, '\\n').replace(/\r/g, '')}"`;
-          }
-        }
+        // Only the allowlisted keys go into the sandbox (SANDBOX_ENV_ALLOWLIST), never the whole server env
+        const envVars = sandboxEnvFlags(context.isStaff === true);
 
         console.log(`[Sandbox] Securely injecting credentials and running Docker container for ${language} script...`);
-        const dockerCommand = `docker run --rm ${envVars} -v /home/ubuntu/sandbox_data/${sessionId}:/data classgrid-ai-sandbox ${execCmd} /data/script.${ext}`;
+        const dockerCommand = `docker run --rm ${envVars} -v /home/ubuntu/sandbox_data/${sessionId}:/data classgrid-ai-sandbox ${execCmd} /data/${SANDBOX_RUNNER_PREFIX}.${ext}`;
         const result = await ssh.execCommand(dockerCommand);
 
         console.log(`\n=================================================`);
@@ -5228,6 +5219,71 @@ export const handleToolCall = async (name, args, context = {}) => {
           const data = await res.json();
           if (data.message) throw new Error(data.message);
           return { content: [{ type: 'text', text: JSON.stringify({ commit: data.commit.html_url, content: data.content?.html_url }, null, 2) }] };
+        } else if (operation === 'push_sandbox_files') {
+          // All sandbox files in one commit, read by the server: no file content passes through the model,
+          // which used to cost two extra rounds (read back + push) and two extra copies of every file.
+          if (!owner || !repo) throw new Error("owner and repo are required for push_sandbox_files");
+          if (!/^[\w.\-]+$/.test(owner) || !/^[\w.\-]+$/.test(repo)) throw new Error("invalid owner or repo name");
+          // Only the website's files: the model lists them (names only), so leftovers from earlier tasks in
+          // this chat's sandbox don't end up in what is usually a public repo.
+          const wanted = Array.isArray(args.paths) ? args.paths.map((p) => String(p).replace(/^\/?data\//, '').replace(/^\.?\//, '')).filter(Boolean) : [];
+          if (wanted.length === 0) throw new Error("paths is required for push_sandbox_files: list every website file to push, relative to /data/ (e.g. [\"index.html\", \"src/App.jsx\", \"README.md\"]).");
+          const files = await readSandboxFilesForPush(sessionId, wanted);
+          const paths = Object.keys(files);
+          const missing = wanted.filter((p) => !(p in files));
+          if (missing.length > 0) throw new Error(`these files are not in the sandbox or can't be pushed (hidden files, keys and .env files are never pushed): ${missing.join(', ')}`);
+
+          const gh = async (path, init = {}) => {
+            const res = await fetch(`https://api.github.com/repos/${owner}/${repo}${path}`, { ...init, headers: { ...headers, ...(init.body ? { 'Content-Type': 'application/json' } : {}) } });
+            const data = res.status === 204 ? {} : await res.json().catch(() => ({}));
+            return { status: res.status, ok: res.ok, data };
+          };
+
+          const repoInfo = await gh('');
+          if (!repoInfo.ok) throw new Error(repoInfo.data.message || `repo not found (${repoInfo.status})`);
+          const targetBranch = branch || repoInfo.data.default_branch || 'main';
+          if (!/^[\w.\-/]+$/.test(targetBranch) || targetBranch.includes('..')) throw new Error(`invalid branch name: ${targetBranch}`);
+
+          let ref = await gh(`/git/ref/heads/${targetBranch}`);
+          if (!ref.ok && targetBranch !== repoInfo.data.default_branch) {
+            // A new branch on a repo that has commits: start it from the default branch.
+            const base = await gh(`/git/ref/heads/${repoInfo.data.default_branch}`);
+            if (base.ok) {
+              const created = await gh('/git/refs', { method: 'POST', body: JSON.stringify({ ref: `refs/heads/${targetBranch}`, sha: base.data.object.sha }) });
+              if (!created.ok) throw new Error(created.data.message || `could not create branch ${targetBranch}`);
+              ref = await gh(`/git/ref/heads/${targetBranch}`);
+            }
+          }
+          if (!ref.ok) {
+            // A new empty repo has no commits, and the Git Data API refuses empty repos: create the first
+            // file through the contents API, which makes the initial commit and the branch.
+            const first = paths.includes('README.md') ? 'README.md' : paths[0];
+            const init = await gh(`/contents/${first.split('/').map(encodeURIComponent).join('/')}`, {
+              method: 'PUT',
+              body: JSON.stringify({ message: message || 'Initial commit', content: files[first], branch: targetBranch })
+            });
+            if (!init.ok) throw new Error(init.data.message || `could not create the first commit (${init.status})`);
+            ref = await gh(`/git/ref/heads/${targetBranch}`);
+            if (!ref.ok) throw new Error(ref.data.message || `branch ${targetBranch} not found`);
+          }
+          const parentSha = ref.data.object.sha;
+          const parent = await gh(`/git/commits/${parentSha}`);
+          if (!parent.ok) throw new Error(parent.data.message || 'could not read the latest commit');
+
+          const tree = [];
+          for (const p of paths) {
+            const blob = await gh('/git/blobs', { method: 'POST', body: JSON.stringify({ content: files[p], encoding: 'base64' }) });
+            if (!blob.ok) throw new Error(`${p}: ${blob.data.message || `blob upload failed (${blob.status})`}`);
+            tree.push({ path: p, mode: '100644', type: 'blob', sha: blob.data.sha });
+          }
+          const newTree = await gh('/git/trees', { method: 'POST', body: JSON.stringify({ base_tree: parent.data.tree.sha, tree }) });
+          if (!newTree.ok) throw new Error(newTree.data.message || 'could not create the tree');
+          const commit = await gh('/git/commits', { method: 'POST', body: JSON.stringify({ message: message || 'Add website files', tree: newTree.data.sha, parents: [parentSha] }) });
+          if (!commit.ok) throw new Error(commit.data.message || 'could not create the commit');
+          const update = await gh(`/git/refs/heads/${targetBranch}`, { method: 'PATCH', body: JSON.stringify({ sha: commit.data.sha }) });
+          if (!update.ok) throw new Error(update.data.message || 'could not update the branch');
+
+          return { content: [{ type: 'text', text: JSON.stringify({ commit: commit.data.html_url, branch: targetBranch, files_pushed: paths }, null, 2) }] };
         } else if (operation === 'create_pull_request') {
           if (!owner || !repo || !title || !head || !base) throw new Error("owner, repo, title, head, and base are required for create_pull_request");
           const res = await fetch(`https://api.github.com/repos/${owner}/${repo}/pulls`, {
@@ -5284,7 +5340,9 @@ export const handleToolCall = async (name, args, context = {}) => {
           throw new Error(`Unsupported operation: ${operation}`);
         }
       } catch (e) {
-        return { content: [{ type: 'text', text: `Failed to execute GitHub API call: ${e.message}` }] };
+        // Identical repeated calls are blocked as duplicates, so a retry of the push needs a new commit message.
+        const retryHint = operation === 'push_sandbox_files' ? ' To retry after fixing the cause, call push_sandbox_files again with a different commit message.' : '';
+        return { content: [{ type: 'text', text: `Failed to execute GitHub API call: ${e.message}${retryHint}` }] };
       }
     }
 
@@ -5601,8 +5659,9 @@ export async function readSandboxFiles(sessionId) {
 
   try {
     const dir = `/home/ubuntu/sandbox_data/${sessionId}`;
-    // Recursively find ALL files (including subdirectories like css/, js/), excluding script.* execution files
-    const { stdout } = await ssh.execCommand(`find ${dir} -type f ! -name 'script.*' -printf '%P\\n' 2>/dev/null`);
+    // Recursively find ALL files (including subdirectories like css/, js/), excluding the hidden runner files
+    // (.cg_run.*, .cg_run_terminal.sh). A site's own script.js is a normal file and is included.
+    const { stdout } = await ssh.execCommand(`find ${dir} -type f ! -name '${SANDBOX_RUNNER_PREFIX}*' -printf '%P\\n' 2>/dev/null`);
     const filenames = stdout.split('\n').map(f => f.trim()).filter(Boolean);
 
     const files = {};
@@ -5621,6 +5680,60 @@ export async function readSandboxFiles(sessionId) {
   }
 }
 
+
+/**
+ * Every project file in the session's sandbox, base64-encoded, for pushing to GitHub: all file types
+ * (images too), without the sandbox's own runner files (the hidden .cg_run* files, dropped by NEVER_PUSH;
+ * script.py / script.sh runner leftovers from older sessions; deploy.js at the top level, which the
+ * Classgrid Cloud deploy writes) and without dependency or build folders. A site's own script.js is pushed.
+ */
+// Never pushed, whatever the model lists: hidden files and folders (.env, .ssh, ...) and key/credential files.
+const NEVER_PUSH = /(^|\/)\.(?!gitignore$)[^/]*($|\/)|\.(pem|key|p12|pfx|crt|cer|keystore|jks)$|(^|\/)id_(rsa|ed25519|ecdsa|dsa)(\.pub)?$/i;
+
+async function readSandboxFilesForPush(sessionId, wantedPaths) {
+  if (!/^[\w-]+$/.test(String(sessionId))) throw new Error("invalid sandbox session");
+  const MAX_FILES = 300;
+  const MAX_FILE_BYTES = 5 * 1024 * 1024;
+  const MAX_TOTAL_BYTES = 30 * 1024 * 1024;
+  const ssh = new NodeSSH();
+  const isProd = process.env.NODE_ENV === 'production';
+  await ssh.connect({
+    host: isProd ? '172.31.6.98' : '13.63.34.197',
+    username: 'ubuntu',
+    ...(process.env.AGENT_SSH_KEY
+      ? { privateKey: process.env.AGENT_SSH_KEY.replace(/\\n/g, '\n') }
+      : { privateKeyPath: 'C:\\Users\\nikhi\\Downloads\\Nikhil.pem' })
+  });
+
+  try {
+    const dir = `/home/ubuntu/sandbox_data/${sessionId}`;
+    const { stdout } = await ssh.execCommand(
+      `cd ${dir} 2>/dev/null && find . \\( -name node_modules -o -name .git -o -name dist -o -name build -o -name .next -o -name .vite \\) -prune -o -type f -printf '%s %P\\n'`
+    );
+    const wanted = new Set(wantedPaths);
+    const entries = stdout.split('\n').map((l) => l.trim()).filter(Boolean).map((l) => {
+      const space = l.indexOf(' ');
+      return { size: Number(l.slice(0, space)), path: l.slice(space + 1) };
+    }).filter(({ size, path }) => Number.isFinite(size) && path && wanted.has(path)
+      && !/^(script\.(py|sh)|deploy\.js)$/.test(path) && !NEVER_PUSH.test(path) && !/['\n\\]/.test(path));
+
+    if (entries.length > MAX_FILES) throw new Error(`too many files in the sandbox (${entries.length}, max ${MAX_FILES})`);
+    const total = entries.reduce((s, e) => s + e.size, 0);
+    if (total > MAX_TOTAL_BYTES) throw new Error(`sandbox files are too large (${Math.round(total / 1048576)} MB, max 30 MB)`);
+    const tooBig = entries.find((e) => e.size > MAX_FILE_BYTES);
+    if (tooBig) throw new Error(`${tooBig.path} is larger than 5 MB`);
+
+    const files = {};
+    for (const { path } of entries) {
+      const { stdout: b64, code } = await ssh.execCommand(`base64 -w0 '${dir}/${path}'`);
+      if (code !== 0 && code !== null) throw new Error(`could not read ${path} from the sandbox`);
+      files[path] = b64.trim();
+    }
+    return files;
+  } finally {
+    ssh.dispose();
+  }
+}
 
 // Trigger redeploy for env keys
 

@@ -118,7 +118,7 @@ export function SetupUsageCredits({ orgId, orgName, currentPoolLimit, currentUse
             <Dialog open={openIndividual} onOpenChange={setOpenIndividual}>
               <DialogTrigger asChild>
                 <button disabled={!isCustomLimits} className={`bg-card p-5 flex flex-col gap-2 text-left transition-colors ${!isCustomLimits ? "opacity-50 cursor-not-allowed" : "hover:bg-muted/30"}`}>
-                  <span className="text-sm font-medium text-muted-foreground">Individual Daily Usage</span>
+                  <span className="text-sm font-medium text-muted-foreground">Individual Weekly Usage</span>
                   <span className="text-xl font-bold text-blue-600 dark:text-blue-400">
                     {individualUsage.toLocaleString()} <span className="text-sm font-normal text-muted-foreground ml-1">Tokens</span>
                   </span>

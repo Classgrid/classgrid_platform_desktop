@@ -3,6 +3,22 @@ import React, { useEffect, useState, useMemo } from 'react';
 import { apiClient } from '@/lib/apiClient';
 import { getSocket } from '@/lib/socketClient';
 
+// Show "<1" for small non-zero usage instead of rounding down to 0%
+const formatPercent = (pct: number) => (pct > 0 && pct < 1 ? "<1" : String(Math.round(pct)));
+
+// Countdown text for the weekly reset, computed from the resetDate the API returns
+const formatResetCountdown = (resetDate?: string | null) => {
+    if (!resetDate) return "Resets weekly";
+    const diffMs = new Date(resetDate).getTime() - Date.now();
+    if (isNaN(diffMs)) return "Resets weekly";
+    if (diffMs <= 0) return "Resets soon";
+    const hours = Math.floor(diffMs / (60 * 60 * 1000));
+    const days = Math.floor(hours / 24);
+    if (days >= 1) return `Resets in ${days} day${days === 1 ? "" : "s"}`;
+    if (hours >= 1) return `Resets in ${hours} hour${hours === 1 ? "" : "s"}`;
+    return "Resets in <1 hour";
+};
+
 export const AiUsageBar = ({ initialData, showExactTokens }: { initialData?: any, showExactTokens?: boolean }) => {
     const [usageData, setUsageData] = useState<any>(initialData || {
         type: 'free',
@@ -79,17 +95,17 @@ export const AiUsageBar = ({ initialData, showExactTokens }: { initialData?: any
             <div className="w-full flex items-start justify-between">
                 <div className="flex flex-col gap-1 pr-6 min-w-[150px]">
                     <span className="text-sm font-medium text-foreground">
-                        {usageData.type === 'pro' ? "Personal Limits" : "Monthly"}
+                        {usageData.type === 'pro' ? "Personal Limits" : "Weekly"}
                     </span>
                     <span className="text-xs text-muted-foreground">
-                        Resets in 7 days
+                        {formatResetCountdown(usageData.freeData?.resetDate || usageData.resetDate)}
                     </span>
                 </div>
                 
                 <div className="flex-1 flex flex-col gap-1.5 mt-1">
                     <div className="w-full flex items-center justify-between text-xs mb-1">
                         <span className="font-medium text-foreground">
-                            {Math.round(usageData.type === 'pro' ? percentUsedFree : percentUsed)}% Used
+                            {formatPercent(usageData.type === 'pro' ? percentUsedFree : percentUsed)}% Used
                         </span>
                         {showExactTokens && (
                             <span className="text-muted-foreground font-medium">
@@ -123,7 +139,7 @@ export const AiUsageBar = ({ initialData, showExactTokens }: { initialData?: any
                     <div className="flex-1 flex flex-col gap-1.5 mt-1">
                         <div className="w-full flex items-center justify-between text-xs mb-1">
                             <span className="font-medium text-foreground">
-                                {Math.round(percentUsed)}% Used
+                                {formatPercent(percentUsed)}% Used
                             </span>
                             {showExactTokens && (
                                 <span className="text-muted-foreground font-medium">

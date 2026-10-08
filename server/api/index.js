@@ -140,7 +140,7 @@ import billingCheckoutRoutes from "../src/routes/billing-checkout.routes.js";
 import aiIntegrationsRoutes from "../src/routes/ai-integrations.routes.js";
 import whatsappRoutes from "../src/routes/whatsapp.routes.js";
 import buildRoutes from "../src/routes/build.routes.js";
-import "../src/workers/buildWorker.js"; // Initialize BullMQ worker
+// import "../src/workers/buildWorker.js"; // Retired build robot (N2): not started anymore, see routes/build.routes.js
 import { publicTenantRouter, orgWebsiteRouter, superAdminWebsiteRouter } from "../src/routes/org-website.routes.js";
 import extractSubdomain, { resolveTenant, getPublicTenantInfo } from "../src/middleware/subdomain-router.middleware.js";
 import { sendEmail } from "../src/services/aws-ses.service.js";

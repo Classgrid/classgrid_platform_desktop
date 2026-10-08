@@ -1345,30 +1345,7 @@ const AssistantMessageContent = memo(({ content, isTyping, onApprovalAction, isH
                 currentStepIndex={currentStepIndexRef.current}
                 onApprove={(payload) => {
                   if (parsedProps.variant === "plan" && parsedProps.plan && Array.isArray(parsedProps.plan)) {
-                    // Phase 1: Send the approved plan to the real Backend Control Plane!
-                    const endpointPrefix = typeof import.meta !== "undefined" && import.meta.env
-                      ? (import.meta.env.VITE_API_URL || "https://api.classgrid.in")
-                      : "";
-                    const projectName = "website-" + Math.random().toString(36).substring(7);
-
-                    fetch(`${endpointPrefix}/api/build/start`, {
-                      method: "POST",
-                      headers: { "Content-Type": "application/json" },
-                      credentials: "include",
-                      body: JSON.stringify({
-                        sessionId: "default",
-                        projectName,
-                        plan: parsedProps.plan
-                      })
-                    })
-                      .then(r => r.json())
-                      .then(data => {
-                        if (data.sessionId) {
-                          window.dispatchEvent(new CustomEvent('classgrid-build-session', { detail: data.sessionId }));
-                        }
-                      })
-                      .catch(err => console.error("Failed to start build", err));
-
+                    // The chat agent executes the approved plan itself and streams plan_step_update events
                     onApprovalActionRef.current?.(`I approve this plan.`);
                   } else if (parsedProps.questions && Array.isArray(parsedProps.questions)) {
                     const formatted = parsedProps.questions.map((q: any) => {
@@ -1582,6 +1559,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
   const [thinking, setThinking] = useState(false);
   const [sandboxFiles, setSandboxFiles] = useState<Record<string, string>>({});
   const [completedPlanSteps, setCompletedPlanSteps] = useState<string[]>([]);
+  const [planStepStatus, setPlanStepStatus] = useState<Record<string, "running" | "done" | "failed">>({});
   const [selectedModel, setSelectedModel] = useSelectedModel();
 
   // --- Voice Dictation State ---
@@ -1654,17 +1632,6 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
   const [atMenuQuery, setAtMenuQuery] = useState("");
   const [atMenuSelectedIndex, setAtMenuSelectedIndex] = useState(0);
 
-  // Track the active build session for polling live step status
-  const [activeBuildSessionId, setActiveBuildSessionId] = useState<string | null>(null);
-
-  React.useEffect(() => {
-    const handleBuildSession = (e: any) => {
-      if (e.detail) setActiveBuildSessionId(e.detail);
-    };
-    window.addEventListener('classgrid-build-session', handleBuildSession);
-    return () => window.removeEventListener('classgrid-build-session', handleBuildSession);
-  }, []);
-
   // Auto-open workspace panel when a plan is detected
   const hasPlan = useMemo(() => {
     return messages.some((m) => m.role === 'assistant' && (m.content.includes('"variant": "plan"') || m.content.includes('"variant":"plan"') || m.content.includes("'variant': 'plan'") || m.content.includes('variant="plan"')));
@@ -1692,6 +1659,12 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
   // Only parse and return a new array when the underlying JSON string actually changes
   const planSteps = useMemo(() => {
     return planStepsString ? JSON.parse(planStepsString) : null;
+  }, [planStepsString]);
+
+  // Reset live step progress when a new plan appears or the chat changes (chat change swaps the plan too)
+  useEffect(() => {
+    setCompletedPlanSteps([]);
+    setPlanStepStatus({});
   }, [planStepsString]);
 
   // Extract plan text as a string first
@@ -1726,7 +1699,19 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
   const latestHtml = sandboxFiles["index.html"] || "";
   const latestCss = sandboxFiles["style.css"] || "";
   const latestJs = sandboxFiles["script.js"] || "";
-  const isExecuting = Object.keys(sandboxFiles).length > 0;
+  // Controls showing the Code/Preview tabs; whether the AI is still streaming is `submitting`
+  const hasSandboxFiles = Object.keys(sandboxFiles).length > 0;
+
+  // Live site link (Vercel / ClassGrid Sites) from the latest assistant message, for build-step projects
+  const liveSiteUrl = useMemo(() => {
+    for (let i = messages.length - 1; i >= 0; i--) {
+      const m = messages[i];
+      if (m?.role !== 'assistant') continue;
+      const match = (m.content || "").match(/https?:\/\/[a-z0-9.-]+\.(?:vercel\.app|sites\.classgrid\.in)(?:\/[^\s)"'<>\]`]*)?/i);
+      return match ? match[0] : null;
+    }
+    return null;
+  }, [messages]);
 
   // Watch for the latest assistant message to finish typing
   const isAssistantTyping = useMemo(() => {
@@ -3402,6 +3387,12 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                 setCompletedPlanSteps((prev: string[]) => {
                   const updated = new Set([...prev, ...completedSteps]);
                   return Array.from(updated);
+                });
+                // Per-step status (running/done/failed); completed ids count as done unless stepStatus says otherwise
+                setPlanStepStatus((prev) => {
+                  const next = { ...prev };
+                  completedSteps.forEach((id: string) => { next[id] = "done"; });
+                  return { ...next, ...(event.stepStatus || {}) };
                 });
               } else if (event.type === "tool_start") {
                 if (event.tool === "open_integration_panel") {
@@ -5680,7 +5671,9 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                 chatFiles={chatFiles}
                 setPreviewFile={setPreviewFile}
                 hasPlan={hasPlan}
-                isExecuting={isExecuting}
+                hasSandboxFiles={hasSandboxFiles}
+                isStreaming={submitting}
+                liveSiteUrl={liveSiteUrl}
                 sandboxFiles={sandboxFiles}
                 currentHtml={latestHtml}
                 currentCss={latestCss}
@@ -5688,7 +5681,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                 planNode={planNode}
                 planSteps={planSteps}
                 completedPlanSteps={completedPlanSteps}
-                activeBuildSessionId={activeBuildSessionId}
+                planStepStatus={planStepStatus}
               />
             )}
           </AnimatePresence>

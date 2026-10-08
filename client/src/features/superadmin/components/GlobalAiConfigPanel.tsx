@@ -111,7 +111,7 @@ export function GlobalAiConfigPanel({ grantCreditsNode }: { grantCreditsNode?: R
             }}>
               <DialogTrigger asChild>
                 <button className="bg-card hover:bg-muted/30 p-5 flex flex-col gap-2 text-left transition-colors">
-                  <span className="text-sm font-medium text-muted-foreground">Individual Daily Usage</span>
+                  <span className="text-sm font-medium text-muted-foreground">Individual Weekly Usage</span>
                   <span className="text-xl font-bold text-blue-600 dark:text-blue-400">
                     {(data?.global_user_weekly_limit ?? 0).toLocaleString()} <span className="text-sm font-normal text-muted-foreground ml-1">Tokens</span>
                   </span>

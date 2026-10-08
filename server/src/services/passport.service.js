@@ -203,19 +203,12 @@ const passportConfig = () => {
                         // Auto-create for the Chat Organization
                         console.log(`✅ Google Chat: Creating new user: ${email}`);
                         
-                        let reqLoginTab = 'user';
-                        if (req.query.state) {
-                            try {
-                                const [encodedPayload] = String(req.query.state).split('.');
-                                const stateObj = JSON.parse(Buffer.from(encodedPayload, 'base64url').toString('utf-8'));
-                                if (stateObj.t) reqLoginTab = stateObj.t;
-                            } catch(e) {}
-                        }
+                        // chat.classgrid.in accounts are always "user" (the OAuth state maps loginTab=user to "student")
 
                         user = await User.create({
                             email: email.toLowerCase(),
                             name: profile.displayName || email.split('@')[0],
-                            role: reqLoginTab,
+                            role: 'user',
                             profilePicture: profile.photos && profile.photos.length > 0 ? profile.photos[0].value : '',
                             googleId: profile.id,
                             authProvider: 'google',
@@ -279,19 +272,12 @@ const passportConfig = () => {
                         // Auto-create for the Chat Organization
                         console.log(`✅ GitHub Chat: Creating new user: ${email}`);
                         
-                        let reqLoginTab = 'user';
-                        if (req.query.state) {
-                            try {
-                                const [encodedPayload] = String(req.query.state).split('.');
-                                const stateObj = JSON.parse(Buffer.from(encodedPayload, 'base64url').toString('utf-8'));
-                                if (stateObj.t) reqLoginTab = stateObj.t;
-                            } catch(e) {}
-                        }
+                        // chat.classgrid.in accounts are always "user" (the OAuth state maps loginTab=user to "student")
 
                         user = await User.create({
                             email: email,
                             name: profile.displayName || profile.username || email.split('@')[0],
-                            role: reqLoginTab,
+                            role: 'user',
                             profilePicture: profile.photos && profile.photos.length > 0 ? profile.photos[0].value : '',
                             githubId: profile.id,
                             authProvider: 'github',

@@ -151,6 +151,15 @@ export const hasEnoughTokens = async (userId, orgId, requiredTokens = 1) => {
         return { allowed: true, source: "personal", remaining: paidBalance };
     }
 
+    // No single pool covers it, but the pools together may: the free pool spills over into the first credit pool
+    // when it runs out (see deductTokens), so free headroom + that pool's balance counts.
+    const freeHeadroom = Math.max(0, weeklyLimit - usedThisWeek);
+    const spillSource = pickCreditSource(user);
+    const spillBalance = spillSource === "promotion" ? promoBalance : spillSource === "personal" ? paidBalance : 0;
+    if (freeHeadroom > 0 && freeHeadroom + spillBalance >= requiredTokens) {
+        return { allowed: true, source: "weekly_free", remaining: freeHeadroom + spillBalance };
+    }
+
     return { allowed: false, reason: "Insufficient tokens." };
 };
 

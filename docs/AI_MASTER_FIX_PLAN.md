@@ -300,3 +300,45 @@ File paths are under `server/src` unless they start with `client/`.
 6. Are there real students or admins in org `6ac4` (Phase 5.2)?
 7. For keys in the sandbox, Option A now and B before launch (Phase 6.1)?
 8. Should 6.2 (account takeover) be fixed now, since it works on the live server?
+
+---
+
+## Status update — 8 Oct 2026, evening
+
+| Phase | What | Status |
+|---|---|---|
+| 2 | Claude backend + token logging | ✅ Done, pushed in `0faf5dc5` |
+| 3 | Model dropdown working end to end (4 Claude + 15 Cloudflare + Mistral Small) | ✅ Done, pushed in `0faf5dc5` and `7c9edb93` |
+| 4 | Cut tokens per message: "hi" 34k → ~3.8k (DeepSeek), 60k → ~6.9k mostly cached (Claude) | ✅ Done, pushed in `dc03082a` |
+| 4.3 | OCR rules kept for Cloudflare models only; Claude reads images and PDFs natively | ✅ Done, pushed in `dc03082a` |
+| 6.3 | Internal tools only for staff (database role `super_admin` / `co_super_admin`); `run_code` for everyone | ✅ Done, pushed in `dc03082a` |
+| 7.1, 7.2 | Duplicate `search_knowledge_base` removed; tools with no handler no longer sent | ✅ Done, pushed in `dc03082a` |
+| — | Uploaded files remembered across turns; Claude caches the conversation | ✅ Done, pushed in `81f214ad` |
+| 1.4 | Chat titles moved to Flash, re-titled every 5 messages | ✅ Done, pushed |
+| 1.1, 1.2 | Deduction uses the dashboard limit (was stuck at 100k); spill-over free → promo/paid (oldest first) → org pool | ✅ Done, pushed in `47605484` |
+| 1 (pricing) | Pool tokens by real model price (DeepSeek V4 Pro = 1×); cached tokens at their real weight | ✅ Done, pushed in `47605484` |
+| — | WhatsApp + image limits: one shared rule (`services/ai-feature-limits.js`), the dashboard shows the real limit, counted per week, direct WhatsApp sends counted too, counted on the signed-in user | ✅ Pushed (evening batch) |
+| — | Website build tokens: new `push_sandbox_files` (all listed files in one GitHub commit, server-side; hidden/key files never pushed), several files per `run_code` call. ~38 rounds → ~5 for a React site | ✅ Pushed (evening batch) |
+| 6.2 | Account takeover: finalize needs a signed email-verified ticket, never overwrites an existing password, OTP expiry checked, one WhatsApp number per email, safe fields only | ✅ Pushed (evening batch) |
+| 6.5 | Dead `chatSendOtp` / `chatVerifyOtp` / `chatOnboard` (hard-coded `123456`) | 🟡 Unreachable (no routes), but the code is still in `auth.controller.js` — delete by hand |
+| 1.3 | Pre-check estimates the real prompt size, fails closed, uses `req.user` only | ✅ Pushed (evening batch) |
+| 1.5 | Flash → Pro retry adds both usages | ✅ Pushed (evening batch) |
+| 1.6 | Usage panel: "Weekly", real reset countdown, "<1%" | ✅ Pushed (evening batch) |
+| 5 | New chat sign-ups get role "user"; finalize upgrades "student" → "user". Migration `server/scripts/migrate-chat-students-to-user.js` written, **not run** (dry run by default; `--apply` after approval) | 🟡 Code pushed, migration waiting |
+| 6.1 | Sandbox gets only R2 + Voyage keys (+ `MONGO_URI` for staff only); "GOD-MODE 200+ env vars" prompt line removed | ✅ Pushed (evening batch) |
+| 6.4 | Decisions, prompt labels and lookups use `req.user`, not body `userEmail` / `userRole` | ✅ Pushed (evening batch) |
+| 7.3–7.8 | Small bugs (send_email schema, double answer after retry, fake allowlist, read_local_file rule, cloudflare_r2_connector without definition) | ✅ Pushed (evening batch) |
+| N1 | AI marks its own plan steps (`update_plan_step`: running / done / failed) | ✅ Pushed (evening batch) |
+| N2 | Old build robot and its hidden "SYSTEM ALARM" messages turned off | ✅ Pushed (evening batch) |
+| N3 | Preview spinner only while building; plain HTML renders; React shows the live link | ✅ Pushed (evening batch) |
+| N4 | "Daily" labels for the weekly limit fixed | ✅ Pushed (evening batch) |
+| — | Sandbox runner no longer overwrites a site's `script.js` | ✅ Pushed (evening batch) |
+| — | RAG FAST-PATH (staff) still writes MongoDB from the sandbox; long term move it to a server-side tool | ⏳ Later |
+
+### New bugs found (not fixed yet)
+| # | Bug | Where |
+|---|---|---|
+| N1 | Website plan always shows step 1 failed and the rest pending: Approve starts an old separate build robot (`/api/build/start` → `workers/buildWorker.js`) that fails at step 1 and stops, while the real chat AI builds the site. The chat AI only marks steps named `html` / `css` / `js` / `deploy` | `client/.../AskAiPanel.tsx:1354`, `services/controlPlane.js:122`, `ai-chat.controller.js:2126` |
+| N2 | Watchdog alarms from that robot may send hidden "SYSTEM ALARM: continue building" messages, so the AI may build again (extra token cost). Not confirmed from logs | `workers/alarmWorker.js` |
+| N3 | Preview stuck on "Building Preview...": "still building" is decided by "any files exist", so the iframe never shows. React/Vite sites can't run in the preview at all | `client/.../AskAiPanel.tsx:1729`, `client/.../workspace/WorkspacePanel.tsx:451` |
+| N4 | Dashboard label "Individual Daily Usage" is actually weekly | super admin AI usage page |

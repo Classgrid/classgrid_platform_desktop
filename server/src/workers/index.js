@@ -43,7 +43,7 @@
  */
 
 import './email-provisioning.worker.js';
-import './alarmWorker.js';
+// import './alarmWorker.js'; // Retired build-robot watchdog (N2): its alarms posted hidden "continue building" chat messages
 
 // Import other workers here as they are created
 import './chat-persistence.worker.js';

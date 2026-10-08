@@ -14,15 +14,32 @@ interface WorkspacePanelProps {
   chatFiles: any[];
   setPreviewFile: (file: any) => void;
   hasPlan: boolean;
-  isExecuting: boolean;
+  hasSandboxFiles: boolean;
+  isStreaming?: boolean;
+  liveSiteUrl?: string | null;
   planNode?: React.ReactNode;
   currentHtml?: string;
   currentCss?: string;
   currentJs?: string;
   planSteps?: any[];
   completedPlanSteps?: string[];
-  activeBuildSessionId?: string | null;
+  planStepStatus?: Record<string, "running" | "done" | "failed">;
   sandboxFiles?: Record<string, string>;
+}
+
+// Projects that need a build step (Vite/React/Next) cannot run as a plain srcDoc preview
+function needsBuildStep(files: Record<string, string>): boolean {
+  const html = files["index.html"] || files["/index.html"] || "";
+  if (/<script[^>]*src=["'][^"']*\.(?:jsx|tsx)["']/i.test(html)) return true;
+  const pkg = files["package.json"] || files["/package.json"];
+  if (!pkg) return false;
+  try {
+    const parsed = JSON.parse(pkg);
+    const deps = { ...(parsed.dependencies || {}), ...(parsed.devDependencies || {}) };
+    return ["vite", "react", "next"].some((d) => d in deps);
+  } catch {
+    return /"(?:vite|react|next)"\s*:/.test(pkg);
+  }
 }
 
 type TreeNode = {
@@ -160,24 +177,27 @@ export function WorkspacePanel({
   chatFiles,
   setPreviewFile,
   hasPlan,
-  isExecuting,
+  hasSandboxFiles,
+  isStreaming = false,
+  liveSiteUrl,
   planNode,
   currentHtml = "",
   currentCss = "",
   currentJs = "",
   planSteps,
   completedPlanSteps,
-  activeBuildSessionId,
+  planStepStatus,
   sandboxFiles = {},
 }: WorkspacePanelProps) {
   // Debounce the code for iframe rendering (300ms) to avoid browser freeze
   const debouncedHtml = useDebounce(currentHtml, 300);
   const debouncedCss = useDebounce(currentCss, 300);
   const debouncedJs = useDebounce(currentJs, 300);
+  const debouncedFiles = useDebounce(sandboxFiles, 300);
+  const isBuildProject = React.useMemo(() => needsBuildStep(sandboxFiles), [sandboxFiles]);
 
   // Determine which tabs to show based on state
   const [activeTab, setActiveTab] = useState<WorkspaceTab>("files");
-  const [buildStatus, setBuildStatus] = useState<any>(null);
   const [selectedFile, setSelectedFile] = useState<string>("index.html");
 
   const highlightedCode = React.useMemo(() => {
@@ -194,23 +214,6 @@ export function WorkspacePanel({
     }
   }, [sandboxFiles, selectedFile]);
 
-  // Poll backend for real-time trajectory status
-  React.useEffect(() => {
-    if (!activeBuildSessionId) return;
-    const interval = setInterval(() => {
-      const endpointPrefix = typeof import.meta !== "undefined" && import.meta.env
-        ? (import.meta.env.VITE_API_URL || "https://api.classgrid.in")
-        : "";
-      fetch(`${endpointPrefix}/api/build/status/${activeBuildSessionId}`)
-        .then(r => r.json())
-        .then(data => {
-          if (!data.error) setBuildStatus(data);
-        })
-        .catch(e => console.error("Polling error", e));
-    }, 1000);
-    return () => clearInterval(interval);
-  }, [activeBuildSessionId]);
-
   // Auto-switch to plan if a plan exists and we were on files
   React.useEffect(() => {
     if (hasPlan && activeTab === "files") {
@@ -218,33 +221,56 @@ export function WorkspacePanel({
     }
   }, [hasPlan]);
 
-  // Auto-switch to preview if executing
+  // Auto-switch to preview once sandbox files arrive
   React.useEffect(() => {
-    if (isExecuting && (activeTab === "files" || activeTab === "plan")) {
+    if (hasSandboxFiles && (activeTab === "files" || activeTab === "plan")) {
       setActiveTab("preview");
     }
-  }, [isExecuting]);
+  }, [hasSandboxFiles]);
 
   const previewSrcDoc = React.useMemo(() => {
     let html = debouncedHtml;
-    // Inject CSS
-    if (debouncedCss) {
-      if (/<link\s+[^>]*href=["'](?:\.\/)?style\.css["'][^>]*>/i.test(html)) {
-        html = html.replace(/<link\s+[^>]*href=["'](?:\.\/)?style\.css["'][^>]*>/i, `<style>\n${debouncedCss}\n</style>`);
-      } else {
-        html = html.replace(/<\/head>/i, `<style>\n${debouncedCss}\n</style>\n</head>`);
+    const inlined = new Set<string>();
+    const resolve = (ref: string) => {
+      const path = ref.replace(/^\.?\//, "");
+      const content = debouncedFiles[path] ?? debouncedFiles[`/${path}`];
+      if (content !== undefined) inlined.add(path);
+      return content;
+    };
+    // Inline every local stylesheet the page links
+    html = html.replace(/<link\s+[^>]*href=["']([^"':]+\.css)["'][^>]*>/gi, (tag, href) => {
+      const css = resolve(href);
+      return css === undefined ? tag : `<style>\n${css}\n</style>`;
+    });
+    // Inline every local script the page links (keeps module/defer timing). Deferred scripts move to the end
+    // of <body> as plain top-level code, so their functions stay global like with a real defer.
+    const deferred: string[] = [];
+    html = html.replace(/<script\s+([^>]*)src=["']([^"':]+\.js)["']([^>]*)><\/script>/gi, (tag, pre, src, post) => {
+      const js = resolve(src);
+      if (js === undefined) return tag;
+      const attrs = `${pre} ${post}`;
+      if (/type=["']module["']/i.test(attrs)) return `<script type="module">\n${js}\n</script>`;
+      const inline = `<script>\ntry {\n${js}\n} catch(e) { console.error(e); }\n</script>`;
+      if (/\bdefer\b/i.test(attrs)) {
+        deferred.push(inline);
+        return "";
       }
+      return inline;
+    });
+    if (deferred.length > 0) {
+      html = /<\/body>/i.test(html)
+        ? html.replace(/<\/body>/i, () => `${deferred.join("\n")}\n</body>`)
+        : `${html}\n${deferred.join("\n")}`;
     }
-    // Inject JS
-    if (debouncedJs) {
-      if (/<script\s+[^>]*src=["'](?:\.\/)?script\.js["'][^>]*><\/script>/i.test(html)) {
-        html = html.replace(/<script\s+[^>]*src=["'](?:\.\/)?script\.js["'][^>]*><\/script>/i, `<script>\ntry {\n${debouncedJs}\n} catch(e) { console.error(e); }\n</script>`);
-      } else {
-        html = html.replace(/<\/body>/i, `<script>\ntry {\n${debouncedJs}\n} catch(e) { console.error(e); }\n</script>\n</body>`);
-      }
+    // Fallback: inject style.css / script.js even when the page does not link them
+    if (debouncedCss && !inlined.has("style.css")) {
+      html = html.replace(/<\/head>/i, () => `<style>\n${debouncedCss}\n</style>\n</head>`);
+    }
+    if (debouncedJs && !inlined.has("script.js")) {
+      html = html.replace(/<\/body>/i, () => `<script>\ntry {\n${debouncedJs}\n} catch(e) { console.error(e); }\n</script>\n</body>`);
     }
     return html;
-  }, [debouncedHtml, debouncedCss, debouncedJs]);
+  }, [debouncedHtml, debouncedCss, debouncedJs, debouncedFiles]);
 
   if (!isOpen) return null;
 
@@ -269,7 +295,7 @@ export function WorkspacePanel({
               Plan
             </Button>
           )}
-          {isExecuting && (
+          {hasSandboxFiles && (
             <>
               <Button
                 variant={activeTab === "code" ? "secondary" : "ghost"}
@@ -356,11 +382,9 @@ export function WorkspacePanel({
               <div className="space-y-3 mt-4">
                 <h3 className="text-sm font-semibold text-foreground/80 mb-4">Execution Steps</h3>
                 {planSteps.map((step, idx) => {
-                  // Use completedPlanSteps from frontend state directly
-                  // Fallback to buildStatus polling for legacy compatibility
-                  const liveStep = buildStatus?.plan?.find((s: any) => s.id === step.id) || step;
-                  const isDone = completedPlanSteps?.includes(step.id) || liveStep.status === 'done';
-                  const status = isDone ? 'done' : (liveStep.status || 'pending');
+                  // Live status from plan_step_update SSE events; completedPlanSteps kept as fallback
+                  const status = planStepStatus?.[step.id]
+                    || (completedPlanSteps?.includes(step.id) ? 'done' : (step.status || 'pending'));
                   
                   return (
                     <div key={idx} className="flex items-start gap-3 p-3 rounded-md bg-muted/30 border border-border/50">
@@ -382,18 +406,6 @@ export function WorkspacePanel({
                     </div>
                   );
                 })}
-                
-                {buildStatus?.deployedUrl && buildStatus.status === 'done' && (
-                  <div className="mt-6 p-4 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex flex-col items-center justify-center gap-3">
-                    <CheckCircle2 className="w-8 h-8 text-emerald-500" />
-                    <div className="text-center">
-                      <div className="font-medium text-emerald-500">Deployment Successful!</div>
-                      <a href={buildStatus.deployedUrl} target="_blank" rel="noopener noreferrer" className="text-xs mt-1 text-emerald-500/80 hover:text-emerald-500 underline flex items-center justify-center gap-1">
-                        {buildStatus.deployedUrl} <ExternalLink className="w-3 h-3" />
-                      </a>
-                    </div>
-                  </div>
-                )}
               </div>
             )}
             
@@ -448,7 +460,27 @@ export function WorkspacePanel({
 
         {activeTab === "preview" && (
           <div className="h-full w-full bg-white relative">
-            {isExecuting ? (
+            {isBuildProject ? (
+              liveSiteUrl ? (
+                <div className="flex flex-col h-full">
+                  <div className="shrink-0 px-3 py-2 text-xs text-muted-foreground bg-muted/40 border-b border-border/50 flex items-center gap-2">
+                    <span className="truncate">This project needs a build step. Showing the live site:</span>
+                    <a href={liveSiteUrl} target="_blank" rel="noopener noreferrer" className="text-primary underline flex items-center gap-1 shrink-0">
+                      Open <ExternalLink className="w-3 h-3" />
+                    </a>
+                  </div>
+                  <iframe
+                    className="w-full flex-1 border-0"
+                    sandbox="allow-scripts allow-same-origin allow-popups allow-forms"
+                    src={liveSiteUrl}
+                  />
+                </div>
+              ) : (
+                <div className="flex items-center justify-center h-full px-6 text-sm text-center text-muted-foreground">
+                  This project uses a build step (React/Vite/Next), so it can't be previewed here. The preview is available after deploy.
+                </div>
+              )
+            ) : isStreaming && !debouncedHtml ? (
               <div className="flex flex-col items-center justify-center h-full text-muted-foreground gap-4">
                 <Loader2 className="w-8 h-8 animate-spin text-primary" />
                 <div className="text-sm">Building Preview...</div>

@@ -20,7 +20,7 @@ import { usageStorage } from "../utils/fetch-interceptor.js";
 import { createLLMClient } from "@classgrid/ai/core";
 import { streamChat } from "../services/llm-stream.js";
 import { streamClaudeChat, CLAUDE_CHAT_MODELS } from "../services/llm-stream-anthropic.js";
-import { planToolsForMessage, buildLoadToolsTool, orderTools, groupOfTool, ageSticky, stickyKey, LOAD_TOOLS_NAME, promptBlock, filterPromptBlocks, promptBlocksForGroups } from "../services/ai-tool-groups.js";
+import { planToolsForMessage, buildLoadToolsTool, orderTools, groupOfTool, ageSticky, stickyKey, LOAD_TOOLS_NAME, promptBlock, filterPromptBlocks, promptBlocksForGroups, isStaffRole } from "../services/ai-tool-groups.js";
 import { chargeableTokens } from "../services/ai-token-pricing.js";
 import { getPresignedUploadUrl, uploadBufferToR2 } from "../config/r2Client.js";
 import { primarySupabaseClient as supabase } from "../config/supabaseClient.js";
@@ -483,11 +483,6 @@ Classgrid uses a hybrid dual-database architecture. When using \`unified_db_quer
 [BANNED DB QUERY DOMAINS - CRITICAL INSTRUCTION]
 You are STRICTLY FORBIDDEN from using \`unified_db_query\` for the following domains: Support Tickets, Classgrid Talk, Internal Chat (messages/threads), Organizations, Users, Leads (DemoRequests), and Blog Subscribers. You now have dedicated, specialized tools for all of these (e.g., list_support_tickets, list_leads, list_organizations, list_chat_threads, etc.). YOU MUST USE THE DEDICATED TOOLS INSTEAD OF RAW DB QUERIES for these domains.
 
-- CRITICAL SCHEMA RULE: You have two master schema files containing the EXACT database structures:
-  1. MongoDB Schema: ./src/mcp/schemas/all_mongodb_schema.md
-  2. Supabase Schema: ./src/mcp/schemas/all_database_schema.md
-  Before you write any queries using \`unified_db_query\`, you MUST use your \`read_local_file\` tool to read the appropriate schema file to learn the exact collection/table names and field names.
-
 [WARNING] DATABASE EFFICIENCY & ANTI-LOOPING RULE (CRITICAL):
 You are allowed a MAXIMUM of 2 queries per table (e.g. one 'countDocuments' and one 'find'). You are STRICTLY FORBIDDEN from calling \`unified_db_query\` a 3rd time for the same table. If you query the same table 3 times, you will hit a hard backend block. Extract what you need from the first 2 queries and proceed immediately.
 
@@ -749,6 +744,12 @@ async function buildDeepContext(userEmail) {
     }
 }
 
+// Pre-request quota estimate: ~4 characters per token over everything sent (rules, history, message, tools),
+// plus room for the reply. MIN_PROMPT_TOKENS is the smallest real request (rules + core tools, "hi" ~3.8k).
+const MIN_PROMPT_TOKENS = 3000;
+const REPLY_TOKEN_ALLOWANCE = 2000;
+const estimatePromptTokens = (parts) => Math.ceil(parts.reduce((n, p) => n + (typeof p === "string" ? p.length : (JSON.stringify(p ?? "") || "").length), 0) / 4);
+
 // Chat models (approved by the platform owner, 2026-10-07): V4 Pro answers anything non-trivial,
 // V4 Flash answers short simple messages faster. Set AI_FLASH_ROUTING=off to send everything to Pro.
 const CF_PRO_MODEL = "@cf/deepseek-ai/deepseek-v4-pro-0813";
@@ -802,36 +803,43 @@ export const streamAskAi = async (req, res) => {
     const requestStartedAt = Date.now();
     const body = req.body || {};
 
-    const userId = req.user?.id || body.userId;
+    // Identity comes only from the auth middleware (the route requires a login), never from the body.
+    const userId = req.user?.id || null;
     let tokenSource = "personal";
     let availableTokensToGenerate = 8192;
-    let orgId = null;
+    let orgId = req.user?.organization_id || null;
 
-    if (userId) {
-        try {
-            const User = (await import("../models/User.js")).default;
-            const userTokens = await User.findById(userId).select("organization_id");
-            orgId = userTokens?.organization_id;
+    if (!userId) {
+        res.writeHead(401, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ error: "Please sign in to use Classgrid AI." }));
+        return;
+    }
 
-            const isDiagramRequest = false; // from original code
-            const estimatedCost = isDiagramRequest ? 25000 : 3000; // Require minimum 10k tokens to cover massive system prompt input cost
-
-            const check = await hasEnoughTokens(userId, orgId, estimatedCost);
-            if (!check.allowed) {
-                const user = await User.findById(userId).select("ai_tokens");
-                const resetDate = user?.ai_tokens?.week_reset_date || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
-                res.writeHead(429, { "Content-Type": "application/json" });
-                const errorType = check.reason === "Insufficient tokens." ? "ai_quota_exceeded" : "ai_blocked";
-                res.end(JSON.stringify({ error: errorType, message: check.reason, resetDate: resetDate.toISOString() }));
-                return;
-            }
-            tokenSource = check.source;
-            if (check.remaining !== undefined) {
-                availableTokensToGenerate = Math.min(8192, check.remaining);
-            }
-        } catch (err) {
-            console.error("Quota check error:", err);
+    // Quota check, part 1 (before anything is saved): the user's message plus a minimum for the rules and the
+    // reply. Part 2 (quotaCheckForPrompt, below) re-checks with the real prompt size once the prompt is built.
+    // Both fail closed: if the check itself errors, the request is not run.
+    const quotaBlocked = async (check) => {
+        const user = await User.findById(userId).select("ai_tokens").lean().catch(() => null);
+        const resetDate = user?.ai_tokens?.week_reset_date ? new Date(user.ai_tokens.week_reset_date) : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+        return { error: check.reason === "Insufficient tokens." ? "ai_quota_exceeded" : "ai_blocked", message: check.reason, resetDate: resetDate.toISOString() };
+    };
+    try {
+        const check = await hasEnoughTokens(userId, orgId, estimatePromptTokens([body.question || ""]) + MIN_PROMPT_TOKENS + REPLY_TOKEN_ALLOWANCE);
+        if (!check.allowed) {
+            const blocked = await quotaBlocked(check);
+            res.writeHead(429, { "Content-Type": "application/json" });
+            res.end(JSON.stringify(blocked));
+            return;
         }
+        tokenSource = check.source;
+        if (check.remaining !== undefined) {
+            availableTokensToGenerate = Math.min(8192, check.remaining);
+        }
+    } catch (err) {
+        console.error("Quota check error:", err);
+        res.writeHead(503, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ error: "We couldn't check your AI usage balance right now, so this message was not sent. Please try again in a minute." }));
+        return;
     }
 
     // 1. Setup Server-Sent Events (SSE) headers for Express
@@ -899,7 +907,8 @@ export const streamAskAi = async (req, res) => {
         // stays byte-identical between requests and can be served from the provider's prompt cache.
         let volatilePrompt = "";
 
-        const userEmail = req.user?.email || body.userEmail || 'unknown@classgrid.in';
+        // Only the signed-in account (auth middleware), never body.userEmail. No staff-looking default.
+        const userEmail = req.user?.email || '';
 
         if (sessionId && !isIncognito) {
             // ÃƒÂ°Ã…Â¸Ã…Â¡Ã‚Â¨ CRITICAL SECURITY CHECK: Verify Ownership before loading history ÃƒÂ°Ã…Â¸Ã…Â¡Ã‚Â¨
@@ -909,7 +918,7 @@ export const streamAskAi = async (req, res) => {
                 res.end();
                 return;
             }
-            if (sessionData.user_email !== userEmail) {
+            if (!userEmail || sessionData.user_email !== userEmail) {
                 console.error(`[SECURITY] Unauthorized chat access attempt! User ${userEmail} tried to access session ${sessionId} owned by ${sessionData.user_email}`);
                 res.write(`data: ${JSON.stringify({ type: "error", error: "Unauthorized. You do not have permission to view this chat." })}\n\n`);
                 res.end();
@@ -1074,7 +1083,7 @@ RULES:
             volatilePrompt += `\n\nSYSTEM NOTE: The user edited their previous message to get a better answer. Please provide an improved response to this updated prompt.`;
         }
 
-        if (body.userEmail === 'nikhil.shinde@classgrid.in') {
+        if (userEmail === 'nikhil.shinde@classgrid.in') {
             volatilePrompt += `\n\nCREATOR OVERRIDE RULE (CRITICAL):
 You are currently talking to Nikhil Shinde (nikhil.shinde@classgrid.in), the CREATOR AND SUPER ADMIN of Classgrid AI. 
 1. He is NOT a normal user. He is actively testing and developing you. Do NOT act like a polite customer support bot with him; act like a senior backend developer reporting to a Tech Lead.
@@ -1200,7 +1209,6 @@ Use these natively in scripts without attempting to 'pip install' or 'npm instal
 You MUST write and execute Python or bash scripts via \`run_code\` or \`execute_terminal_command\` to accomplish these tasks when requested by the user.`);
 
         dynamicSystemPrompt += promptBlock("staff+internal_ops|code_sandbox|database", `\n\n--- ENVIRONMENT & INFRASTRUCTURE TOPOLOGY (CRITICAL CONTEXT) ---
-You now have GOD-MODE access to ALL 200+ environment variables via the AWS Sandbox. Any script you write using \`run_code\` can access any key simply by reading it (e.g. \`process.env.RAZORPAY_KEY_SECRET\` in Node, or \`os.environ.get('AWS_SES_SMTP_PASS')\` in Python). 
 You MUST use this context if the user asks you about the architecture or how things are connected:
 - **Backend Node.js API:** Hosted on AWS EC2 at \`https://api.classgrid.in\`
 - **Frontend App:** Hosted on Vercel at \`https://classgrid.in\`
@@ -1275,11 +1283,12 @@ CRITICAL: If you call ANY integration tool (e.g. Google Classroom, Gmail, Google
 - If the user asks to run code, call \`run_code\` immediately after your thought.`);
         }
         // These lookups are independent, so run them together instead of one after another.
-        const hasUserContext = !!(body.userName || body.userEmail || body.userRole || body.subdomain);
+        // The body fields only switch the user context on; every value in it comes from the signed-in account.
+        const hasUserContext = !!req.user && !!(body.userName || body.userEmail || body.userRole || body.subdomain);
         const UserModel = (await import("../models/User.js")).default;
         const AiSkillModel = (await import("../models/AiSkill.js")).default;
         const [deepContext, userPrefsDocResult, customSkillsResult, latestUserResult] = await Promise.all([
-            hasUserContext ? buildDeepContext(body.userEmail).catch((e) => { console.error("buildDeepContext failed:", e); return null; }) : null,
+            hasUserContext ? buildDeepContext(userEmail).catch((e) => { console.error("buildDeepContext failed:", e); return null; }) : null,
             userId ? UserModel.findById(userId).select("ai_preferences").lean().catch((e) => { console.error("Error loading AI Preferences:", e); return null; }) : null,
             userId ? AiSkillModel.find({ userId, is_active: true }).lean().catch((e) => { console.error("Error loading AI skills:", e); return []; }) : [],
             req.user ? mongoose.model('User').findById(req.user._id).lean().catch((e) => { console.error("Error loading user for integrations:", e); return null; }) : null
@@ -1287,17 +1296,18 @@ CRITICAL: If you call ANY integration tool (e.g. Google Classroom, Gmail, Google
         console.log(`[AI-TIMING] user lookups done at +${Date.now() - requestStartedAt}ms`);
 
         if (hasUserContext) {
-            volatilePrompt += `\n\n--- USER CONTEXT ---\nVerified Name: ${body.userName || "[UNAVAILABLE] - Use neutral greeting"}`;
-            if (body.userEmail) {
-                volatilePrompt += `\nTheir Email: ${body.userEmail}`;
-                if (body.userEmail.endsWith("@classgrid.in")) {
+            volatilePrompt += `\n\n--- USER CONTEXT ---\nVerified Name: ${req.user.name || "[UNAVAILABLE] - Use neutral greeting"}`;
+            if (userEmail) {
+                volatilePrompt += `\nTheir Email: ${userEmail}`;
+                // Staff label from the database role only.
+                if (isStaffRole(req.user.role)) {
                     volatilePrompt += ` (SUPER ADMIN / PLATFORM OWNER)`;
                 }
             }
             if (req.user && req.user._id) {
                 volatilePrompt += `\nTheir User ID: ${req.user._id}`;
             }
-            if (body.userRole) volatilePrompt += `\nTheir Role: ${body.userRole}`;
+            if (req.user.role) volatilePrompt += `\nTheir Role: ${req.user.role}`;
             if (body.subdomain) {
                 volatilePrompt += `\nCurrent Dashboard Subdomain: ${body.subdomain}`;
                 if (body.subdomain !== "classgrid.in" && body.subdomain !== "superadmin.classgrid.in" && body.subdomain !== "localhost") {
@@ -1375,40 +1385,13 @@ CRITICAL: If you call ANY integration tool (e.g. Google Classroom, Gmail, Google
         // ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬
         // ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬
         let pluginPrompt = '';
-        let allowedConnectorNames = new Set([
-            'search_users_for_chat',
-            'run_code',
-            'read_sandbox_file',
-            'execute_terminal_command',
-            'internal_thought_process',
-            'search_syllabus_vectors',
-            'generate_image',
-            'analyze_image',
-            'upload_sandbox_file_to_cdn'
-        ]);
+        // Only *_connector tools are filtered by this set (a connector is offered only when it is connected, see the
+        // tool list below). Which other tools a user gets is decided per message in services/ai-tool-groups.js
+        // (staff-only and organization-only groups included).
+        let allowedConnectorNames = new Set();
 
-        // CRITICAL SECURITY ENFORCEMENT: ONLY SUPER ADMINS GET DATABASE TOOLS
+        // Used for the Supabase connector and the platform Meta token below.
         const isSuperAdmin = req.user && (req.user.role === 'super_admin' || (req.user.email && req.user.email.endsWith('@classgrid.in')));
-        if (isSuperAdmin) {
-            allowedConnectorNames.add('unified_db_query');
-        }
-        
-        if (req.user && req.user.organization_id) {
-            allowedConnectorNames.add('get_organization_info');
-            allowedConnectorNames.add('get_student_count');
-            allowedConnectorNames.add('get_teacher_count');
-            allowedConnectorNames.add('list_recent_users');
-            allowedConnectorNames.add('get_fee_collection_stats');
-            allowedConnectorNames.add('list_pending_fee_defaulters');
-            allowedConnectorNames.add('get_today_attendance_stats');
-            allowedConnectorNames.add('list_active_classrooms');
-            allowedConnectorNames.add('list_recent_exams');
-            allowedConnectorNames.add('list_pending_support_tickets');
-            allowedConnectorNames.add('list_pending_leave_requests');
-            allowedConnectorNames.add('get_admission_stats');
-            allowedConnectorNames.add('list_recent_leads');
-            allowedConnectorNames.add('list_department_admins');
-        }
         let googleConnected = false;
         let msConnected = false;
         let zoomConnected = false;
@@ -1617,7 +1600,6 @@ CRITICAL: If you call ANY integration tool (e.g. Google Classroom, Gmail, Google
                     if (sanityConnected) allowedConnectorNames.add('sanity_connector');
                     if (facebookConnected) allowedConnectorNames.add('facebook_connector');
                     if (instagramConnected) allowedConnectorNames.add('instagram_connector');
-                    allowedConnectorNames.add('cloudflare_r2_connector');
                     allowedConnectorNames.add('send_whatsapp_message');
 
                     let activeDescriptions = [];
@@ -1662,7 +1644,7 @@ CRITICAL: If you call ANY integration tool (e.g. Google Classroom, Gmail, Google
                     if (githubConnected) {
                         const githubName = latestUser.github_name ? ` (Name: ${latestUser.github_name})` : '';
                         const githubEmail = latestUser.github_email ? `(Connected as: ${latestUser.github_email}${githubName}) ` : '';
-                        activeDescriptions.push(`- **GitHub**: ÃƒÂ¢Ã…â€œÃ¢â‚¬Â¦ CONNECTED. ${githubEmail}${promptBlock("connector:github", `Use 'github_workspace_connector' tool to list_repos, read_file, create_issue, list_issues, create_repo, create_or_update_file, create_pull_request, list_pull_requests, add_issue_comment, search_code, list_commits, get_commit, list_branches. You have complete read/write access to explore repositories, manage issues/PRs, and push commits directly.`)}`);
+                        activeDescriptions.push(`- **GitHub**: ÃƒÂ¢Ã…â€œÃ¢â‚¬Â¦ CONNECTED. ${githubEmail}${promptBlock("connector:github", `Use 'github_workspace_connector' tool to list_repos, read_file, create_issue, list_issues, create_repo, create_or_update_file, push_sandbox_files (push all sandbox files in one commit), create_pull_request, list_pull_requests, add_issue_comment, search_code, list_commits, get_commit, list_branches. You have complete read/write access to explore repositories, manage issues/PRs, and push commits directly.`)}`);
                         allowedConnectorNames.add('github_workspace_connector');
                     } else {
                         disconnectedLinks.push(`[GitHub](/api/auth/github/connect)`);
@@ -1775,7 +1757,7 @@ You MUST write all code using the \`run_code\` tool.
 CALL run_code TO WRITE CODE TO THE SANDBOX:
 Use run_code (javascript) to write each file to the sandbox filesystem at /data/<filename>.
 Example: fs.writeFileSync('/data/index.html', \\\`...html here...\\\`);
-Write each file in a SEPARATE run_code call.
+Write files in as FEW run_code calls as possible: group several small files in ONE call (several fs.writeFileSync lines in the same script; create folders first with fs.mkdirSync(dir, { recursive: true })), keeping each call under about 300 lines of code. A large file goes in a call of its own. NEVER use one run_code call per small file.
 
 Do NOT output markdown code blocks in your chat response. The Workspace panel will automatically stream the live code from the sandbox while run_code is executing.
 
@@ -1798,10 +1780,19 @@ PATH A — Classgrid Cloud:
 PATH B — GitHub + Vercel (Personal):
    1. First write ALL files (including a README.md) to the sandbox via run_code.
    2. Create the GitHub repo using github_workspace_connector (operation: create_repo, isPrivate: false, isClassgridManaged: false).
-   3. Push each file from sandbox to GitHub using github_workspace_connector (operation: create_or_update_file). Read each file from /data/ using a run_code script that outputs the content, then push it. Also push README.md.
+   3. Push ALL sandbox files to GitHub in ONE call: github_workspace_connector (operation: push_sandbox_files, owner, repo, message, paths: [every website file you wrote, relative to /data/, README.md included], isClassgridManaged: false). The server reads those files from /data/ itself. Do NOT read the files back and do NOT push them one by one with create_or_update_file.
    4. Create a Vercel project linked to the GitHub repo using vercel_connector (operation: create_project, isClassgridManaged: false).
    5. Give the user the primary project URL: https://<project-name>.vercel.app (NEVER the specific commit deployment URL).`);
         // --- END OF PROTECTED BLOCK ---
+
+        // Live plan progress for the Workspace panel (the plan block above lists the steps).
+        // Same group as the update_plan_step tool, so the rule never arrives without the tool.
+        dynamicSystemPrompt += promptBlock("code_sandbox", `\n\nPLAN PROGRESS UPDATES:
+When you work through a Project Execution Plan, keep its steps up to date with the \`update_plan_step\` tool, using the step ids from YOUR OWN plan block (not fixed names):
+- Call it with status "running" when you start a step.
+- Call it with status "done" as soon as that step is finished.
+- If a step fails, call it with status "failed" and a short note saying why.
+These calls are cheap: make them in the same turn as your other tool calls (for example together with the run_code call that does the step), never as a separate turn. Do not mention them in your reply.`);
 
         dynamicSystemPrompt += promptBlock("files_docs|image_media", `\n\nDOCUMENT RETRIEVAL RULE:
 CRITICAL: If a user asks a specific question about a document, PDF, or image, and you do not have the exact raw text in your immediate memory, you MUST use the \`recall_session_context\` tool first to get the list of previously read file URLs. Then, you MUST use \`parse_document\` or \`analyze_image\` to fetch and read the document/image AGAIN. 
@@ -2048,7 +2039,7 @@ Do NOT talk about internal architecture unless asked by a @classgrid.in employee
                             properties: {
                                 to: { type: "string", description: "Recipient email address" },
                                 subject: { type: "string", description: "Email subject" },
-                                htmlBody: { type: "string", description: "The HTML content of the email" },
+                                body: { type: "string", description: "The HTML content of the email" },
                                 attachments: {
                                     type: "array",
                                     description: "Optional array of attachments. Each object MUST have a 'filename' (e.g. report.pdf) and a 'path' (the URL or sandbox file path).",
@@ -2079,6 +2070,22 @@ Do NOT talk about internal architecture unless asked by a @classgrid.in employee
                             required: ["query"]
                         }
                     }
+                },
+                {
+                    type: "function",
+                    function: {
+                        name: "update_plan_step",
+                        description: "Updates one step of the Project Execution Plan shown in the user's Workspace panel. Use the step ids from your own plan block. Call with 'running' when you start a step, 'done' when it is finished, 'failed' (with a short note) if it failed.",
+                        parameters: {
+                            type: "object",
+                            properties: {
+                                step_id: { type: "string", description: "The id of the step, exactly as in your plan block." },
+                                status: { type: "string", enum: ["running", "done", "failed"], description: "The new status of the step." },
+                                note: { type: "string", description: "Optional short note, e.g. why the step failed." }
+                            },
+                            required: ["step_id", "status"]
+                        }
+                    }
                 }
             ],
             toolHandlers: (() => {
@@ -2101,7 +2108,7 @@ Do NOT talk about internal architecture unless asked by a @classgrid.in employee
                         return "Thought logged successfully. Proceed with the next step in your workflow sequence.";
                     },
                     execute_terminal_command: async (args) => {
-                        const result = await handleToolCall('execute_terminal_command', args, { sessionId });
+                        const result = await handleToolCall('execute_terminal_command', args, { sessionId, isStaff: isStaffRole(req.user?.role) });
                         return result.isError ? result.content[0].text : result.content[0].text;
                     },
                     read_sandbox_file: async (args) => {
@@ -2109,7 +2116,7 @@ Do NOT talk about internal architecture unless asked by a @classgrid.in employee
                         return result.isError ? result.content[0].text : result.content[0].text;
                     },
                     run_code: async (args) => {
-                        const result = await handleToolCall('run_code', args, { sessionId });
+                        const result = await handleToolCall('run_code', args, { sessionId, isStaff: isStaffRole(req.user?.role) });
                         const text = result.isError ? result.content[0].text : result.content[0].text;
 
                         // After execution, read back any website files the sandbox wrote
@@ -2155,6 +2162,31 @@ Do NOT talk about internal architecture unless asked by a @classgrid.in employee
 
                         return text;
                     },
+                    // The model reports progress on its own plan steps (any ids). completedSteps is kept for older
+                    // clients; stepStatus carries running/done/failed.
+                    update_plan_step: async (args) => {
+                        const stepId = typeof args?.step_id === "string" ? args.step_id.trim().slice(0, 100) : "";
+                        const status = args?.status;
+                        if (!stepId || !["running", "done", "failed"].includes(status)) {
+                            return "ERROR: update_plan_step needs step_id (a step id from your plan) and status ('running', 'done' or 'failed').";
+                        }
+                        const note = typeof args?.note === "string" ? args.note.slice(0, 300) : "";
+                        if (!res.writableEnded) {
+                            res.write(`data: ${JSON.stringify({
+                                type: "plan_step_update",
+                                completedSteps: status === "done" ? [stepId] : [],
+                                stepStatus: { [stepId]: status },
+                                ...(note ? { stepNotes: { [stepId]: note } } : {})
+                            })}\n\n`);
+                        }
+                        // Same Trajectory record the file-based detection above updates.
+                        if (sessionId && status !== "running") {
+                            import('../models/Trajectory.js')
+                                .then(({ default: Trajectory }) => Trajectory.updateOne({ sessionId, "plan.id": stepId }, { $set: { "plan.$.status": status } }))
+                                .catch(err => console.error("[update_plan_step] Failed to update trajectory:", err));
+                        }
+                        return `Step "${stepId}" marked ${status}.`;
+                    },
 
                     unified_db_query: async (args) => {
                         if (args && args.collectionOrTable) {
@@ -2165,8 +2197,8 @@ Do NOT talk about internal architecture unless asked by a @classgrid.in employee
                             }
                             queriedTables.set(tableKey, queryCount + 1);
                         }
-                        const userEmail = req.user?.email || body.userEmail || '';
-                        const userRole = req.user?.role || body.userRole || '';
+                        const userEmail = req.user?.email || '';
+                        const userRole = req.user?.role || '';
                         const subdomain = req.user?.subdomain || body.subdomain || '';
                         const result = await handleToolCall('unified_db_query', args, { userEmail, userRole, subdomain });
                         return result.isError ? result.content[0].text : result.content[0].text;
@@ -2218,7 +2250,7 @@ Do NOT talk about internal architecture unless asked by a @classgrid.in employee
                                 }
 
                                 const libraryFile = new AiLibraryFile({
-                                  user_email: req.user?.email || body.userEmail || '',
+                                  user_email: req.user?.email || '',
                                   user_id: req.user?._id || null,
                                   organization_id: req.user?.organization_id || null,
                                   original_name: safeFileName,
@@ -2321,7 +2353,7 @@ Do NOT talk about internal architecture unless asked by a @classgrid.in employee
                                 }
 
                                 const libraryFile = new AiLibraryFile({
-                                  user_email: req.user?.email || body.userEmail || '',
+                                  user_email: req.user?.email || '',
                                   user_id: req.user?._id || null,
                                   organization_id: req.user?.organization_id || null,
                                   original_name: fileName,
@@ -2492,50 +2524,6 @@ Do NOT talk about internal architecture unless asked by a @classgrid.in employee
                         }
                     },
 
-                    /*
-                    edit_image: async (args) => {
-                        try {
-                            const cfAccountId = process.env.CLOUDFLARE_ACCOUNT_ID;
-                            const cfToken = process.env.CLOUDFLARE_WORKERS_AI_TOKEN;
-                            if (!cfAccountId || !cfToken) return "Error: Cloudflare credentials missing.";
-
-                            // Fetch the original image
-                            const imgRes = await fetch(args.imageUrl);
-                            if (!imgRes.ok) return `Error fetching original image: ${imgRes.status}`;
-                            const arrayBuffer = await imgRes.arrayBuffer();
-                            const imageArray = [...new Uint8Array(arrayBuffer)];
-
-                            // Call Cloudflare img2img
-                            const cfUrl = `https://api.cloudflare.com/client/v4/accounts/${cfAccountId}/ai/run/@cf/runwayml/stable-diffusion-v1-5-img2img`;
-                            const cfApiRes = await fetch(cfUrl, {
-                                method: 'POST',
-                                headers: { 'Authorization': `Bearer ${cfToken}`, 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ prompt: args.prompt, image: imageArray, strength: 0.5, guidance: 7.5, num_steps: 20 })
-                            });
-
-                            if (!cfApiRes.ok) {
-                                const errTxt = await cfApiRes.text();
-                                return `Cloudflare API Error: ${cfApiRes.status} ${errTxt}`;
-                            }
-
-                            // Cloudflare returns binary image
-                            const buffer = await cfApiRes.arrayBuffer();
-                            const nodeBuffer = Buffer.from(buffer);
-                            
-                            const r2Url = await uploadBufferToR2(
-                                nodeBuffer,
-                                `edited-${Date.now()}.jpg`,
-                                'image/jpeg',
-                                `ai-edited/image-${Date.now()}.jpg`
-                            );
-
-                            return `[IMAGE_GENERATION_COMPLETE: ${args.prompt} | ${r2Url}]\n\nCRITICAL: You MUST immediately output this exact [IMAGE_GENERATION_COMPLETE] string to the user right now. DO NOT use Markdown image syntax like ![alt](url)! Just output the raw string.`;
-                        } catch (e) {
-                            return `Error: ${e.message}`;
-                        }
-                    },
-                    */
-
                     get_timezone_time: async (args) => {
                         try {
                             const tz = args.timeZone || 'UTC';
@@ -2583,7 +2571,16 @@ Do NOT talk about internal architecture unless asked by a @classgrid.in employee
                             if (!process.env.WHATSAPP_PHONE_ID || !process.env.WHATSAPP_ACCESS_TOKEN) {
                                 return "FAILED: WhatsApp Business API keys are not configured in the backend environment.";
                             }
-                            
+                            // Same weekly WhatsApp limit as scheduled messages (set in the super admin dashboard).
+                            if (!req.user?._id) {
+                                return "FAILED: Sign in to send WhatsApp messages.";
+                            }
+                            const { checkWhatsappLimit, recordDirectWhatsappSend } = await import('../services/ai-feature-limits.js');
+                            const waLimit = await checkWhatsappLimit(req.user);
+                            if (!waLimit.allowed) {
+                                return `FAILED: The weekly WhatsApp limit of ${waLimit.limit} messages has been reached. No message was sent.`;
+                            }
+
                             const res = await fetch(`https://graph.facebook.com/v17.0/${process.env.WHATSAPP_PHONE_ID}/messages`, {
                                 method: 'POST',
                                 headers: {
@@ -2607,6 +2604,7 @@ Do NOT talk about internal architecture unless asked by a @classgrid.in employee
                                 return `FAILED to send WhatsApp message: ${res.status} ${res.statusText} - ${err}`;
                             }
 
+                            await recordDirectWhatsappSend(req.user._id);
                             return `SUCCESS: WhatsApp message sent successfully to ${toPhoneNumber}`;
                         } catch (e) {
                             return `FAILED to send WhatsApp message: ${e.message}`;
@@ -2618,7 +2616,8 @@ Do NOT talk about internal architecture unless asked by a @classgrid.in employee
                             return "ERROR: You can only send emails from an @classgrid.in address.";
                         }
 
-                        const isSuperAdmin = req.user?.email?.endsWith('@classgrid.in') || body.userRole === 'super_admin' || body.userRole === 'org_admin';
+                        // Role and email from the signed-in account only (body.userRole could be set by anyone).
+                        const isSuperAdmin = req.user?.email?.endsWith('@classgrid.in') || ['super_admin', 'co_super_admin', 'org_admin'].includes(req.user?.role);
                         if (!isSuperAdmin) {
                             return "SECURITY ERROR: Access Denied. Only Admins are authorized to use the AI email sending tool.";
                         }
@@ -2699,7 +2698,7 @@ Do NOT talk about internal architecture unless asked by a @classgrid.in employee
                             const emailPayload = {
                                 to: args.to,
                                 subject: args.subject,
-                                html: args.htmlBody || args.body,
+                                html: args.body || args.htmlBody, // htmlBody: the old parameter name
                                 fromName: args.fromName,
                                 fromEmail: args.fromEmail
                             };
@@ -2772,43 +2771,43 @@ Do NOT talk about internal architecture unless asked by a @classgrid.in employee
                     // MCP handleToolCall function. Without these, the AI can "see" the tools
                     // but can't execute them ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â causing "All providers failed" errors.
                     create_skill: async (args) => {
-                        const userEmail = req.user?.email || body.userEmail || '';
+                        const userEmail = req.user?.email || '';
                         const result = await handleToolCall('create_skill', args, { userEmail });
                         return result.isError ? result.content[0].text : result.content[0].text;
                     },
                     list_skills: async (args) => {
-                        const userEmail = req.user?.email || body.userEmail || '';
+                        const userEmail = req.user?.email || '';
                         const result = await handleToolCall('list_skills', args, { userEmail });
                         return result.isError ? result.content[0].text : result.content[0].text;
                     },
                     read_skill: async (args) => {
-                        const userEmail = req.user?.email || body.userEmail || '';
+                        const userEmail = req.user?.email || '';
                         const result = await handleToolCall('read_skill', args, { userEmail });
                         return result.isError ? result.content[0].text : result.content[0].text;
                     },
                     delete_skill: async (args) => {
-                        const userEmail = req.user?.email || body.userEmail || '';
+                        const userEmail = req.user?.email || '';
                         const result = await handleToolCall('delete_skill', args, { userEmail });
                         return result.isError ? result.content[0].text : result.content[0].text;
                     },
                     google_workspace_connector: async (args) => {
-                        const userEmail = req.user?.email || body.userEmail || '';
+                        const userEmail = req.user?.email || '';
                         const result = await handleToolCall('google_workspace_connector', args, { userEmail });
                         return result.isError ? result.content[0].text : result.content[0].text;
                     },
                     microsoft_workspace_connector: async (args) => {
-                        const userEmail = req.user?.email || body.userEmail || '';
+                        const userEmail = req.user?.email || '';
                         const result = await handleToolCall('microsoft_workspace_connector', args, { userEmail });
                         return result.isError ? result.content[0].text : result.content[0].text;
                     },
                     slack_workspace_connector: async (args) => {
-                        const userEmail = req.user?.email || body.userEmail || '';
+                        const userEmail = req.user?.email || '';
                         const result = await handleToolCall('slack_workspace_connector', args, { userEmail });
                         return result.isError ? result.content[0].text : result.content[0].text;
                     },
                     github_workspace_connector: async (args) => {
-                        const userEmail = req.user?.email || body.userEmail || '';
-                        const result = await handleToolCall('github_workspace_connector', args, { userEmail });
+                        const userEmail = req.user?.email || '';
+                        const result = await handleToolCall('github_workspace_connector', args, { userEmail, sessionId });
                         return result.isError ? result.content[0].text : result.content[0].text;
                     },
                     transcribe_audio: async (args) => {
@@ -2816,122 +2815,122 @@ Do NOT talk about internal architecture unless asked by a @classgrid.in employee
                         return result.isError ? result.content[0].text : result.content[0].text;
                     },
                     zoom_connector: async (args) => {
-                        const userEmail = req.user?.email || body.userEmail || '';
+                        const userEmail = req.user?.email || '';
                         const result = await handleToolCall('zoom_connector', args, { userEmail });
                         return result.isError ? result.content[0].text : result.content[0].text;
                     },
                     notion_connector: async (args) => {
-                        const userEmail = req.user?.email || body.userEmail || '';
+                        const userEmail = req.user?.email || '';
                         const result = await handleToolCall('notion_connector', args, { userEmail });
                         return result.isError ? result.content[0].text : result.content[0].text;
                     },
                     vercel_connector: async (args) => {
-                        const userEmail = req.user?.email || body.userEmail || '';
+                        const userEmail = req.user?.email || '';
                         const result = await handleToolCall('vercel_connector', args, { userEmail });
                         return result.isError ? result.content[0].text : result.content[0].text;
                     },
                     supabase_connector: async (args) => {
-                        const userEmail = req.user?.email || body.userEmail || '';
+                        const userEmail = req.user?.email || '';
                         const result = await handleToolCall('supabase_connector', args, { userEmail });
                         return result.isError ? result.content[0].text : result.content[0].text;
                     },
                     sanity_connector: async (args) => {
-                        const userEmail = req.user?.email || body.userEmail || '';
+                        const userEmail = req.user?.email || '';
                         const result = await handleToolCall('sanity_connector', args, { userEmail });
                         return result.isError ? result.content[0].text : result.content[0].text;
                     },
                     facebook_connector: async (args) => {
-                        const userEmail = req.user?.email || body.userEmail || '';
+                        const userEmail = req.user?.email || '';
                         const result = await handleToolCall('facebook_connector', args, { userEmail });
                         return result.isError ? result.content[0].text : result.content[0].text;
                     },
                     instagram_connector: async (args) => {
-                        const userEmail = req.user?.email || body.userEmail || '';
+                        const userEmail = req.user?.email || '';
                         const result = await handleToolCall('instagram_connector', args, { userEmail });
                         return result.isError ? result.content[0].text : result.content[0].text;
                     },
                     get_my_profile: async (args) => {
-                        const userEmail = req.user?.email || body.userEmail || '';
+                        const userEmail = req.user?.email || '';
                         const result = await handleToolCall('get_my_profile', args, { userEmail });
                         return result.isError ? result.content[0].text : result.content[0].text;
                     },
                     get_organization_info: async (args) => {
-                        const userEmail = req.user?.email || body.userEmail || '';
+                        const userEmail = req.user?.email || '';
                         const result = await handleToolCall('get_organization_info', args, { userEmail });
                         return result.isError ? result.content[0].text : result.content[0].text;
                     },
                     get_student_count: async (args) => {
-                        const userEmail = req.user?.email || body.userEmail || '';
+                        const userEmail = req.user?.email || '';
                         const result = await handleToolCall('get_student_count', args, { userEmail });
                         return result.isError ? result.content[0].text : result.content[0].text;
                     },
                     get_teacher_count: async (args) => {
-                        const userEmail = req.user?.email || body.userEmail || '';
+                        const userEmail = req.user?.email || '';
                         const result = await handleToolCall('get_teacher_count', args, { userEmail });
                         return result.isError ? result.content[0].text : result.content[0].text;
                     },
                     list_recent_users: async (args) => {
-                        const userEmail = req.user?.email || body.userEmail || '';
+                        const userEmail = req.user?.email || '';
                         const result = await handleToolCall('list_recent_users', args, { userEmail });
                         return result.isError ? result.content[0].text : result.content[0].text;
                     },
                     get_fee_collection_stats: async (args) => {
-                        const userEmail = req.user?.email || body.userEmail || '';
+                        const userEmail = req.user?.email || '';
                         const result = await handleToolCall('get_fee_collection_stats', args, { userEmail });
                         return result.isError ? result.content[0].text : result.content[0].text;
                     },
                     list_pending_fee_defaulters: async (args) => {
-                        const userEmail = req.user?.email || body.userEmail || '';
+                        const userEmail = req.user?.email || '';
                         const result = await handleToolCall('list_pending_fee_defaulters', args, { userEmail });
                         return result.isError ? result.content[0].text : result.content[0].text;
                     },
                     get_today_attendance_stats: async (args) => {
-                        const userEmail = req.user?.email || body.userEmail || '';
+                        const userEmail = req.user?.email || '';
                         const result = await handleToolCall('get_today_attendance_stats', args, { userEmail });
                         return result.isError ? result.content[0].text : result.content[0].text;
                     },
                     list_active_classrooms: async (args) => {
-                        const userEmail = req.user?.email || body.userEmail || '';
+                        const userEmail = req.user?.email || '';
                         const result = await handleToolCall('list_active_classrooms', args, { userEmail });
                         return result.isError ? result.content[0].text : result.content[0].text;
                     },
                     list_recent_exams: async (args) => {
-                        const userEmail = req.user?.email || body.userEmail || '';
+                        const userEmail = req.user?.email || '';
                         const result = await handleToolCall('list_recent_exams', args, { userEmail });
                         return result.isError ? result.content[0].text : result.content[0].text;
                     },
                     list_pending_support_tickets: async (args) => {
-                        const userEmail = req.user?.email || body.userEmail || '';
+                        const userEmail = req.user?.email || '';
                         const result = await handleToolCall('list_pending_support_tickets', args, { userEmail });
                         return result.isError ? result.content[0].text : result.content[0].text;
                     },
                     list_pending_leave_requests: async (args) => {
-                        const userEmail = req.user?.email || body.userEmail || '';
+                        const userEmail = req.user?.email || '';
                         const result = await handleToolCall('list_pending_leave_requests', args, { userEmail });
                         return result.isError ? result.content[0].text : result.content[0].text;
                     },
                     get_admission_stats: async (args) => {
-                        const userEmail = req.user?.email || body.userEmail || '';
+                        const userEmail = req.user?.email || '';
                         const result = await handleToolCall('get_admission_stats', args, { userEmail });
                         return result.isError ? result.content[0].text : result.content[0].text;
                     },
                     list_recent_leads: async (args) => {
-                        const userEmail = req.user?.email || body.userEmail || '';
+                        const userEmail = req.user?.email || '';
                         const result = await handleToolCall('list_recent_leads', args, { userEmail });
                         return result.isError ? result.content[0].text : result.content[0].text;
                     },
                     list_department_admins: async (args) => {
-                        const userEmail = req.user?.email || body.userEmail || '';
+                        const userEmail = req.user?.email || '';
                         const result = await handleToolCall('list_department_admins', args, { userEmail });
                         return result.isError ? result.content[0].text : result.content[0].text;
                     },
                     whatsapp_business_connector: async (args) => {
-                        const userEmail = req.user?.email || body.userEmail || '';
+                        const userEmail = req.user?.email || '';
                         const result = await handleToolCall('whatsapp_business_connector', args, { userEmail });
                         return result.isError ? result.content[0].text : result.content[0].text;
                     },
                     youtube_connector: async (args) => {
-                        const userEmail = req.user?.email || body.userEmail || '';
+                        const userEmail = req.user?.email || '';
                         const result = await handleToolCall('youtube_connector', args, { userEmail });
                         return result.isError ? result.content[0].text : result.content[0].text;
                     },
@@ -2944,57 +2943,57 @@ Do NOT talk about internal architecture unless asked by a @classgrid.in employee
                         return result.isError ? result.content[0].text : result.content[0].text;
                     },
                     create_schedule: async (args) => {
-                        const userEmail = req.user?.email || body.userEmail || '';
-                        const result = await handleToolCall('create_schedule', args, { userEmail });
+                        const userEmail = req.user?.email || '';
+                        const result = await handleToolCall('create_schedule', args, { userEmail, userId: req.user?._id });
                         return result.isError ? result.content[0].text : result.content[0].text;
                     },
                     edit_schedule_time: async (args) => {
-                        const userEmail = req.user?.email || body.userEmail || '';
+                        const userEmail = req.user?.email || '';
                         const result = await handleToolCall('edit_schedule_time', args, { userEmail });
                         return result.isError ? result.content[0].text : result.content[0].text;
                     },
                     edit_schedule_title: async (args) => {
-                        const userEmail = req.user?.email || body.userEmail || '';
+                        const userEmail = req.user?.email || '';
                         const result = await handleToolCall('edit_schedule_title', args, { userEmail });
                         return result.isError ? result.content[0].text : result.content[0].text;
                     },
                     edit_schedule_email_subject: async (args) => {
-                        const userEmail = req.user?.email || body.userEmail || '';
+                        const userEmail = req.user?.email || '';
                         const result = await handleToolCall('edit_schedule_email_subject', args, { userEmail });
                         return result.isError ? result.content[0].text : result.content[0].text;
                     },
                     edit_schedule_email_body: async (args) => {
-                        const userEmail = req.user?.email || body.userEmail || '';
+                        const userEmail = req.user?.email || '';
                         const result = await handleToolCall('edit_schedule_email_body', args, { userEmail });
                         return result.isError ? result.content[0].text : result.content[0].text;
                     },
                     edit_schedule_summary: async (args) => {
-                        const userEmail = req.user?.email || body.userEmail || '';
+                        const userEmail = req.user?.email || '';
                         const result = await handleToolCall('edit_schedule_summary', args, { userEmail });
                         return result.isError ? result.content[0].text : result.content[0].text;
                     },
                     edit_schedule_description: async (args) => {
-                        const userEmail = req.user?.email || body.userEmail || '';
+                        const userEmail = req.user?.email || '';
                         const result = await handleToolCall('edit_schedule_description', args, { userEmail });
                         return result.isError ? result.content[0].text : result.content[0].text;
                     },
                     edit_schedule_action_info: async (args) => {
-                        const userEmail = req.user?.email || body.userEmail || '';
+                        const userEmail = req.user?.email || '';
                         const result = await handleToolCall('edit_schedule_action_info', args, { userEmail });
                         return result.isError ? result.content[0].text : result.content[0].text;
                     },
                     delete_schedule_attachment: async (args) => {
-                        const userEmail = req.user?.email || body.userEmail || '';
+                        const userEmail = req.user?.email || '';
                         const result = await handleToolCall('delete_schedule_attachment', args, { userEmail });
                         return result.isError ? result.content[0].text : result.content[0].text;
                     },
                     delete_schedule: async (args) => {
-                        const userEmail = req.user?.email || body.userEmail || '';
+                        const userEmail = req.user?.email || '';
                         const result = await handleToolCall('delete_schedule', args, { userEmail });
                         return result.isError ? result.content[0].text : result.content[0].text;
                     },
                     list_schedules: async (args) => {
-                        const userEmail = req.user?.email || body.userEmail || '';
+                        const userEmail = req.user?.email || '';
                         const result = await handleToolCall('list_schedules', args, { userEmail });
                         return result.isError ? result.content[0].text : result.content[0].text;
                     },
@@ -3204,10 +3203,6 @@ Do NOT talk about internal architecture unless asked by a @classgrid.in employee
                         const result = await handleToolCall('search_users_for_chat', args, { userId: req.user?._id?.toString() });
                         return result.isError ? result.content[0].text : result.content[0].text;
                     },
-                    get_my_ai_user_id: async (args) => {
-                        const result = await handleToolCall('get_my_ai_user_id', args, { userId: req.user?._id?.toString() });
-                        return result.isError ? result.content[0].text : result.content[0].text;
-                    },
                     upload_file_to_chat: async (args) => {
                         const result = await handleToolCall('upload_file_to_chat', args, { userId: req.user?._id?.toString() });
                         return result.isError ? result.content[0].text : result.content[0].text;
@@ -3259,7 +3254,9 @@ Do NOT talk about internal architecture unless asked by a @classgrid.in employee
                 }).map(([toolName, handler]) => [
                     toolName,
                     async (args) => {
-                        if (toolName !== 'internal_thought_process') {
+                        // Thought and plan-progress calls are not shown as tool steps in the chat.
+                        const silentTool = toolName === 'internal_thought_process' || toolName === 'update_plan_step';
+                        if (!silentTool) {
                             accSteps.push({
                                 id: Date.now().toString(),
                                 type: 'tool',
@@ -3274,7 +3271,7 @@ Do NOT talk about internal architecture unless asked by a @classgrid.in employee
                         let resultStr;
                         try { resultStr = await handler(args); } catch (err) { resultStr = "Error: " + (err.message || String(err)); }
 
-                        if (toolName !== 'internal_thought_process') {
+                        if (!silentTool) {
                             const step = accSteps.find(s => s.tool === toolName && s.status === 'loading');
                             if (step) {
                                 const isErr = typeof resultStr === 'string' && (resultStr.startsWith("Error:") || resultStr.startsWith("ERROR:") || resultStr.startsWith("FAILED:"));
@@ -3361,6 +3358,28 @@ Do NOT talk about internal architecture unless asked by a @classgrid.in employee
         };
         console.log(`[AI-TOOLS] groups=[${toolPlan.activeGroupIds.join(",")}] sent=${activeToolList.length}/${fullToolList.length} tools staff=${toolPlan.staff}`);
 
+        // Quota check, part 2: the real prompt (rules + history + message + loaded tools, ~4 chars per token) plus
+        // room for the reply, priced like the deduction after the answer (V4 Pro unless a Claude model was picked).
+        // Fails closed like part 1.
+        try {
+            const estimatedPromptTokens = estimatePromptTokens([...messages.map(m => m.content), activeToolList]);
+            const estimatedCost = chargeableTokens({ prompt_tokens: estimatedPromptTokens, completion_tokens: REPLY_TOKEN_ALLOWANCE }, isClaudeRequest ? body.selectedModel : CF_PRO_MODEL);
+            const check = await hasEnoughTokens(userId, orgId, estimatedCost);
+            if (!check.allowed) {
+                const blocked = await quotaBlocked(check);
+                console.warn(`[AI-TOKEN] Blocked before the model call: estimate=${estimatedCost} (prompt ~${estimatedPromptTokens}) reason="${check.reason}"`);
+                // Same error text the client gets from the 429 response of part 1.
+                res.write(`data: ${JSON.stringify({ type: "error", error: blocked.error === "ai_quota_exceeded" ? `${blocked.error}|${blocked.resetDate}` : blocked.error, message: blocked.message })}\n\n`);
+                return;
+            }
+            tokenSource = check.source;
+            if (check.remaining !== undefined) llmConfig.defaultMaxTokens = Math.max(1, Math.min(8192, check.remaining));
+        } catch (err) {
+            console.error("Quota check error:", err);
+            res.write(`data: ${JSON.stringify({ type: "error", error: "We couldn't check your AI usage balance right now, so this message was not answered. Please try again in a minute." })}\n\n`);
+            return;
+        }
+
         // Only the tools this user may use can run, on every path (the SDK fallback runs any handler it is asked for).
         for (const name of Object.keys(llmConfig.toolHandlers)) {
             if (name !== LOAD_TOOLS_NAME && !toolPlan.allowedToolNames.has(name)) delete llmConfig.toolHandlers[name];
@@ -3415,8 +3434,19 @@ Do NOT talk about internal architecture unless asked by a @classgrid.in employee
         const maxAttempts = 2;
         let currentClient = client;
         let accThought = "";
-        const usageStore = { usage: null }; // Will be populated by fetch-interceptor with real Cloudflare usage
+        // usage: the answering call (filled by the stream loops or the fetch-interceptor). failedAttempts: calls that
+        // failed and were retried on another model (e.g. Flash -> Pro); they are charged too, each at its own price.
+        const usageStore = { usage: null, failedAttempts: [] };
+        // Answer text already streamed to the user. Once there is some, nothing is retried: a retry would type a
+        // second answer below the first one.
+        let shownAnswerText = "";
+        const cutOffAnswer = () => `${shownAnswerText.trim()}\n\n_(This answer was cut off by a technical problem. Please ask again if you need the rest.)_`;
         while (attempt <= maxAttempts) {
+            if (attempt > 1 && shownAnswerText) {
+                console.warn(`[AI-STREAM] Not retrying (attempt ${attempt}): answer text was already shown`);
+                answer = cutOffAnswer();
+                break;
+            }
             try {
                 if (attempt > 1 && !res.writableEnded) {
                     res.write(`data: ${JSON.stringify({ type: "status", label: "auto-correcting syntax with fallback model..." })}\n\n`);
@@ -3450,6 +3480,7 @@ Do NOT talk about internal architecture unless asked by a @classgrid.in employee
                         loggedFirstToken = true;
                         console.log(`[AI-TIMING] first answer token at +${Date.now() - requestStartedAt}ms`);
                     }
+                    shownAnswerText += token || "";
                     if (requestAborted || res.writableEnded) return;
                     try { res.write(`data: ${JSON.stringify({ type: "token", token })}\n\n`); } catch (e) { }
                 };
@@ -3537,7 +3568,7 @@ Do NOT talk about internal architecture unless asked by a @classgrid.in employee
                                 if (claudeErr.usage?.total_tokens > 0) usageStore.usage = claudeErr.usage;
                                 console.error(`[AI-STREAM] ${claudeModel} failed after output started (toolsRun=${claudeErr.toolsRun}); not retrying: ${claudeErr.message}`);
                                 usedModel = claudeModel;
-                                streamed = { answer: "Something went wrong while finishing this answer. The actions above were completed — please ask again if you need a summary." };
+                                streamed = { answer: shownAnswerText ? cutOffAnswer() : "Something went wrong while finishing this answer. The actions above were completed — please ask again if you need a summary." };
                             } else {
                                 console.warn(`[AI-STREAM] ${claudeModel} failed before any output, falling back to Cloudflare: ${claudeErr.message}`);
                             }
@@ -3572,13 +3603,17 @@ Do NOT talk about internal architecture unless asked by a @classgrid.in employee
                             break;
                         } catch (streamErr) {
                             if (requestAborted) return;
-                            if (streamErr.usage?.total_tokens > 0) usageStore.usage = streamErr.usage;
-                            if (streamErr.toolsRun > 0) {
-                                console.error(`[AI-STREAM] ${model} failed after ${streamErr.toolsRun} tool(s) ran; not retrying: ${streamErr.message}`);
+                            // Not retried when a tool already ran (it could repeat side effects) or answer text was
+                            // already shown (the retry would add a second answer below it).
+                            if (streamErr.toolsRun > 0 || shownAnswerText) {
+                                if (streamErr.usage?.total_tokens > 0) usageStore.usage = streamErr.usage;
+                                console.error(`[AI-STREAM] ${model} failed after output started (toolsRun=${streamErr.toolsRun}, answerShown=${!!shownAnswerText}); not retrying: ${streamErr.message}`);
                                 usedModel = model;
-                                streamed = { answer: "Something went wrong while finishing this answer. The actions above were completed — please ask again if you need a summary." };
+                                streamed = { answer: shownAnswerText ? cutOffAnswer() : "Something went wrong while finishing this answer. The actions above were completed — please ask again if you need a summary." };
                                 break;
                             }
+                            // Retried on the next model: this attempt's usage is added to the bill, not overwritten.
+                            if (streamErr.usage?.total_tokens > 0) usageStore.failedAttempts.push({ usage: streamErr.usage, model });
                             console.warn(`[AI-STREAM] ${model} failed before any tool ran: ${streamErr.message}`);
                         }
                     }
@@ -3696,12 +3731,20 @@ Do NOT talk about internal architecture unless asked by a @classgrid.in employee
                         calculatedTokens = 0;
                     }
                 }
-                const estimatedTokens = calculatedTokens;
                 // Pool tokens: real tokens weighted by the model's real price (V4 Pro = 1x) and by cache use,
                 // for Claude and Cloudflare models alike (services/ai-token-pricing.js).
-                const poolTokens = usageStore.usage && usageStore.usage.total_tokens > 0
+                let poolTokens = usageStore.usage && usageStore.usage.total_tokens > 0
                     ? chargeableTokens(usageStore.usage, usedModel)
                     : chargeableTokens({ prompt_tokens: inputTokens, completion_tokens: outputTokens }, usedModel);
+                // Attempts that failed and were retried on another model (Flash -> Pro) are added, each at its own price.
+                for (const failed of usageStore.failedAttempts) {
+                    inputTokens += failed.usage.prompt_tokens || 0;
+                    outputTokens += failed.usage.completion_tokens || 0;
+                    calculatedTokens += failed.usage.total_tokens || 0;
+                    poolTokens += chargeableTokens(failed.usage, failed.model);
+                }
+                if (usageStore.failedAttempts.length > 0) console.log(`[AI-TOKEN] Added ${usageStore.failedAttempts.length} failed attempt(s): ${usageStore.failedAttempts.map(f => `${f.model}=${f.usage.total_tokens}`).join(", ")}`);
+                const estimatedTokens = calculatedTokens;
                 if (estimatedTokens > 0) {
                     const User = (await import("../models/User.js")).default;
                     const Organization = (await import("../models/Organization.js")).default;
@@ -3799,7 +3842,7 @@ Do NOT talk about internal architecture unless asked by a @classgrid.in employee
                         try {
                             const AiLibraryFile = (await import('../models/AiLibraryFile.js')).default;
                             await AiLibraryFile.create({
-                                user_email: req.user.email || "unknown@classgrid.in",
+                                user_email: req.user.email || "unknown",
                                 user_id: req.user.id || req.user._id,
                                 organization_id: req.user.organization_id || null,
                                 original_name: fileName,
@@ -3902,7 +3945,7 @@ export const uploadChatImage = async (req, res) => {
                                : 'other';
 
                 await AiLibraryFile.create({
-                    user_email: req.user.email || "unknown@classgrid.in",
+                    user_email: req.user.email || "unknown",
                     user_id: req.user._id,
                     organization_id: req.user.organization_id || null,
                     original_name: fileName,
@@ -4583,36 +4626,34 @@ export const bulkDeleteAgentReviews = async (req, res) => {
 
 export const generateImage = async (req, res) => {
     try {
-        const { prompt, sessionId, userEmail, isIncognito } = req.body;
+        const { prompt, sessionId, isIncognito } = req.body;
+        // isInternalCall (the chat's generate_image tool) only skips saving to a chat session: the chat saves it itself.
         const isInternalCall = req.body.isInternalCall === true;
+        // The image limit is checked and counted on the signed-in account, never on body.userEmail, and body flags
+        // (isIncognito / isInternalCall) don't skip it.
+        const userEmail = req.user?.email || '';
 
         let authUserForImage = null;
 
-        if (!isIncognito && !isInternalCall && userEmail) {
+        if (!userEmail) {
+            return res.status(401).json({ error: "Unauthorized" });
+        }
+        {
             const User = (await import('../models/User.js')).default;
             const Organization = (await import('../models/Organization.js')).default;
             const GlobalAiConfig = (await import('../models/GlobalAiConfig.js')).default;
             
-            authUserForImage = await User.findOne({ email: userEmail });
+            authUserForImage = await User.findById(req.user._id);
             if (!authUserForImage) {
                 return res.status(401).json({ error: "Unauthorized" });
             }
 
-            let imageLimit = 20; // fallback default
-            
-            // Determine limit based on organization or global config
-            if (authUserForImage.organization_id) {
-                const org = await Organization.findById(authUserForImage.organization_id);
-                if (org && org.ai_config && org.ai_config.custom_limits_enabled) {
-                    imageLimit = org.ai_config.image_generation_limit !== undefined ? org.ai_config.image_generation_limit : 20;
-                } else {
-                    const globalConfig = await GlobalAiConfig.findOne({ key: 'singleton' }).lean();
-                    imageLimit = globalConfig?.global_image_weekly_limit !== undefined ? globalConfig.global_image_weekly_limit : 20;
-                }
-            } else {
-                const globalConfig = await GlobalAiConfig.findOne({ key: 'singleton' }).lean();
-                imageLimit = globalConfig?.global_image_weekly_limit !== undefined ? globalConfig.global_image_weekly_limit : 20;
-            }
+            // Same rule as the super admin dashboard shows (global -> org custom limit -> Classgrid limit for users without an org).
+            const { resolveFeatureLimit } = await import('../services/ai-feature-limits.js');
+            const imageOrgId = authUserForImage.organization_id || null;
+            const imageOrg = imageOrgId ? await Organization.findById(imageOrgId).select('ai_config').lean() : null;
+            const imageGlobalConfig = await GlobalAiConfig.findOne({ key: 'singleton' }).lean();
+            const imageLimit = resolveFeatureLimit('image', imageOrg, imageGlobalConfig, imageOrgId);
 
             // Check if user has exceeded their image generation limit
             if ((authUserForImage.ai_image_free_weekly_used || 0) >= imageLimit) {
@@ -4719,6 +4760,11 @@ export const generateImage = async (req, res) => {
         let activeSessionId = sessionId;
 
         if (!isIncognito && !isInternalCall) {
+            // Only the user's own chat can receive the image.
+            if (activeSessionId) {
+                const sessionData = await getSessionById(activeSessionId).catch(() => null);
+                if (!sessionData || sessionData.user_email !== userEmail) activeSessionId = null;
+            }
             if (!activeSessionId && userEmail) {
                 const newSession = await createSession(userEmail, prompt.substring(0, 50));
                 if (newSession) {
@@ -4732,14 +4778,16 @@ export const generateImage = async (req, res) => {
                 // Save assistant image response
                 await saveMessage(activeSessionId, 'assistant', `[IMAGE_GENERATION_COMPLETE: ${prompt} : ${r2Url}]`);
             }
-            
-            // Log to AiUsageLog for dashboard analytics
+        }
+
+        // Count the image on the signed-in user and log it for dashboard analytics (every call, chat tool included).
+        {
             try {
                 const User = (await import('../models/User.js')).default;
                 const AiUsageLog = (await import('../models/AiUsageLog.js')).default;
                 const { getIO } = await import('../services/socket.service.js');
                 
-                const user = await User.findOne({ email: userEmail });
+                const user = await User.findById(req.user._id);
                 if (user) {
                     user.ai_image_free_weekly_used = (user.ai_image_free_weekly_used || 0) + 1;
                     await user.save();

@@ -3060,6 +3060,9 @@ export const chatOnboard = async (req, res) => {
 // CHAT AGENT REAL AUTH FLOW (END-TO-END)
 // ============================================================================
 
+const CHAT_PUBLIC_ORG_ID = '6ac4b95e0f8a97f45e98b0ff';
+const CHAT_EMAIL_TICKET_PURPOSE = 'chat_email_verified';
+
 export const chatSendEmailOtp = async (req, res) => {
     try {
         await connectDB();
@@ -3116,7 +3119,9 @@ export const chatVerifyEmailOtp = async (req, res) => {
 
         // Find or create user
         let user = await User.findOne({ email: email.toLowerCase() });
+        let isNewAccount = false;
         if (!user) {
+            isNewAccount = true;
             user = await User.create({
                 email: email.toLowerCase(),
                 name: name || email.split('@')[0],
@@ -3130,9 +3135,18 @@ export const chatVerifyEmailOtp = async (req, res) => {
         const token = generateToken(user, req);
         setTokenCookie(res, token, req);
 
+        // Short-lived proof that this email was verified, required by chatFinalizeOnboarding.
+        // No `id` claim, so it can never be used as a login token.
+        const emailVerifiedTicket = jwt.sign(
+            { purpose: CHAT_EMAIL_TICKET_PURPOSE, email: user.email, uid: user._id.toString(), newAccount: isNewAccount },
+            JWT_SECRET,
+            { expiresIn: '30m' }
+        );
+
         res.json({
             message: 'Email verified',
             token,
+            emailVerifiedTicket,
             user: {
                 id: user._id,
                 email: user.email,
@@ -3151,8 +3165,16 @@ export const chatVerifyEmailOtp = async (req, res) => {
 export const chatSendWhatsappOtp = async (req, res) => {
     try {
         await connectDB();
-        const { phoneNumber } = req.body;
+        const { phoneNumber, email } = req.body;
         if (!phoneNumber) return res.status(400).json({ message: 'Phone number required' });
+
+        const User = (await import('../models/User.js')).default;
+        const existingPhoneUser = await User.findOne({ "metadata.whatsappPhone": phoneNumber });
+        if (existingPhoneUser) {
+            if (!email || (email && existingPhoneUser.email !== email.toLowerCase())) {
+                 return res.status(400).json({ message: "This WhatsApp number is already linked to another email." });
+            }
+        }
 
         const otp = Math.floor(100000 + Math.random() * 900000).toString();
         const OnboardingOTP = (await import('../models/OnboardingOTP.js')).default;
@@ -3226,33 +3248,55 @@ export const chatFinalizeOnboarding = async (req, res) => {
     try {
         const connectDB = (await import('../../config/db.js')).default;
         await connectDB();
-        const { email, name, password, age, role, whatsappPhone, whatsappOtp } = req.body;
+        const { email, name, password, age, role, whatsappPhone, whatsappOtp, emailVerifiedTicket } = req.body;
+        if (!email || !whatsappPhone || !whatsappOtp) {
+            return res.status(400).json({ message: 'Email, WhatsApp number and OTP are required' });
+        }
+
+        // Proof of email ownership: the ticket issued by chatVerifyEmailOtp, bound to this email
+        let ticket;
+        try {
+            ticket = jwt.verify(emailVerifiedTicket || '', JWT_SECRET);
+        } catch (e) {
+            return res.status(401).json({ message: 'Email verification expired. Please verify your email again.' });
+        }
+        if (ticket?.purpose !== CHAT_EMAIL_TICKET_PURPOSE || ticket.email !== email.toLowerCase()) {
+            return res.status(401).json({ message: 'Email verification expired. Please verify your email again.' });
+        }
 
         const OnboardingOTP = (await import('../models/OnboardingOTP.js')).default;
         const record = await OnboardingOTP.findOne({ target: whatsappPhone, type: 'phone' });
         if (!record || record.otp !== whatsappOtp) {
             return res.status(400).json({ message: 'Invalid WhatsApp OTP' });
         }
+        if (record.expires_at && record.expires_at < new Date()) {
+            await OnboardingOTP.deleteOne({ _id: record._id });
+            return res.status(400).json({ message: 'OTP has expired. Please request a new one.' });
+        }
         await OnboardingOTP.deleteOne({ _id: record._id });
 
         const User = (await import('../models/User.js')).default;
         const bcrypt = (await import('bcryptjs')).default;
-        const jwt = (await import('jsonwebtoken')).default;
 
-        // One email = one whatsapp number validation
-        const existingPhoneUser = await User.findOne({ "metadata.whatsappPhone": whatsappPhone });
-        if (existingPhoneUser && existingPhoneUser.email !== email.toLowerCase()) {
-            return res.status(400).json({ message: "This WhatsApp number is already linked to another email." });
-        }
-        
         let user = await User.findOne({ email: email.toLowerCase() });
-        const orgId = '6ac4b95e0f8a97f45e98b0ff';
+        const orgId = CHAT_PUBLIC_ORG_ID;
+        let passwordSet = true; // false when a chosen password was not applied to an existing account
+
+        if (user && ticket.uid && user._id.toString() !== ticket.uid) {
+            return res.status(401).json({ message: 'Email verification expired. Please verify your email again.' });
+        }
+
+        // One WhatsApp number per email (the send-OTP check is only an early warning; its email isn't proven)
+        const existingPhoneUser = await User.findOne({ 'metadata.whatsappPhone': whatsappPhone }).select('email');
+        if (existingPhoneUser && existingPhoneUser.email !== email.toLowerCase()) {
+            return res.status(400).json({ message: 'This WhatsApp number is already linked to another account.' });
+        }
 
         if (!user) {
             user = new User({
                 email: email.toLowerCase(),
                 name: name || 'AI User',
-                password: await bcrypt.hash(password, 10),
+                password: await bcrypt.hash(password || crypto.randomBytes(16).toString('hex'), 10),
                 role: 'user',
                 organization_id: orgId,
                 metadata: { age, job_role: role, whatsappPhone, whatsapp_number: whatsappPhone },
@@ -3267,17 +3311,34 @@ export const chatFinalizeOnboarding = async (req, res) => {
             
             if (!user.organization_id) user.organization_id = orgId;
             if (!user.role) user.role = 'user';
-            
-            if (password) {
+            // Public chat accounts are "user", not "student" (older sign-ups defaulted to student)
+            if (user.organization_id?.toString() === CHAT_PUBLIC_ORG_ID && user.role === 'student' && !user.email.toLowerCase().endsWith('@classgrid.in')) user.role = 'user';
+
+            // Only set the password on an account chatVerifyEmailOtp just created (random placeholder).
+            // Never overwrite the password of an account that already existed.
+            if (password && ticket.newAccount === true) {
                user.password = await bcrypt.hash(password, 10);
+            } else if (password) {
+               passwordSet = false;
             }
         }
         await user.save();
 
-        const JWT_SECRET = process.env.JWT_SECRET || 'dev_secret';
         const token = jwt.sign({ id: user._id.toString(), role: user.role, organization_id: user.organization_id }, JWT_SECRET, { expiresIn: '30d' });
 
-        res.json({ token, user });
+        res.json({
+            token,
+            passwordSet,
+            ...(passwordSet ? {} : { notice: 'Your account already existed, so your password was not changed. Sign in with an email code or your existing password.' }),
+            user: {
+                id: user._id,
+                email: user.email,
+                name: user.name,
+                role: user.role,
+                organization_id: user.organization_id || null,
+                metadata: user.metadata || {}
+            }
+        });
     } catch (error) {
         console.error('chatFinalizeOnboarding Error:', error);
         res.status(500).json({ message: error.message });
