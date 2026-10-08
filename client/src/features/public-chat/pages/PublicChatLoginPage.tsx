@@ -451,9 +451,9 @@ function LoginContent() {
         name: mode === "signup" ? `${firstName} ${lastName}`.trim() : undefined,
       });
 
-      if (res.data?.token) {
+      if (res.data?.token || res.data?.emailVerifiedTicket) {
         const user = res.data.user;
-        const needsOnboarding = mode === "signup" || (!user?.metadata?.whatsappPhone || !user?.metadata?.age);
+        const needsOnboarding = mode === "signup" || (!user?.metadata?.whatsappPhone || !user?.metadata?.age) || !res.data.token;
 
         if (needsOnboarding) {
           // Proof of email verification, required by /chat/finalize-onboarding
