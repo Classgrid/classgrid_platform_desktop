@@ -296,7 +296,7 @@ function LoginContent() {
       // Force Email OTP even for OAuth users
       const triggerOtp = async () => {
         try {
-          await apiClient.post("/api/auth/chat/send-email-otp", { email: urlEmail });
+          await sendEmailCode(urlEmail || "");
           setStep("otp");
           startCountdown();
         } catch (err) {
@@ -355,6 +355,17 @@ function LoginContent() {
   const resendWait = otpExpired ? 0 : Math.max(0, countdown - (OTP_TTL_SECONDS - RESEND_COOLDOWN_SECONDS));
   const whatsappResendWait = whatsappOtpExpired ? 0 : Math.max(0, whatsappCountdown - (OTP_TTL_SECONDS - RESEND_COOLDOWN_SECONDS));
 
+  // First send of an email code. A "wait N seconds" (429) reply means a code went out under a minute ago
+  // (double submit or a retried request); that code is still valid, so it is not shown as an error.
+  const sendingCodeRef = useRef(false);
+  const sendEmailCode = async (address: string) => {
+    try {
+      await apiClient.post("/api/auth/chat/send-email-otp", { email: address });
+    } catch (err: any) {
+      if (err?.code !== "429") throw err;
+    }
+  };
+
   const startCountdown = () => {
     setCountdown(OTP_TTL_SECONDS);
     setOtpExpired(false);
@@ -401,6 +412,9 @@ function LoginContent() {
       return;
     }
 
+    // Ignore a second submit while the first is still running (Enter + click sent two codes).
+    if (sendingCodeRef.current) return;
+    sendingCodeRef.current = true;
     setLoading(true);
     try {
       if (mode === "signin") {
@@ -410,7 +424,7 @@ function LoginContent() {
             setStep("login_password");
           } else {
             // User exists but has no password (e.g. Google OAuth user) — send OTP for login
-            await apiClient.post("/api/auth/chat/send-email-otp", { email: email.toLowerCase() });
+            await sendEmailCode(email.toLowerCase());
             setStep("otp");
             startCountdown();
           }
@@ -426,12 +440,12 @@ function LoginContent() {
           if (checkRes.data.hasPassword) {
             setStep("login_password");
           } else {
-            await apiClient.post("/api/auth/chat/send-email-otp", { email: email.toLowerCase() });
+            await sendEmailCode(email.toLowerCase());
             setStep("otp");
             startCountdown();
           }
         } else {
-          await apiClient.post("/api/auth/chat/send-email-otp", { email: email.toLowerCase() });
+          await sendEmailCode(email.toLowerCase());
           setStep("otp");
           startCountdown();
         }
@@ -440,6 +454,7 @@ function LoginContent() {
       const msg = err?.response?.data?.message || err?.message;
       setError(msg && typeof msg === "string" ? msg : "Failed to send OTP.");
     } finally {
+      sendingCodeRef.current = false;
       setLoading(false);
     }
   };
@@ -722,6 +737,12 @@ function LoginContent() {
       setStep("whatsapp_otp");
       startWhatsappCountdown();
     } catch (err: any) {
+      if (err?.code === "429") {
+        // A code was sent to this number under a minute ago and is still valid
+        setStep("whatsapp_otp");
+        if (!whatsappCountdown) startWhatsappCountdown();
+        return;
+      }
       setError(err?.message || err?.response?.data?.message || "Failed to send OTP.");
     } finally {
       setLoading(false);
@@ -1139,7 +1160,7 @@ function LoginContent() {
                     disabled={loading || whatsappResendWait > 0}
                     className="text-slate-900 underline underline-offset-2 transition-opacity hover:opacity-70 disabled:cursor-not-allowed disabled:opacity-30 dark:text-[#f1f1f1]"
                   >
-                    {whatsappResendWait > 0 ? `Resend code in ${formatCountdown(whatsappResendWait)}` : "Resend code"}
+                    {whatsappResendWait > 0 ? `Didn't get it? Resend in ${formatCountdown(whatsappResendWait)}` : "Resend code"}
                   </button>
                 </div>
               </div>
@@ -1412,7 +1433,7 @@ function LoginContent() {
                     disabled={loading || resendWait > 0}
                     className="text-slate-900 underline underline-offset-2 transition-opacity hover:opacity-70 disabled:cursor-not-allowed disabled:opacity-30 dark:text-[#f1f1f1]"
                   >
-                    {resendWait > 0 ? `Resend code in ${formatCountdown(resendWait)}` : "Resend code"}
+                    {resendWait > 0 ? `Didn't get it? Resend in ${formatCountdown(resendWait)}` : "Resend code"}
                   </button>
                 </div>
               </div>
