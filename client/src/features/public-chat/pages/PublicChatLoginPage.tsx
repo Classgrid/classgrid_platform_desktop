@@ -1010,10 +1010,10 @@ function LoginContent() {
                 {/* Timer / Resend */}
                 <div className="text-[13px] text-center mt-2">
                   {whatsappOtpExpired ? (
-                    <span className="text-red-400">Code expired. </span>
+                    <span className="text-slate-500 dark:text-[#888888]">You can now resend the code. </span>
                   ) : whatsappCountdown > 0 ? (
                     <span className="text-slate-500 dark:text-[#888888]">
-                      Code expires in{" "}
+                      Resend available in{" "}
                       <span className={`font-mono font-semibold tabular-nums ${whatsappCountdown <= 10 ? "text-red-400" : "text-slate-900 dark:text-[#f1f1f1]"}`}>
                         {formatCountdown(whatsappCountdown)}
                       </span>
@@ -1283,10 +1283,10 @@ function LoginContent() {
                 {/* Timer / Resend */}
                 <div className="text-[13px] text-center">
                   {otpExpired ? (
-                    <span className="text-red-400">Code expired. </span>
+                    <span className="text-slate-500 dark:text-[#888888]">You can now resend the code. </span>
                   ) : countdown > 0 ? (
                     <span className="text-slate-500 dark:text-[#888888]">
-                      Code expires in{" "}
+                      Resend available in{" "}
                       <span className={`font-mono font-semibold tabular-nums ${countdown <= 10 ? "text-red-400" : "text-slate-900 dark:text-[#f1f1f1]"
                         }`}>
                         {formatCountdown(countdown)}
