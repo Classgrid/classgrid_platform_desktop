@@ -47,7 +47,7 @@ const COUNTRY_CODES = customArray({
 const useSession = () => ({ data: null, status: "unauthenticated" });
 const signIn = async (p: any, o: any) => { console.log("Mock signIn", p, o); return { ok: true, error: null }; };
 
-const OTP_TTL_SECONDS = 60;
+const OTP_TTL_SECONDS = 600;
 
 /** Map NextAuth URL error codes to user-friendly messages */
 const OAUTH_ERROR_MAP: Record<string, string> = {
@@ -1010,10 +1010,10 @@ function LoginContent() {
                 {/* Timer / Resend */}
                 <div className="text-[13px] text-center mt-2">
                   {whatsappOtpExpired ? (
-                    <span className="text-slate-500 dark:text-[#888888]">You can now resend the code. </span>
+                    <span className="text-red-400">Code expired. </span>
                   ) : whatsappCountdown > 0 ? (
                     <span className="text-slate-500 dark:text-[#888888]">
-                      Resend available in{" "}
+                      Code expires in{" "}
                       <span className={`font-mono font-semibold tabular-nums ${whatsappCountdown <= 10 ? "text-red-400" : "text-slate-900 dark:text-[#f1f1f1]"}`}>
                         {formatCountdown(whatsappCountdown)}
                       </span>
@@ -1283,10 +1283,10 @@ function LoginContent() {
                 {/* Timer / Resend */}
                 <div className="text-[13px] text-center">
                   {otpExpired ? (
-                    <span className="text-slate-500 dark:text-[#888888]">You can now resend the code. </span>
+                    <span className="text-red-400">Code expired. </span>
                   ) : countdown > 0 ? (
                     <span className="text-slate-500 dark:text-[#888888]">
-                      Resend available in{" "}
+                      Code expires in{" "}
                       <span className={`font-mono font-semibold tabular-nums ${countdown <= 10 ? "text-red-400" : "text-slate-900 dark:text-[#f1f1f1]"
                         }`}>
                         {formatCountdown(countdown)}
