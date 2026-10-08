@@ -44,9 +44,9 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import { format } from "date-fns";
-import { Calendar } from "@/components/marketing_ui/nikhil_calendar";
+import { Calendar as CalendarComponent } from "@/components/marketing_ui/nikhil_calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/marketing_ui/popover";
-import { Calendar as CalendarIcon, ChevronDownIcon, CheckIcon } from "lucide-react";
+import { Clock, ChevronDownIcon, CheckIcon } from "lucide-react";
 import { Button } from "@/components/marketing_ui/button";
 import { cn } from "@/lib/utils";
 
@@ -59,6 +59,7 @@ interface NikhilDateCalendarProps {
   /** When provided, renders a Creation/Schedule toggle inside the calendar popup */
   dateType?: "createdAt" | "meetingScheduledAt";
   onDateTypeChange?: (type: "createdAt" | "meetingScheduledAt") => void;
+  iconOnly?: boolean;
 }
 
 function CustomSelect({
@@ -157,6 +158,7 @@ export function NikhilDateCalendar({
   popDirection = "down",
   dateType,
   onDateTypeChange,
+  iconOnly,
 }: NikhilDateCalendarProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [pickingMode, setPickingMode] = useState<"from" | "to">("from");
@@ -208,13 +210,14 @@ export function NikhilDateCalendar({
           type="button"
           variant="outline"
           className={cn(
-            "w-full justify-start text-left font-normal border-border bg-background hover:bg-accent/50 overflow-hidden",
+            "justify-start text-left font-normal border-border bg-background hover:bg-accent/50 overflow-hidden",
+            !iconOnly && "w-full",
             !value && "text-muted-foreground",
             className
           )}
         >
-          <CalendarIcon className="mr-1.5 h-4 w-4 shrink-0" />
-          <span className="truncate min-w-0">{displayString}</span>
+          <Clock className={cn("h-4 w-4 shrink-0", !iconOnly && "mr-1.5")} />
+          {!iconOnly && <span className="truncate min-w-0">{displayString}</span>}
         </Button>
       </PopoverTrigger>
 
@@ -282,7 +285,7 @@ export function NikhilDateCalendar({
           </div>
 
           <div className="px-3 pb-3">
-            <Calendar
+            <CalendarComponent
               mode="single"
               month={new Date(parseInt(selectedYear), parseInt(selectedMonth))}
               onMonthChange={(d) => {

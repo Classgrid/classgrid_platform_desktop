@@ -410,6 +410,19 @@ function sanitizeAssistantText(text: string) {
     .trim();
 }
 
+function stripMarkdownForPreview(content: string) {
+  if (!content) return "";
+  return content
+    .replace(/^#{1,6}\s+/gm, "")           // headings
+    .replace(/\*\*(.+?)\*\*/g, "$1")        // bold
+    .replace(/\*(.+?)\*/g, "$1")            // italic
+    .replace(/`([^`]+)`/g, "$1")            // inline code
+    .replace(/```[\s\S]*?```/g, "")          // code blocks
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1") // links
+    .replace(/\n+/g, " ")                    // collapse newlines to space
+    .trim();
+}
+
 function splitLongParagraph(text: string) {
   const trimmed = text.trim();
   if (!trimmed) return [];
@@ -737,7 +750,7 @@ function renderInlineText(rawText: string) {
   return nodes;
 }
 
-function MessageActions({ content, messageId }: { content: string; messageId: string }) {
+function MessageActions({ content, messageId, onReply }: { content: string; messageId: string, onReply?: () => void }) {
   const [copied, setCopied] = useState(false);
   const [feedback, setFeedback] = useState<"up" | "down" | null>(null);
   const [isFeedbackModalOpen, setIsFeedbackModalOpen] = useState(false);
@@ -928,6 +941,16 @@ function MessageActions({ content, messageId }: { content: string; messageId: st
         >
           <ThumbsUp className="h-3.5 w-3.5" />
         </button>
+        {onReply && (
+          <button
+            type="button"
+            onClick={onReply}
+            className="flex h-7 w-7 items-center justify-center rounded-lg transition-all duration-200 cursor-pointer text-muted-foreground/60 hover:bg-muted hover:text-foreground"
+            title="Reply to message"
+          >
+            <CornerDownRight className="h-3.5 w-3.5" />
+          </button>
+        )}
         <button
           type="button"
           onClick={() => handleFeedback("down")}
@@ -1549,6 +1572,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
   const wordTypingActiveRef = useRef(false);
 
   const [messages, setMessages] = useState<ChatMessage[]>(initialMessages ?? []);
+  const [replyToMessage, setReplyToMessage] = useState<ChatMessage | null>(null);
   const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
   const [editContent, setEditContent] = useState<string>("");
   const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null);
@@ -3559,6 +3583,12 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
   function submitInput() {
     if (!canSubmit) return;
 
+    let finalInput = input;
+    if (replyToMessage) {
+      finalInput = `> ${replyToMessage.content.substring(0, 500).replace(/\n/g, "\n> ")}\n\n${input}`;
+      setReplyToMessage(null);
+    }
+
     const isTyping = messages.length > 0 && messages[messages.length - 1]?.typing === true;
     if (thinking || submitting || isTyping || wordTypingActiveRef.current) {
       // Linear Approach: Queue the message instead of sending immediately to prevent stream collisions
@@ -3566,7 +3596,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
         ...prev,
         {
           id: Math.random().toString(36).substring(2, 9),
-          text: input,
+          text: finalInput,
           attachedFiles: [...attachedFiles],
           pastedTexts: [...pastedTexts],
         }
@@ -3581,7 +3611,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
       return;
     }
 
-    void askQuestion(input);
+    void askQuestion(finalInput);
   }
 
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
@@ -3847,7 +3877,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                       {/* ── Text Bubble ── */}
                       {(message.content || (message.steps && message.steps.length > 0) || (message.thought && message.thought.trim().length > 0) || (message.attachments && message.attachments.length > 0) || (!isUser && index === messages.length - 1 && thinking)) && (
                         <div
-                          id={isUser ? `msg-${message.id}` : undefined}
+                          id={`msg-${message.id}`}
                           className={cn(
                             "relative min-w-0 transition-all duration-700 msg-target-glow scroll-mt-12",
                             isUser
@@ -3886,14 +3916,58 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                                 </div>
                               ) : (
                                 <>
-                                  {message.content && message.content.trim().length > 0 && (
-                                    <p className="text-[16px] leading-[24px] break-words break-all whitespace-pre-wrap text-[#37352f] dark:text-[#F0EFED] cursor-text">
-                                      {(typeof message.content === 'object' && message.content !== null
-                                        ? (message.content as any).content || JSON.stringify(message.content)
-                                        : String(message.content || '')
-                                      ).replace(/\[Attached file:.*?\]/g, '').trim()}
-                                    </p>
-                                  )}
+                                  {message.content && message.content.trim().length > 0 && (() => {
+                                    const rawContent = (typeof message.content === 'object' && message.content !== null
+                                      ? (message.content as any).content || JSON.stringify(message.content)
+                                      : String(message.content || '')
+                                    ).replace(/\[Attached file:.*?\]/g, '').trim();
+
+                                    const replyMatch = rawContent.match(/^>\s([\s\S]*?)\n\n([\s\S]*)$/);
+
+                                    if (replyMatch) {
+                                      const quotedText = replyMatch[1].replace(/\n>\s/g, '\n').trim();
+                                      const userReply = replyMatch[2].trim();
+                                      return (
+                                        <div className="flex flex-col gap-2 w-full text-left">
+                                          <div 
+                                            className="flex flex-col overflow-hidden border-l-2 border-foreground/30 pl-2 bg-black/5 dark:bg-white/5 py-1 pr-3 rounded-r-lg cursor-pointer hover:bg-black/10 dark:hover:bg-white/10 transition-colors"
+                                            onClick={(e) => {
+                                              e.preventDefault();
+                                              e.stopPropagation();
+                                              const searchPreview = stripMarkdownForPreview(quotedText).substring(0, 40);
+                                              const idx = messages.findIndex(m => m.id === message.id);
+                                              const preceding = messages.slice(0, idx >= 0 ? idx : messages.length).reverse();
+                                              const target = preceding.find(m => m.content && stripMarkdownForPreview(m.content).includes(searchPreview));
+                                              if (target) {
+                                                const el = document.getElementById(`msg-${target.id}`);
+                                                if (el) {
+                                                  el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                                  el.style.transition = 'background-color 0.3s ease';
+                                                  el.style.backgroundColor = 'rgba(16, 185, 129, 0.2)';
+                                                  setTimeout(() => el.style.backgroundColor = '', 1000);
+                                                }
+                                              }
+                                            }}
+                                          >
+                                            <span className="font-semibold text-[11px] text-foreground mb-0.5 uppercase tracking-wider pointer-events-none">Replied to AI</span>
+                                            <span className="text-muted-foreground truncate whitespace-nowrap text-[13px] pointer-events-none">
+                                              {stripMarkdownForPreview(quotedText).substring(0, 100)}
+                                              {stripMarkdownForPreview(quotedText).length > 100 ? "..." : ""}
+                                            </span>
+                                          </div>
+                                          <p className="text-[16px] leading-[24px] break-words break-all whitespace-pre-wrap text-[#37352f] dark:text-[#F0EFED] cursor-text">
+                                            {userReply}
+                                          </p>
+                                        </div>
+                                      );
+                                    }
+
+                                    return (
+                                      <p className="text-[16px] leading-[24px] break-words break-all whitespace-pre-wrap text-[#37352f] dark:text-[#F0EFED] cursor-text">
+                                        {rawContent}
+                                      </p>
+                                    );
+                                  })()}
 
                                   {/* Hover Actions (Copy / Edit) */}
                                   <div className="absolute top-full right-0 mt-1 opacity-0 group-hover:opacity-100 transition-opacity flex flex-row items-center gap-1 z-50 before:absolute before:-top-4 before:left-0 before:right-0 before:h-4">
@@ -4347,7 +4421,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                           )}
                           {!isUser && !message.typing && message.content.length > 0 && !message.content.includes("```approval") && !message.content.startsWith("[IMAGE_GENERATION") && !message.content.trim().startsWith("ai_quota_exceeded") && message.content.trim() !== "ai_blocked" && (
                             <div className="pl-1 mt-3">
-                              <MessageActions content={message.content} messageId={message.id} />
+                              <MessageActions content={message.content} messageId={message.id} onReply={() => setReplyToMessage(message)} />
                             </div>
                           )}
                         </div>
@@ -4874,6 +4948,40 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                       </motion.div>
                     )}
                   </AnimatePresence>
+
+                  {replyToMessage && (
+                    <div 
+                      className="flex items-center justify-between bg-muted/30 border border-border px-3 py-2 mx-3 mt-3 rounded-xl cursor-pointer hover:bg-muted/50 transition-colors"
+                      onClick={() => {
+                        const el = document.getElementById(`msg-${replyToMessage.id}`);
+                        if (el) {
+                          el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                          el.style.transition = 'background-color 0.3s ease';
+                          el.style.backgroundColor = 'rgba(16, 185, 129, 0.2)';
+                          setTimeout(() => el.style.backgroundColor = '', 1000);
+                        }
+                      }}
+                    >
+                      <div className="flex flex-col overflow-hidden max-w-[90%] border-l-2 border-foreground/30 pl-2 pointer-events-none">
+                        <span className="font-semibold text-[11px] text-foreground mb-0.5 uppercase tracking-wider pointer-events-none">Replying to AI</span>
+                        <span className="text-muted-foreground truncate whitespace-nowrap text-[13px] pointer-events-none">
+                          {stripMarkdownForPreview(replyToMessage.content).substring(0, 100)}
+                          {stripMarkdownForPreview(replyToMessage.content).length > 100 ? "..." : ""}
+                        </span>
+                      </div>
+                      <button 
+                        type="button" 
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          setReplyToMessage(null);
+                        }}
+                        className="text-muted-foreground hover:text-foreground shrink-0 rounded-full hover:bg-muted p-1.5 transition-colors"
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                    </div>
+                  )}
 
                   <textarea
                     id="ask-ai-input"

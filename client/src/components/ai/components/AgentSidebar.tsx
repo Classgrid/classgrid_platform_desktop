@@ -10,6 +10,8 @@
 import React from "react";
 import { createPortal } from "react-dom";
 import { MessageSquare, Plus, Search, Pin, MoreHorizontal, Pencil, Trash2, Share, Copy, Mail, Check, Link2, FileText, ExternalLink, X, Loader2, SquarePen, Calendar, Library } from "lucide-react";
+import { format } from "date-fns";
+import { NikhilDateCalendar } from "@/components/marketing_ui/nikhil_date_calendar";
 import { useNavigate, useLocation } from "react-router-dom";
 
 import { SidebarGroup, SidebarGroupContent, SidebarMenu, SidebarMenuItem, SidebarMenuButton, useSidebar } from "@/components/marketing_ui/sidebar";
@@ -41,6 +43,7 @@ export function AgentNestedMenu({ searchQuery = "" }: { searchQuery?: string }) 
   const [sessions, setSessions] = React.useState<ChatSession[]>([]);
   const [loading, setLoading] = React.useState(false);
   const [activeSessionId, setActiveSessionId] = React.useState<string | null>(null);
+  const [dateFilter, setDateFilter] = React.useState<{ from?: Date; to?: Date } | undefined>();
 
   const [pinnedOpen, setPinnedOpen] = React.useState(false);
   const [recentOpen, setRecentOpen] = React.useState(false);
@@ -346,8 +349,26 @@ export function AgentNestedMenu({ searchQuery = "" }: { searchQuery?: string }) 
   const pinnedSessions = filteredSessions.filter(s => s.pinned);
   const unpinnedSessions = filteredSessions.filter(s => !s.pinned);
 
-  const todaySessions = unpinnedSessions.filter(s => isToday(s.created_at));
-  const previousSessions = unpinnedSessions.filter(s => !isToday(s.created_at));
+  const filteredUnpinnedSessions = React.useMemo(() => {
+    if (!dateFilter || (!dateFilter.from && !dateFilter.to)) return unpinnedSessions;
+    return unpinnedSessions.filter(s => {
+      const d = new Date(s.created_at);
+      if (dateFilter.from) {
+        const fromStart = new Date(dateFilter.from);
+        fromStart.setHours(0, 0, 0, 0);
+        if (d < fromStart) return false;
+      }
+      if (dateFilter.to) {
+        const toEnd = new Date(dateFilter.to);
+        toEnd.setHours(23, 59, 59, 999);
+        if (d > toEnd) return false;
+      }
+      return true;
+    });
+  }, [unpinnedSessions, dateFilter]);
+
+  const todaySessions = filteredUnpinnedSessions.filter(s => isToday(s.created_at));
+  const previousSessions = filteredUnpinnedSessions.filter(s => !isToday(s.created_at));
 
   const navigate = useNavigate();
   const location = useLocation();
@@ -671,8 +692,31 @@ export function AgentNestedMenu({ searchQuery = "" }: { searchQuery?: string }) 
             )}
 
             <AccordionItem value="today" className="border-none mb-2">
-              <AccordionTrigger className="px-2 py-1.5 hover:no-underline group/acc-trigger flex items-center h-auto min-h-0 border-transparent focus-visible:ring-0 cursor-pointer">
-                <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Today</span>
+              <AccordionTrigger className="px-2 py-1.5 hover:no-underline group/acc-trigger flex items-center h-auto min-h-0 border-transparent focus-visible:ring-0 cursor-pointer justify-between w-full">
+                <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider truncate mr-2">
+                  {dateFilter && (dateFilter.from || dateFilter.to) ? 
+                    (dateFilter.to && dateFilter.from && dateFilter.to.getTime() !== dateFilter.from.getTime() 
+                      ? `${format(dateFilter.from, 'MMM d')} - ${format(dateFilter.to, 'MMM d')}` 
+                      : format(dateFilter.from || dateFilter.to!, 'MMM d')) 
+                    : "Today"}
+                </span>
+                <div onClick={(e) => e.stopPropagation()} className="pointer-events-auto shrink-0 flex items-center gap-1 justify-end">
+                  {dateFilter && (dateFilter.from || dateFilter.to) && (
+                    <button 
+                      onClick={() => setDateFilter(undefined)}
+                      className="p-1 rounded-md hover:bg-muted text-muted-foreground"
+                    >
+                      <X size={14} />
+                    </button>
+                  )}
+                  <NikhilDateCalendar 
+                     value={dateFilter} 
+                     onChange={setDateFilter}
+                     iconOnly={true}
+                     className="h-6 w-7 p-1.5 flex items-center justify-center border-none shadow-none bg-transparent hover:bg-muted text-[11px]"
+                     placeholder=""
+                  />
+                </div>
               </AccordionTrigger>
               <AccordionContent className="pb-0 pt-1 px-0">
                 <SidebarMenu>
@@ -683,7 +727,7 @@ export function AgentNestedMenu({ searchQuery = "" }: { searchQuery?: string }) 
                       <div className="h-4 w-[70%] rounded-md bg-muted animate-pulse" />
                     </div>
                   )}
-                  {!loading && todaySessions.length === 0 && <div className="px-2 text-xs text-muted-foreground py-2">No chats today</div>}
+                  {!loading && todaySessions.length === 0 && <div className="px-2 text-xs text-muted-foreground py-2">{dateFilter && (dateFilter.from || dateFilter.to) ? "No chats in this period" : "No chats today"}</div>}
                   {todaySessions.map(renderSessionItem)}
                 </SidebarMenu>
               </AccordionContent>
