@@ -3338,9 +3338,10 @@ export const chatFinalizeOnboarding = async (req, res) => {
             // Public chat accounts are "user", not "student" (older sign-ups defaulted to student)
             if (user.organization_id?.toString() === CHAT_PUBLIC_ORG_ID && user.role === 'student' && !user.email.toLowerCase().endsWith('@classgrid.in')) user.role = 'user';
 
-            // Only set the password on an account chatVerifyEmailOtp just created (random placeholder).
-            // Never overwrite the password of an account that already existed.
-            if (password && ticket.newAccount === true) {
+            // Only set the password on an account chatVerifyEmailOtp just created (random placeholder),
+            // OR if the account exists but has no password set yet (incomplete onboarding).
+            // Never overwrite the password of an account that already existed and had a password.
+            if (password && (ticket.newAccount === true || !user.password)) {
                user.password = await bcrypt.hash(password, 10);
             } else if (password) {
                passwordSet = false;
