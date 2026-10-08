@@ -167,6 +167,15 @@ export const isAuthenticated = async (req, res, next) => {
             }
         }
 
+            const isAuthOrOnboardingRoute = req.originalUrl.startsWith('/api/auth');
+            if (user.role === 'user' && (!user.metadata || !user.metadata.whatsappPhone) && !isAuthOrOnboardingRoute) {
+                return res.status(403).json({
+                    success: false,
+                    message: 'Account onboarding incomplete. You must verify your WhatsApp number.',
+                    code: 'INCOMPLETE_ONBOARDING',
+                });
+            }
+
             req.user = user;
             req.realUser = null;
             req.isImpersonating = false;
@@ -252,4 +261,5 @@ export const requirePasswordSet = (req, res, next) => {
     }
     next();
 };
+
 

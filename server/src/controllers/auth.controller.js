@@ -3132,8 +3132,13 @@ export const chatVerifyEmailOtp = async (req, res) => {
             });
         }
 
-        const token = generateToken(user, req);
-        setTokenCookie(res, token, req);
+        const needsOnboarding = (!user.metadata || !user.metadata.whatsappPhone || !user.metadata.age);
+
+        let token = null;
+        if (!needsOnboarding) {
+            token = generateToken(user, req);
+            setTokenCookie(res, token, req);
+        }
 
         // Short-lived proof that this email was verified, required by chatFinalizeOnboarding.
         // No `id` claim, so it can never be used as a login token.

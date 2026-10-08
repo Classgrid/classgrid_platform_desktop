@@ -1037,6 +1037,18 @@ function LoginContent() {
               >
                 {loading ? <><Spinner className="w-4 h-4 text-inherit mr-2" /> Verifying...</> : "Verify OTP"}
               </button>
+              
+              <button
+                type="button"
+                onClick={() => {
+                  setWhatsappOtp("");
+                  setError("");
+                  setStep("whatsapp");
+                }}
+                className="flex w-full items-center justify-center rounded-md border border-slate-200 bg-white py-3 text-sm font-medium text-slate-900 transition-all duration-200 hover:bg-slate-50 active:scale-[0.98] dark:border-[#2a2a2a] dark:bg-[#161616] dark:text-[#f1f1f1] dark:hover:bg-[#222]"
+              >
+                Back
+              </button>
             </form>
           ) : step === "age" ? (
             <form onSubmit={handleSetupAge} className="space-y-4 animate-in slide-in-from-right-4 duration-300">
