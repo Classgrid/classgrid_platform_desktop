@@ -21,6 +21,7 @@ import { createLLMClient } from "@classgrid/ai/core";
 import { streamChat } from "../services/llm-stream.js";
 import { streamClaudeChat, CLAUDE_CHAT_MODELS } from "../services/llm-stream-anthropic.js";
 import { planToolsForMessage, buildLoadToolsTool, orderTools, groupOfTool, ageSticky, stickyKey, LOAD_TOOLS_NAME, promptBlock, filterPromptBlocks, promptBlocksForGroups } from "../services/ai-tool-groups.js";
+import { chargeableTokens } from "../services/ai-token-pricing.js";
 import { getPresignedUploadUrl, uploadBufferToR2 } from "../config/r2Client.js";
 import { primarySupabaseClient as supabase } from "../config/supabaseClient.js";
 import {
@@ -870,7 +871,7 @@ export const streamAskAi = async (req, res) => {
                 const summary = answer.replace(/["'*]/g, "").trim().slice(0, 60);
                 if (!res.writableEnded) res.write(`data: ${JSON.stringify({ type: "answer", answer: summary })}\n\n`);
                 if (userId && usage?.total_tokens > 0) {
-                    deductTokens(userId, orgId, usage.total_tokens, tokenSource).catch(() => {});
+                    deductTokens(userId, orgId, chargeableTokens(usage, CF_FLASH_MODEL), tokenSource).catch(() => {});
                     AiUsageLog.create({
                         organization_id: orgId || null, userId, provider: 'cloudflare', model: CF_FLASH_MODEL, feature: 'other',
                         promptTokens: usage.prompt_tokens || 0, completionTokens: usage.completion_tokens || 0, totalTokens: usage.total_tokens, success: true
@@ -3465,7 +3466,7 @@ Do NOT talk about internal architecture unless asked by a @classgrid.in employee
                     // Cloudflare answered instead, or the user left mid-answer) is charged and logged on its own.
                     const chargeDetachedClaudeUsage = (claudeUsage, claudeModel, errorMessage) => {
                         if (!userId || !(claudeUsage?.total_tokens > 0)) return;
-                        deductTokens(userId, orgId, claudeUsage.total_tokens, tokenSource)
+                        deductTokens(userId, orgId, chargeableTokens(claudeUsage, claudeModel), tokenSource)
                             .catch(err => console.error("[AI-TOKEN] Failed to deduct detached Claude usage:", err));
                         AiUsageLog.create({
                             organization_id: orgId || null,
@@ -3694,16 +3695,21 @@ Do NOT talk about internal architecture unless asked by a @classgrid.in employee
                     }
                 }
                 const estimatedTokens = calculatedTokens;
+                // Pool tokens: real tokens weighted by the model's real price (V4 Pro = 1x) and by cache use,
+                // for Claude and Cloudflare models alike (services/ai-token-pricing.js).
+                const poolTokens = usageStore.usage && usageStore.usage.total_tokens > 0
+                    ? chargeableTokens(usageStore.usage, usedModel)
+                    : chargeableTokens({ prompt_tokens: inputTokens, completion_tokens: outputTokens }, usedModel);
                 if (estimatedTokens > 0) {
                     const User = (await import("../models/User.js")).default;
                     const Organization = (await import("../models/Organization.js")).default;
-                    
+
                     // The tokenSource was determined earlier via hasEnoughTokens
-                    const deductionResult = await deductTokens(userId, orgId, estimatedTokens, tokenSource);
-                    
+                    const deductionResult = await deductTokens(userId, orgId, poolTokens, tokenSource);
+
                     if (deductionResult && deductionResult.success) {
                         const totalUsed = deductionResult.limit - deductionResult.remaining;
-                        console.log(`[AI-TOKEN-DEDUCTION] Current Request Cost: ${estimatedTokens} | Total Limit: ${deductionResult.limit} | Total Used This Week: ${totalUsed} | Total Remaining: ${deductionResult.remaining} | Pool Type: ${deductionResult.type}`);
+                        console.log(`[AI-TOKEN-DEDUCTION] Real tokens: ${estimatedTokens} | Charged to pool: ${poolTokens} (${usedModel}) | Total Limit: ${deductionResult.limit} | Total Used This Week: ${totalUsed} | Total Remaining: ${deductionResult.remaining} | Pool Type: ${deductionResult.type}${deductionResult.spilledTo ? ` | Overflow ${deductionResult.spilledTokens} -> ${deductionResult.spilledTo} (left ${deductionResult.spill?.remaining})` : ""}${deductionResult.uncharged ? ` | UNCHARGED ${deductionResult.uncharged} (no credits left)` : ""}`);
                         
                         const { getIO } = await import('../services/socket.service.js');
                         const io = getIO();
@@ -3714,8 +3720,8 @@ Do NOT talk about internal architecture unless asked by a @classgrid.in employee
                             // Emit personal usage update to user
                             io.to(userId).emit("ai_token_update", { 
                                 remaining: deductionResult.remaining, 
-                                type: deductionResult.type, 
-                                used: estimatedTokens 
+                                type: deductionResult.type,
+                                used: poolTokens
                             });
                         }
                     }
@@ -3731,12 +3737,13 @@ Do NOT talk about internal architecture unless asked by a @classgrid.in employee
                         completionTokens: outputTokens || 0,
                         totalTokens: estimatedTokens,
                         success: true,
-                        ...(usageStore.usage?.cache_read_input_tokens !== undefined ? {
-                            metadata: {
+                        metadata: {
+                            poolTokens,
+                            ...(usageStore.usage?.cache_read_input_tokens !== undefined ? {
                                 cacheReadTokens: usageStore.usage.cache_read_input_tokens,
                                 cacheWriteTokens: usageStore.usage.cache_creation_input_tokens
-                            }
-                        } : {})
+                            } : {})
+                        }
                     }).then(async () => {
                         try {
                             const { getIO } = await import('../services/socket.service.js');

@@ -29,6 +29,28 @@ export const calculateCreditsFromAmount = async (amountInr) => {
     return Math.floor(amountInr * multiplier);
 };
 
+/**
+ * The free weekly limit set in the super admin dashboard, resolved the same way everywhere:
+ * global limit -> org custom limit (when the org doesn't follow global) or the Classgrid limit for users
+ * without an org -> the user's own custom limit. Used by the check before a request AND by the deduction
+ * after it (they used to differ: the deduction read only user.ai_tokens.free_weekly_limit, default 100,000,
+ * so usage stopped being counted at 100k while the check allowed the dashboard's limit).
+ */
+export function resolveWeeklyLimit(user, org, globalConfig, orgId = org?._id) {
+    let weeklyLimit = globalConfig?.global_user_weekly_limit || 0;
+    if (org) {
+        if (org.ai_config?.custom_limits_enabled && org.ai_config.free_weekly_limit_per_user !== undefined && org.ai_config.free_weekly_limit_per_user !== null) {
+            weeklyLimit = org.ai_config.free_weekly_limit_per_user;
+        }
+    } else if (!orgId && globalConfig?.classgrid_custom_limits_enabled && globalConfig.classgrid_user_weekly_limit !== undefined && globalConfig.classgrid_user_weekly_limit !== null) {
+        weeklyLimit = globalConfig.classgrid_user_weekly_limit;
+    }
+    if (user?.ai_tokens?.custom_limits_enabled && user.ai_tokens.free_weekly_limit !== undefined && user.ai_tokens.free_weekly_limit !== null) {
+        weeklyLimit = user.ai_tokens.free_weekly_limit;
+    }
+    return weeklyLimit;
+}
+
 export const hasEnoughTokens = async (userId, orgId, requiredTokens = 1) => {
     // 1. Check if user is blocked or suspended
     const user = await User.findById(userId).select('ai_tokens role status');
@@ -48,8 +70,6 @@ export const hasEnoughTokens = async (userId, orgId, requiredTokens = 1) => {
         return { allowed: false, reason: "AI access is globally blocked by administrators." };
     }
 
-    let weeklyLimit = globalConfig.global_user_weekly_limit || 0;
-    
     // --- SHARED ORG POOL & ORG CUSTOM LIMITS (STEP 2) ---
     let org = null;
     if (orgId) {
@@ -62,13 +82,6 @@ export const hasEnoughTokens = async (userId, orgId, requiredTokens = 1) => {
                  return { allowed: false, reason: "Organization AI access is explicitly blocked." };
             }
 
-            // Apply Org Custom Limit for individual
-            if (org.ai_config?.custom_limits_enabled) {
-                if (org.ai_config.free_weekly_limit_per_user !== undefined && org.ai_config.free_weekly_limit_per_user !== null) {
-                    weeklyLimit = org.ai_config.free_weekly_limit_per_user;
-                }
-            }
-
             // Check Org Pool (if org_admin)
             if (user.role === 'org_admin') {
                 const orgUsed = org.ai_config?.pro_used_this_period || 0;
@@ -78,21 +91,10 @@ export const hasEnoughTokens = async (userId, orgId, requiredTokens = 1) => {
                 }
             }
         }
-    } else {
-        // Virtual Classgrid Organization for platform team/super admins
-        if (globalConfig.classgrid_custom_limits_enabled) {
-            if (globalConfig.classgrid_user_weekly_limit !== undefined && globalConfig.classgrid_user_weekly_limit !== null) {
-                weeklyLimit = globalConfig.classgrid_user_weekly_limit;
-            }
-        }
     }
 
-    // Apply User Custom Limit (Overrides Org and Global)
-    if (user.ai_tokens?.custom_limits_enabled) {
-        if (user.ai_tokens.free_weekly_limit !== undefined && user.ai_tokens.free_weekly_limit !== null) {
-            weeklyLimit = user.ai_tokens.free_weekly_limit;
-        }
-    }
+    // Global -> org (or Classgrid) -> user custom limit, as set in the super admin dashboard.
+    const weeklyLimit = resolveWeeklyLimit(user, org, globalConfig, orgId);
 
     // 2. Check free weekly limit FIRST (Always use free before touching paid/promo)
     let usedThisWeek = user.ai_tokens?.used_this_week || 0;
@@ -231,6 +233,23 @@ const triggerEmailAlerts = async (userId, orgId, type, oldBalance, currentBalanc
     }
 };
 
+// The credit pool to charge once the free weekly pool is used up: promotion (granted) or personal (paid),
+// whichever started first among those with a positive, unexpired balance. Same FIFO rule as hasEnoughTokens.
+function pickCreditSource(user) {
+    const now = Date.now();
+    const t = user?.ai_tokens || {};
+    const promoOk = (t.promotion_credits_balance || 0) > 0 && !(t.promotion_credits_end_date && new Date(t.promotion_credits_end_date).getTime() < now);
+    const paidOk = (t.ai_credits_balance || 0) > 0 && !(t.ai_credits_end_date && new Date(t.ai_credits_end_date).getTime() < now);
+    if (promoOk && paidOk) {
+        const promoStart = t.promotion_credits_start_date ? new Date(t.promotion_credits_start_date).getTime() : Infinity;
+        const paidStart = t.ai_credits_start_date ? new Date(t.ai_credits_start_date).getTime() : Infinity;
+        return promoStart <= paidStart ? "promotion" : "personal";
+    }
+    if (promoOk) return "promotion";
+    if (paidOk) return "personal";
+    return null;
+}
+
 export const deductTokens = async (userId, orgId, tokenAmount, source) => {
     try {
         let result = { success: false, remaining: 0, type: "unknown" };
@@ -270,23 +289,42 @@ export const deductTokens = async (userId, orgId, tokenAmount, source) => {
             triggerEmailAlerts(userId, orgId, "promotion", currentBalance, result.remaining, user?.ai_tokens?.total_promotion_credits_granted || currentBalance);
 
         } else if (source === "weekly_free") {
-            // For free tier: cap so used_this_week never exceeds the weekly limit
-            const user = await User.findById(userId).select("ai_tokens.used_this_week ai_tokens.free_weekly_limit");
-            const weeklyLimit = user?.ai_tokens?.free_weekly_limit || 100000;
+            // Free tier, with the same dashboard limit the pre-request check uses.
+            const user = await User.findById(userId).select("ai_tokens");
+            const org = orgId ? await Organization.findById(orgId).select("ai_config").lean() : null;
+            const globalConfig = await GlobalAiConfig.findOne({ key: "singleton" }).select("global_user_weekly_limit classgrid_custom_limits_enabled classgrid_user_weekly_limit").lean() || {};
+            const weeklyLimit = resolveWeeklyLimit(user, org, globalConfig, orgId);
             const currentUsed = user?.ai_tokens?.used_this_week || 0;
             const headroom = Math.max(0, weeklyLimit - currentUsed);
             const actualDeduction = Math.min(tokenAmount, headroom);
-            if (actualDeduction <= 0) {
-                return { success: true, remaining: 0, limit: weeklyLimit, type: "free" };
+            const overflow = tokenAmount - actualDeduction;
+
+            if (actualDeduction > 0) {
+                const updatedUser = await User.findByIdAndUpdate(userId, {
+                    $inc: {
+                        "ai_tokens.used_this_week": actualDeduction,
+                        "ai_tokens.total_ai_tokens_used": actualDeduction
+                    }
+                }, { new: true });
+                result = { success: true, remaining: Math.max(0, weeklyLimit - updatedUser.ai_tokens.used_this_week), limit: weeklyLimit, type: "free" };
+                triggerEmailAlerts(userId, orgId, "free", headroom, result.remaining, weeklyLimit);
+            } else {
+                result = { success: true, remaining: 0, limit: weeklyLimit, type: "free" };
             }
-            const updatedUser = await User.findByIdAndUpdate(userId, {
-                $inc: {
-                    "ai_tokens.used_this_week": actualDeduction,
-                    "ai_tokens.total_ai_tokens_used": actualDeduction
+
+            // The free pool ran out during this request: the rest is charged to granted or paid credits
+            // (whichever started first, as in hasEnoughTokens) instead of being dropped.
+            if (overflow > 0) {
+                const next = pickCreditSource(user);
+                if (next) {
+                    const spill = await deductTokens(userId, orgId, overflow, next);
+                    result.spilledTo = next;
+                    result.spilledTokens = overflow;
+                    result.spill = spill;
+                } else {
+                    result.uncharged = overflow;
                 }
-            }, { new: true });
-            result = { success: true, remaining: Math.max(0, updatedUser.ai_tokens.free_weekly_limit - updatedUser.ai_tokens.used_this_week), limit: updatedUser.ai_tokens.free_weekly_limit, type: "free" };
-            triggerEmailAlerts(userId, orgId, "free", headroom, result.remaining, weeklyLimit);
+            }
 
         } else if (source === "org_pool") {
             // For org pool: cap so pro_used_this_period never exceeds pro_pool_limit

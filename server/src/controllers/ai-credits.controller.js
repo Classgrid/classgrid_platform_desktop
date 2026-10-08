@@ -2,6 +2,8 @@
 import User from "../models/User.js";
 import AiCreditTransaction from "../models/AiCreditTransaction.js";
 import GlobalAiConfig from "../models/GlobalAiConfig.js";
+import Organization from "../models/Organization.js";
+import { resolveWeeklyLimit } from "../services/ai-credits.service.js";
 
 /**
  * PHASE 13: End User AI Credits Controller
@@ -18,7 +20,15 @@ export const getMyCredits = async (req, res) => {
         }
 
         const tokens = user.ai_tokens || {};
-        
+        // The free weekly limit from the super admin dashboard (same rule the chat uses to check and deduct).
+        const orgId = req.user.organization_id || null;
+        const org = orgId ? await Organization.findById(orgId).select("ai_config").lean() : null;
+        const limitConfig = await GlobalAiConfig.findOne({ key: "singleton" }).select("global_user_weekly_limit classgrid_custom_limits_enabled classgrid_user_weekly_limit").lean() || {};
+        const freeWeeklyLimit = resolveWeeklyLimit(user, org, limitConfig, orgId);
+        // After the weekly reset date the week starts over, even before the next chat message resets the counter.
+        const weekOver = tokens.week_reset_date && Date.now() >= new Date(tokens.week_reset_date).getTime();
+        const usedThisWeek = weekOver ? 0 : (tokens.used_this_week || 0);
+
         const totalPurchased = tokens.total_ai_credits_purchased || 0;
         const balance = tokens.ai_credits_balance || 0;
         const usedAmount = Math.max(0, totalPurchased - balance);
@@ -33,9 +43,9 @@ export const getMyCredits = async (req, res) => {
                 creditId: `FREE-${user._id.toString().substring(0, 10).toUpperCase()}`,
                 creditType: "Free",
                 status: "Active",
-                issuedAmount: tokens.free_weekly_limit ?? 100000,
-                amountRemaining: Math.max(0, (tokens.free_weekly_limit ?? 100000) - (tokens.used_this_week || 0)),
-                estimatedAmountRemaining: Math.max(0, (tokens.free_weekly_limit ?? 100000) - (tokens.used_this_week || 0)),
+                issuedAmount: freeWeeklyLimit,
+                amountRemaining: Math.max(0, freeWeeklyLimit - usedThisWeek),
+                estimatedAmountRemaining: Math.max(0, freeWeeklyLimit - usedThisWeek),
                 startDate: freeStartDate.toISOString(),
                 expirationDate: freeEndDate.toISOString()
             }
