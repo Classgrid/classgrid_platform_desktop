@@ -63,7 +63,142 @@ function toSystemBlocks(systemText, cacheBoundary) {
     return blocks;
 }
 
-function toClaudeMessages(messages) {
+// The shared system prompt asks every model for inline <think>...</think> reasoning. Claude has native
+// thinking, but may still follow that rule, so such spans are routed to the thought stream instead of the
+// answer. Tags can be split across chunks, so a possible partial tag is held back until resolved.
+function createThinkSplitter(emitText, emitThought) {
+    const OPEN = "<think>";
+    const CLOSE = "</think>";
+    let inThink = false;
+    let pending = "";
+    const partialTagLength = (str, tag) => {
+        for (let len = Math.min(tag.length - 1, str.length); len > 0; len--) {
+            if (tag.startsWith(str.slice(-len))) return len;
+        }
+        return 0;
+    };
+    return {
+        push(piece) {
+            pending += piece;
+            for (;;) {
+                const tag = inThink ? CLOSE : OPEN;
+                const emit = inThink ? emitThought : emitText;
+                const idx = pending.indexOf(tag);
+                if (idx >= 0) {
+                    if (idx > 0) emit(pending.slice(0, idx));
+                    pending = pending.slice(idx + tag.length);
+                    inThink = !inThink;
+                    continue;
+                }
+                const hold = partialTagLength(pending, tag);
+                const ready = pending.slice(0, pending.length - hold);
+                if (ready) emit(ready);
+                pending = pending.slice(pending.length - hold);
+                return;
+            }
+        },
+        flush() {
+            if (pending) (inThink ? emitThought : emitText)(pending);
+            pending = "";
+        },
+    };
+}
+
+const IMAGE_TYPES = new Set(["image/jpeg", "image/jpg", "image/png", "image/gif", "image/webp"]);
+
+// Limits apply to the base64 that is sent (4/3 of the file size): 5 MB per image, 32 MB per request.
+const MAX_IMAGE_BYTES = Math.floor(3.75 * 1024 * 1024);
+const MAX_PDF_BYTES = 20 * 1024 * 1024;
+
+// The real image type from the file's first bytes; the browser's mimeType can be wrong or empty.
+function sniffImageType(buf) {
+    if (buf[0] === 0xff && buf[1] === 0xd8 && buf[2] === 0xff) return "image/jpeg";
+    if (buf[0] === 0x89 && buf[1] === 0x50 && buf[2] === 0x4e && buf[3] === 0x47) return "image/png";
+    if (buf.slice(0, 3).toString("ascii") === "GIF") return "image/gif";
+    if (buf.slice(0, 4).toString("ascii") === "RIFF" && buf.slice(8, 12).toString("ascii") === "WEBP") return "image/webp";
+    return null;
+}
+
+// Only files from Classgrid's own storage are downloaded, so a user can't make the server fetch arbitrary
+// URLs: the Classgrid CDN (CloudFront over S3), the public R2 bucket URL used for chat uploads
+// (config/r2Client.js), and the two Classgrid S3 buckets, including signed (presigned) links to them.
+const TRUSTED_S3_BUCKETS = [
+    { bucket: "erp-classgrid", region: "eu-north-1" },
+    { bucket: "classgrid-student-docs-prod", region: "ap-south-1" },
+];
+
+function isTrustedAttachmentUrl(url) {
+    try {
+        const u = new URL(url);
+        if (u.protocol !== "https:") return false;
+        const trusted = new Set(["cdn.classgrid.in", "pub-96a564393c0440f2bab37ad8bbe92398.r2.dev"]);
+        if (process.env.R2_PUBLIC_URL) {
+            try { trusted.add(new URL(process.env.R2_PUBLIC_URL.replace(/^["']|["']$/g, "")).hostname); } catch { /* ignore a malformed value */ }
+        }
+        if (trusted.has(u.hostname)) return true;
+        return TRUSTED_S3_BUCKETS.some(({ bucket, region }) =>
+            // virtual-hosted style: <bucket>.s3.<region>.amazonaws.com / <bucket>.s3.amazonaws.com
+            u.hostname === `${bucket}.s3.${region}.amazonaws.com` || u.hostname === `${bucket}.s3.amazonaws.com` ||
+            // path style: s3.<region>.amazonaws.com/<bucket>/...
+            ((u.hostname === `s3.${region}.amazonaws.com` || u.hostname === "s3.amazonaws.com") && u.pathname.startsWith(`/${bucket}/`))
+        );
+    } catch {
+        return false;
+    }
+}
+
+function nativeAttachmentKind(a) {
+    const type = String(a?.mimeType || "").toLowerCase();
+    if (!isTrustedAttachmentUrl(typeof a?.url === "string" ? a.url : "")) return null;
+    if (IMAGE_TYPES.has(type)) return "image";
+    if (type === "application/pdf") return "pdf";
+    // Browsers sometimes send no type at all; fall back to the file extension (the bytes are checked later).
+    if (!type && /\.(png|jpe?g|gif|webp)(\?|$)/i.test(a.url)) return "image";
+    if (!type && /\.pdf(\?|$)/i.test(a.url)) return "pdf";
+    return null;
+}
+
+// Attachments Claude can read natively: images (vision) and PDFs. The server downloads them and sends the
+// bytes (base64), so Claude never has to reach the URL itself. A file that can't be fetched is skipped
+// and stays a link in the message text.
+async function toAttachmentBlocks(attachments, signal) {
+    const blocks = [];
+    for (const a of attachments || []) {
+        const kind = nativeAttachmentKind(a);
+        if (!kind) continue;
+        try {
+            const fetchSignal = signal ? AbortSignal.any([signal, AbortSignal.timeout(15000)]) : AbortSignal.timeout(15000);
+            // Redirects are followed by hand, and only to another trusted Classgrid storage URL.
+            let url = a.url;
+            let res;
+            for (let hop = 0; hop < 3; hop++) {
+                res = await fetch(url, { signal: fetchSignal, redirect: "manual" });
+                if (res.status < 300 || res.status >= 400) break;
+                const next = res.headers.get("location");
+                const nextUrl = next ? new URL(next, url).toString() : "";
+                if (!nextUrl || !isTrustedAttachmentUrl(nextUrl)) { res = null; break; }
+                url = nextUrl;
+            }
+            if (!res || !res.ok) continue;
+            const buf = Buffer.from(await res.arrayBuffer());
+            if (buf.length === 0 || buf.length > (kind === "image" ? MAX_IMAGE_BYTES : MAX_PDF_BYTES)) continue;
+            const data = buf.toString("base64");
+            if (kind === "image") {
+                const mediaType = sniffImageType(buf);
+                if (!mediaType) continue; // not a format Claude reads (e.g. HEIC): stays a link for analyze_image
+                blocks.push({ type: "image", source: { type: "base64", media_type: mediaType, data } });
+            } else {
+                blocks.push({ type: "document", source: { type: "base64", media_type: "application/pdf", data }, ...(a.name ? { title: String(a.name).slice(0, 200) } : {}) });
+            }
+        } catch (e) {
+            if (signal?.aborted) throw e;
+            console.warn(`[claude] could not load attachment for native vision (${String(a.url).slice(0, 80)}): ${e.message}`);
+        }
+    }
+    return blocks;
+}
+
+function toClaudeMessages(messages, attachmentBlocks) {
     const out = [];
     for (const m of messages) {
         if (m.role !== "user" && m.role !== "assistant") continue;
@@ -72,7 +207,33 @@ function toClaudeMessages(messages) {
         if (out.length === 0 && m.role === "assistant") continue; // the first message must be from the user
         out.push({ role: m.role, content: text });
     }
+    // Attachments belong to the newest user message; blocks go before its text.
+    const blocks = attachmentBlocks || [];
+    const last = out[out.length - 1];
+    if (blocks.length > 0 && last?.role === "user") {
+        last.content = [...blocks, { type: "text", text: last.content }];
+    }
     return out;
+}
+
+// Tool search: only these frequently used tools are loaded into Claude's context up front. Every other
+// tool is sent with defer_loading, so its definition costs no input tokens until Claude finds it with
+// the server-side tool search. Deferred tools sit outside the cached prefix, so caching is unaffected.
+const ALWAYS_LOADED_TOOLS = new Set(["search_web", "get_timezone_time", "run_code", "search_knowledge_base", "generate_pdf"]);
+const TOOL_SEARCH_TOOL = { type: "tool_search_tool_bm25_20251119", name: "tool_search_tool_bm25" };
+const LOAD_TOOLS_TOOL = "load_tools";
+
+function withToolSearch(claudeTools, loadedToolNames) {
+    const keep = loadedToolNames instanceof Set && loadedToolNames.size > 0 ? loadedToolNames : ALWAYS_LOADED_TOOLS;
+    if (claudeTools.every((t) => keep.has(t.name))) return claudeTools;
+    const loaded = claudeTools.filter((t) => keep.has(t.name));
+    const deferred = claudeTools
+        .filter((t) => !keep.has(t.name))
+        .map(({ cache_control, ...t }) => ({ ...t, defer_loading: true })); // deferred tools can't carry cache_control
+    const head = [TOOL_SEARCH_TOOL, ...loaded];
+    // The cache breakpoint goes on the last always-loaded tool.
+    head[head.length - 1] = { ...head[head.length - 1], cache_control: { type: "ephemeral" } };
+    return [...head, ...deferred];
 }
 
 function toClaudeTools(tools) {
@@ -125,6 +286,9 @@ export async function streamClaudeChat({
     maxToolDepth = 100,
     timeoutMs = 300000,
     systemCacheBoundary,
+    loadedToolNames,
+    groupNeedingLoad,
+    attachments = [],
     effort,
     signal,
     onToken,
@@ -136,8 +300,13 @@ export async function streamClaudeChat({
 
     const systemText = messages.filter((m) => m.role === "system").map((m) => m.content).join("\n\n");
     const system = toSystemBlocks(systemText, systemCacheBoundary);
-    const claudeTools = toClaudeTools(tools);
-    const conversation = toClaudeMessages(messages);
+    const attachmentBlocks = await toAttachmentBlocks(attachments, signal);
+    const conversation = toClaudeMessages(messages, attachmentBlocks);
+    // With an image attached Claude looks at it directly, so the analyze_image detour is not offered.
+    const hasNativeImage = attachmentBlocks.some((b) => b.type === "image");
+    const claudeTools = withToolSearch(toClaudeTools(hasNativeImage ? tools.filter((t) => t?.function?.name !== "analyze_image") : tools), loadedToolNames);
+    const sentToolNames = new Set(claudeTools.map((t) => t.name));
+    const deferredToolNames = new Set(claudeTools.filter((t) => t.defer_loading).map((t) => t.name));
     if (conversation.length === 0) throw new StreamChatError("No user message to send");
 
     const usage = {
@@ -176,6 +345,14 @@ export async function streamClaudeChat({
             if (signal?.aborted) throw new StreamChatError("Request aborted");
 
             thoughtThisRound = false;
+            const emitThought = (piece) => {
+                // Keep reasoning from separate rounds visually separate in the thought stream.
+                if (hadReasoning && !thoughtThisRound) onThought?.("\n\n");
+                thoughtThisRound = true;
+                onThought?.(piece);
+            };
+            let roundText = "";
+            const splitter = createThinkSplitter((piece) => { roundText += piece; onToken?.(piece); }, emitThought);
             const stream = getClient().beta.messages.stream(
                 { ...params, messages: conversation },
                 { signal, timeout: timeoutMs },
@@ -192,14 +369,12 @@ export async function streamClaudeChat({
                 }
                 if (event.type !== "content_block_delta") continue;
                 if (event.delta.type === "thinking_delta" && event.delta.thinking) {
-                    // Keep reasoning from separate rounds visually separate in the thought stream.
-                    if (hadReasoning && !thoughtThisRound) onThought?.("\n\n");
-                    thoughtThisRound = true;
-                    onThought?.(event.delta.thinking);
+                    emitThought(event.delta.thinking);
                 } else if (event.delta.type === "text_delta" && event.delta.text) {
-                    onToken?.(event.delta.text);
+                    splitter.push(event.delta.text);
                 }
             }
+            splitter.flush();
 
             const message = await stream.finalMessage();
             roundUsage = null;
@@ -208,7 +383,12 @@ export async function streamClaudeChat({
             if (thoughtThisRound) hadReasoning = true;
 
             const content = contentAfterFallback(message.content);
-            const text = content.filter((b) => b.type === "text").map((b) => b.text).join("").trim();
+            // Without a mid-response fallback the streamed text (minus inline <think> spans) is the answer;
+            // after one, only the text blocks that survive contentAfterFallback count.
+            const hadFallback = content !== message.content;
+            const text = hadFallback
+                ? content.filter((b) => b.type === "text").map((b) => b.text).join("").replace(/<think>[\s\S]*?<\/think>/g, "").trim()
+                : roundText.trim();
             const toolUses = content.filter((b) => b.type === "tool_use");
 
             if (message.stop_reason === "refusal") {
@@ -232,6 +412,7 @@ export async function streamClaudeChat({
             const truncated = message.stop_reason === "max_tokens";
             const callsThisRound = [];
             const toolResults = [];
+            const extraTexts = [];
             let countsTowardDepth = false;
 
             for (const call of toolUses) {
@@ -245,32 +426,51 @@ export async function streamClaudeChat({
                 } else if ([...earlierCalls, ...callsThisRound].some((c) => c.name === call.name && c.input === inputKey)) {
                     content = `ERROR: You have ALREADY called ${call.name} with these exact arguments. Use the data you already have.`;
                     isError = true;
+                } else if (!sentToolNames.has(call.name)) {
+                    // Only tools that were actually sent to the model may run.
+                    content = `Error: Unknown tool ${call.name}.`;
+                    isError = true;
                 } else if (!toolHandlers[call.name]) {
                     content = `Error: Unknown tool ${call.name}.`;
                     isError = true;
+                } else if (call.name !== LOAD_TOOLS_TOOL && groupNeedingLoad?.(call.name)) {
+                    // Found through tool search but its group (and that group's rules) isn't loaded yet.
+                    content = `Error: Before using ${call.name}, call load_tools with groups ["${groupNeedingLoad(call.name)}"] to load it and its rules, then call ${call.name} again.`;
+                    isError = true;
                 } else {
-                    onStatus?.(call.name.replace(/_/g, " "));
-                    toolsRun++;
+                    // load_tools only changes which tools are visible: no status pill, and not counted as an action.
+                    const isLoader = call.name === LOAD_TOOLS_TOOL;
+                    if (!isLoader) { onStatus?.(call.name.replace(/_/g, " ")); toolsRun++; }
                     try {
                         content = await toolHandlers[call.name](call.input ?? {});
                     } catch (e) {
                         content = `Tool error: ${e instanceof Error ? e.message : String(e)}`;
                         isError = true;
                     }
-                    onStatus?.("analyzing");
+                    if (!isLoader) onStatus?.("analyzing");
                 }
                 countsTowardDepth = true;
                 callsThisRound.push({ name: call.name, input: inputKey });
+                // A handler may return { text, toolReferences }: load_tools hands Claude the deferred tools it
+                // asked for as tool_reference blocks, which the API expands into their full definitions.
+                const isObjectResult = content && typeof content === "object" && "text" in content;
+                const refs = isObjectResult && Array.isArray(content.toolReferences)
+                    ? content.toolReferences.filter((n) => deferredToolNames.has(n))
+                    : [];
+                const resultText = String((isObjectResult ? content.text : content) ?? "").slice(0, 6000);
+                // The tool_result can only hold the references, so a loaded group's rules follow as a text block.
+                if (refs.length > 0 && content.instructions) extraTexts.push(String(content.instructions));
                 toolResults.push({
                     type: "tool_result",
                     tool_use_id: call.id,
-                    content: String(content ?? "").slice(0, 6000),
+                    // The API requires a tool_result that carries tool_reference blocks to contain nothing else.
+                    content: refs.length > 0 ? refs.map((n) => ({ type: "tool_reference", tool_name: n })) : resultText,
                     ...(isError ? { is_error: true } : {}),
                 });
             }
 
             // All results go back in one user message, which keeps Claude making parallel calls.
-            conversation.push({ role: "user", content: toolResults });
+            conversation.push({ role: "user", content: [...toolResults, ...extraTexts.map((text) => ({ type: "text", text: `Rules for the tools just loaded:\n${text}` }))] });
             earlierCalls.push(...callsThisRound);
             if (countsTowardDepth) depth++;
         }

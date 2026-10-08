@@ -167,7 +167,8 @@ export async function streamChat({
     onThought,
     onStatus
 }) {
-    const allTools = tools.filter(t => t?.function?.name !== "internal_thought_process");
+    // `tools` is re-read every round: load_tools can add tools to the same array mid-answer.
+    const currentTools = () => tools.filter(t => t?.function?.name !== "internal_thought_process");
     const conversation = [...messages];
     const usage = { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 };
     let depth = 0;
@@ -184,8 +185,10 @@ export async function streamChat({
                 onThought?.(piece);
             };
 
+            const roundTools = currentTools();
+            const sentToolNames = new Set(roundTools.map(t => t.function.name));
             const round = await streamOneRound({
-                provider, messages: conversation, tools: allTools, temperature, maxTokens, timeoutMs, signal,
+                provider, messages: conversation, tools: roundTools, temperature, maxTokens, timeoutMs, signal,
                 onToken, onThought: separateThought
             });
             if (round.reasoning) hadReasoning = true;
@@ -251,20 +254,27 @@ export async function streamChat({
 
                 if (alreadyCalled) {
                     toolResult = `ERROR: You have ALREADY called ${toolName} with these exact arguments. Use the data you already have.`;
+                } else if (!sentToolNames.has(toolName)) {
+                    // Only tools that were actually sent to the model may run.
+                    toolResult = `Error: The tool ${toolName} is not loaded. Call load_tools with its group first.`;
                 } else if (!handler) {
                     toolResult = `Error: Unknown tool ${toolName}.`;
                 } else {
-                    onStatus?.(toolName.replace(/_/g, " "));
-                    toolsRun++;
+                    // load_tools only changes which tools are visible: no status pill, and not counted as an action.
+                    const isLoader = toolName === "load_tools";
+                    if (!isLoader) { onStatus?.(toolName.replace(/_/g, " ")); toolsRun++; }
                     try {
                         toolResult = await handler(args);
                     } catch (e) {
                         toolResult = `Tool error: ${e instanceof Error ? e.message : String(e)}`;
                     }
-                    onStatus?.("analyzing");
+                    if (!isLoader) onStatus?.("analyzing");
                 }
 
-                conversation.push({ role: "tool", tool_call_id: call.id, content: String(toolResult ?? "").slice(0, 6000) });
+                // A handler may return { text, ... } (load_tools does); the model gets the text.
+                const resultText = toolResult && typeof toolResult === "object" && "text" in toolResult ? toolResult.text : toolResult;
+                // load_tools carries the full rules of the loaded groups, so it isn't cut like normal tool output.
+                conversation.push({ role: "tool", tool_call_id: call.id, content: String(resultText ?? "").slice(0, toolName === "load_tools" ? 40000 : 6000) });
             }
 
             if (countsTowardDepth) depth++;

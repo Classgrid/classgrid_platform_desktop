@@ -40,7 +40,11 @@ import { getSessionMessages } from './ai-chat.service.js';
 
 const REDIS_KEY_PREFIX  = 'ai:chat:history:';
 const MAX_HISTORY       = 500;   // absolute cap stored in Redis
-const DEFAULT_DEPTH     = 25;    // default messages sent to LLM per request
+const DEFAULT_DEPTH     = 12;    // default messages sent to LLM per request (was 25; see docs/AI_TOKEN_ROOT_CAUSE.md)
+// Tool memory notes are restored only for the most recent answers, each cut short, so old tool results
+// don't make every new message heavier. Links in a result are always kept.
+const TOOL_NOTE_TURNS   = 2;
+const TOOL_NOTE_CHARS   = 600;
 const CACHE_TTL_SECONDS = 86400; // 24 hours
 
 /**
@@ -78,23 +82,31 @@ export async function getHistory(sessionId, depth = DEFAULT_DEPTH) {
 
         // LRANGE with negative index: -safeDepth gets the last N items
         const raw = await redis.lrange(key, -safeDepth, -1);
-        return raw.flatMap(item => {
-            try { 
-                const parsed = JSON.parse(item); 
+        // Tool notes are kept only for the last TOOL_NOTE_TURNS assistant messages.
+        const assistantPositions = raw.map((item, i) => (/"role"\s*:\s*"assistant"/.test(item) ? i : -1)).filter(i => i >= 0);
+        const notesFrom = assistantPositions.length > TOOL_NOTE_TURNS ? assistantPositions[assistantPositions.length - TOOL_NOTE_TURNS] : 0;
+        return raw.flatMap((item, itemIndex) => {
+            try {
+                const parsed = JSON.parse(item);
                 if (parsed && typeof parsed.content === 'string' && parsed.content.trim().startsWith('{')) {
                     try {
                         const inner = JSON.parse(parsed.content);
                         if (inner && inner.classgrid_ai_message) {
                             parsed.content = inner.content || '';
-                            
+
                             // Safely restore truncated tool memory for the LLM without blowing up the context window
-                            if (inner.steps && Array.isArray(inner.steps) && inner.steps.length > 0) {
+                            if (itemIndex >= notesFrom && inner.steps && Array.isArray(inner.steps) && inner.steps.length > 0) {
                                 const toolSummaries = inner.steps.map(s => {
                                     if (!s.tool) return null;
                                     let resExcerpt = "No result recorded";
                                     if (typeof s.result === 'string') {
-                                        // Keep it generous enough to capture CDN links but small enough to block raw PDF dumps
-                                        resExcerpt = s.result.length > 5000 ? s.result.substring(0, 5000) + '...[TRUNCATED]' : s.result;
+                                        // Short excerpt, but every link in the result is kept (CDN files, PDFs, meeting links)
+                                        if (s.result.length > TOOL_NOTE_CHARS) {
+                                            const links = [...new Set(s.result.match(/https?:\/\/[^\s"'<>)\]]+/g) || [])].slice(0, 10);
+                                            resExcerpt = s.result.substring(0, TOOL_NOTE_CHARS) + '...[TRUNCATED]' + (links.length ? ` Links: ${links.join(' ')}` : '');
+                                        } else {
+                                            resExcerpt = s.result;
+                                        }
                                     }
                                     return `Tool Used: ${s.tool} | Result Excerpt: ${resExcerpt}`;
                                 }).filter(Boolean).join('\n');

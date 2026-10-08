@@ -3120,6 +3120,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
           headers: { "Content-Type": "application/json" },
           credentials: "include",
           body: JSON.stringify({
+            purpose: "message_summary",
             question: `Create a 3 to 5 word summary title for this message. Output ONLY the raw words, no quotes, no preambles: ${displayQuestion}`,
             history: [{ role: "system", content: "You are a title generator. Output only a short title, without quotes." }],
             isIncognito: true
