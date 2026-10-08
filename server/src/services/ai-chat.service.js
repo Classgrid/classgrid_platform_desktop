@@ -75,72 +75,161 @@ export async function saveMessage(sessionId, role, content, fileUrls = []) {
     return data;
 }
 
+// The summary starts with this header, so the chat knows how many messages it covers and sends the model
+// every message after that point (no gap between the summary and the recent messages).
+const MEMORY_HEADER = /^\[Summary of messages 1-(\d+)\]\n/;
+const MEMORY_EVERY = 8;
+const MEMORY_MESSAGE_CHARS = 3000;
+const MEMORY_FLASH_MODEL = "@cf/deepseek-ai/deepseek-v4-flash-0731";
+
+/** How many chat messages a saved summary covers, or null for an older summary without the header. */
+export function memoryCoverage(summary) {
+    const m = MEMORY_HEADER.exec(String(summary || ""));
+    return m ? Number(m[1]) : null;
+}
+
+/** The summary text without its coverage header. */
+export function memoryText(summary) {
+    return String(summary || "").replace(MEMORY_HEADER, "");
+}
+
+// Saved assistant messages can be JSON ({ classgrid_ai_message, content, steps }); only the text is summarized.
+function plainMessageText(content) {
+    const text = String(content ?? "");
+    if (text.trim().startsWith("{")) {
+        try {
+            const inner = JSON.parse(text);
+            if (inner?.classgrid_ai_message) return String(inner.content || "");
+        } catch { /* not JSON */ }
+    }
+    return text;
+}
+
+const MEMORY_INSTRUCTIONS = `You keep the long-term memory of one chat between a user and Classgrid AI.
+You get the PREVIOUS MEMORY (may be empty) and the NEW MESSAGES since it was written. Write the updated memory.
+
+Output exactly these two sections, in Markdown, max 350 words in total:
+
+## User facts
+Stable facts about the user: their name, things they asked the AI to remember (favorite things, numbers, names), stated preferences and standing instructions.
+- Keep every fact from the previous memory unless the user changed or withdrew it.
+- Copy names, numbers, links and file paths exactly.
+
+## Task state
+What the chat is working on now: the goal, decisions made, files and links created (exact paths/URLs), and what is still pending.
+- Drop finished or outdated items.
+
+Rules:
+- Write only what the messages actually say. Never invent facts, instructions or preferences.
+- Something the AI offered or suggested is not a user instruction unless the user agreed to it.
+- Do not record temporary status or guesses (for example "memory is not working yet" or "the agent may have failed").
+- If a section has nothing, write "None yet."
+- Output only the two sections, nothing before or after.`;
+
+async function summarizeWithFlash(input) {
+    const { streamChat } = await import('./llm-stream.js');
+    const result = await streamChat({
+        provider: {
+            name: "cloudflare",
+            url: `https://api.cloudflare.com/client/v4/accounts/${process.env.CLOUDFLARE_ACCOUNT_ID}/ai/run/${MEMORY_FLASH_MODEL}`,
+            apiKey: process.env.CLOUDFLARE_WORKERS_AI_TOKEN || "",
+            model: MEMORY_FLASH_MODEL,
+            timeoutMs: 90000
+        },
+        messages: [
+            { role: "system", content: MEMORY_INSTRUCTIONS },
+            { role: "user", content: input }
+        ],
+        tools: [],
+        maxTokens: 3000, // Flash reasons first; leave room for the memory after the reasoning
+        maxToolDepth: 0,
+        timeoutMs: 90000
+    });
+    return String(result.answer || "").trim();
+}
+
+// Fallback when DeepSeek V4 Flash is unavailable.
+async function summarizeWithMistral(input) {
+    const mistralKey = process.env.MISTRAL_API_KEY || process.env.MISTRAL_API_KEY_2;
+    if (!mistralKey) throw new Error("MISTRAL_API_KEY is not set");
+    const openai = new OpenAI({ apiKey: mistralKey, baseURL: "https://api.mistral.ai/v1" });
+    const response = await openai.chat.completions.create({
+        model: "open-mistral-nemo",
+        messages: [{ role: "system", content: MEMORY_INSTRUCTIONS }, { role: "user", content: input }]
+    });
+    return String(response.choices?.[0]?.message?.content || "").trim();
+}
+
 /**
- * Background worker that condenses long chat histories using Mistral Nemo.
- * Triggers every 8 messages.
+ * Background worker that keeps each chat's long-term memory: every 8 messages it updates the previous
+ * summary with the messages since then (DeepSeek V4 Flash, Mistral Nemo as fallback).
  */
 export async function triggerMemoryAgent(sessionId) {
     if (!sessionId) return;
+    let lockKey = null;
+    let redis = null;
     try {
-        // 1. Fetch current messages
         const { data: messages, error } = await primarySupabaseClient
             .from('ai_chat_messages')
-            .select('*')
+            .select('role, content, created_at')
             .eq('session_id', sessionId)
             .order('created_at', { ascending: true });
 
         if (error || !messages) return;
+        const total = messages.length;
+        if (total < MEMORY_EVERY || total % MEMORY_EVERY !== 0) return;
 
-        // 2. Threshold check: only run every 8 messages
-        if (messages.length < 8 || messages.length % 8 !== 0) return;
+        // One update at a time per chat (two messages saved at once could both reach this point).
+        redis = (await import('../config/redis.js')).default;
+        lockKey = `ai:memory:lock:${sessionId}`;
+        const gotLock = await redis.set(lockKey, "1", "EX", 120, "NX").catch(() => "OK");
+        if (!gotLock) return;
 
-        console.log(`[Memory Agent] Triggering Mistral Nemo for session ${sessionId}...`);
+        const { data: session } = await primarySupabaseClient
+            .from('ai_chat_sessions')
+            .select('long_term_memory')
+            .eq('id', sessionId)
+            .single();
+        const previous = session?.long_term_memory || "";
+        // An older summary without the header covered everything up to the previous 8-message mark.
+        const covered = previous ? (memoryCoverage(previous) ?? Math.max(0, total - MEMORY_EVERY)) : 0;
+        const newMessages = messages.slice(Math.min(covered, total));
+        if (newMessages.length === 0) return;
 
-        // 3. Format history
-        const historyText = messages.map(m => `${m.role.toUpperCase()}: ${m.content}`).join('\n\n');
+        const input = [
+            `PREVIOUS MEMORY:\n${previous ? memoryText(previous) : "(empty)"}`,
+            `NEW MESSAGES (${covered + 1} to ${total}):`,
+            ...newMessages.map((m, i) => `[${covered + i + 1}] ${String(m.role).toUpperCase()}: ${plainMessageText(m.content).slice(0, MEMORY_MESSAGE_CHARS)}`)
+        ].join("\n\n");
 
-        // 4. Call Mistral Nemo via OpenAI compatible endpoint
-        const mistralKey = process.env.MISTRAL_API_KEY || process.env.MISTRAL_API_KEY_2;
-        if (!mistralKey) {
-            console.warn("[Memory Agent] Missing MISTRAL_API_KEY. Skipping.");
-            return;
+        console.log(`[Memory Agent] Updating memory for session ${sessionId} (messages ${covered + 1}-${total})...`);
+        let summary = "";
+        let usedModel = MEMORY_FLASH_MODEL;
+        try {
+            summary = await summarizeWithFlash(input);
+        } catch (e) {
+            console.warn(`[Memory Agent] DeepSeek V4 Flash failed, using Mistral Nemo: ${e.message}`);
         }
+        if (!summary) {
+            usedModel = "open-mistral-nemo";
+            summary = await summarizeWithMistral(input);
+        }
+        if (!summary) throw new Error("empty summary");
 
-        const openai = new OpenAI({
-            apiKey: mistralKey,
-            baseURL: "https://api.mistral.ai/v1"
-        });
-
-        const prompt = `You are the Context Condenser Agent. Read the following chat history and generate a highly compressed, dense summary (max 300 words).
-Focus ONLY on:
-1. The core goal of the project being built.
-2. Absolute file paths of created files (e.g., /data/space-site/style.css).
-3. Key user preferences, frustrations, or explicit instructions (e.g., "NEVER use R2 connector, use Node.js script instead").
-4. Current pending tasks.
-
-CHAT HISTORY:
-${historyText}`;
-
-        const response = await openai.chat.completions.create({
-            model: "open-mistral-nemo",
-            messages: [{ role: "user", content: prompt }]
-        });
-
-        const summary = response.choices[0].message.content;
-
-        // 5. Save to database
         const { error: updateErr } = await primarySupabaseClient
             .from('ai_chat_sessions')
-            .update({ long_term_memory: summary })
+            .update({ long_term_memory: `[Summary of messages 1-${total}]\n${summary}` })
             .eq('id', sessionId);
 
         if (updateErr) {
             console.error("[Memory Agent] Error saving to DB:", updateErr);
         } else {
-            console.log(`[Memory Agent] Successfully saved condensed memory for session ${sessionId}`);
+            console.log(`[Memory Agent] Successfully saved condensed memory for session ${sessionId} (1-${total}, ${usedModel})`);
         }
     } catch (error) {
         console.error("[Memory Agent] Failed:", error);
+    } finally {
+        if (redis && lockKey) redis.del(lockKey).catch(() => {});
     }
 }
 

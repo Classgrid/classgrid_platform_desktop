@@ -35,9 +35,11 @@ import {
     getSessionById,
     createSharedSnapshot,
     getSharedSnapshot,
-    getUserGeneratedImages
+    getUserGeneratedImages,
+    memoryCoverage,
+    memoryText
 } from "../services/ai-chat.service.js";
-import { getHistory, appendToHistory, invalidateHistoryCache } from "../services/ai-chat-history.service.js";
+import { getHistory, getHistoryCount, appendToHistory, invalidateHistoryCache } from "../services/ai-chat-history.service.js";
 import { hasEnoughTokens, deductTokens, getImageGenerationCost } from "../services/ai-credits.service.js";
 import redis from "../config/redis.js";
 import { sendEmail } from "../services/aws-ses.service.js";
@@ -993,8 +995,13 @@ export const streamAskAi = async (req, res) => {
 
             // Inject Mistral long_term_memory if available
             if (sessionData.long_term_memory) {
-                volatilePrompt += `\n\n<long_term_memory>\n${sessionData.long_term_memory}\n</long_term_memory>`;
-                historyDepth = Math.min(historyDepth, 5); // Prune history if memory exists
+                // Every message after the summary is sent (+2 overlap), so nothing falls between the two.
+                // An older summary without the coverage header covered up to the previous 8-message mark.
+                const covered = memoryCoverage(sessionData.long_term_memory);
+                const total = await getHistoryCount(sessionId);
+                const sinceSummary = covered !== null ? total - covered : (total % 8) + 8;
+                historyDepth = Math.min(Math.max(sinceSummary + 2, 4), 30);
+                volatilePrompt += `\n\n<long_term_memory>\nA background model's summary of messages 1-${covered ?? "?"} of this chat (not their exact text; say so if you quote it). The messages after it follow in full.\n${memoryText(sessionData.long_term_memory)}\n</long_term_memory>`;
             }
 
             // Ownership verified, safe to load history

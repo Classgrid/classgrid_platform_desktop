@@ -150,6 +150,22 @@ export async function getHistory(sessionId, depth = DEFAULT_DEPTH) {
     }
 }
 
+/** How many messages the chat has so far (warms the cache from Supabase on a miss). */
+export async function getHistoryCount(sessionId) {
+    if (!sessionId) return 0;
+    const key = redisKey(sessionId);
+    try {
+        let len = await redis.llen(key);
+        if (len === 0) {
+            await warmCache(sessionId);
+            len = await redis.llen(key);
+        }
+        return len;
+    } catch {
+        return (await getSessionMessages(sessionId).catch(() => []))?.length || 0;
+    }
+}
+
 /**
  * Append a new message to the session history in Redis.
  * Also resets TTL so active sessions stay warm.

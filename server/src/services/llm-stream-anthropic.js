@@ -187,6 +187,9 @@ function imageBlockFromBuffer(buf) {
 // a Classgrid link) are shown to Claude as real images. Every image is re-sent with the rest of the chat on
 // later rounds, so a run is capped by count and size (the API allows 32 MB per request).
 const TRUSTED_IMAGE_URL = /https:\/\/[^\s"'<>()\]]+?\.(?:png|jpe?g|gif|webp)(?:\?[^\s"'<>()\]]*)?/gi;
+// Only tools that make or upload an image have their image links shown; database, log, web and other
+// results stay text (their links are just data, and fetching them would cost tokens on every query).
+const IMAGE_LINK_TOOLS = new Set(["upload_sandbox_file_to_cdn", "upload_file_to_cdn", "generate_image", "edit_image"]);
 const MAX_IMAGES_PER_TOOL_RESULT = 4;
 const MAX_TOOL_IMAGES_PER_RUN = 16;
 const MAX_TOOL_IMAGE_BYTES_PER_RUN = 18 * 1024 * 1024;
@@ -335,7 +338,7 @@ export async function streamClaudeChat({
     let toolImagesSent = 0;
     let toolImageBytesSent = 0;
     const seenImageUrls = new Set();
-    const toolResultImages = async (result, text) => {
+    const toolResultImages = async (toolName, result, text) => {
         const blocks = [];
         const take = (block) => {
             if (!block || blocks.length >= MAX_IMAGES_PER_TOOL_RESULT || toolImagesSent >= MAX_TOOL_IMAGES_PER_RUN) return;
@@ -349,7 +352,7 @@ export async function streamClaudeChat({
         for (const img of result?.images || []) {
             try { take(imageBlockFromBuffer(Buffer.from(String(img?.data || ""), "base64"))); } catch { /* skip a bad image */ }
         }
-        for (const url of String(text).match(TRUSTED_IMAGE_URL) || []) {
+        for (const url of IMAGE_LINK_TOOLS.has(toolName) ? String(text).match(TRUSTED_IMAGE_URL) || [] : []) {
             if (blocks.length >= MAX_IMAGES_PER_TOOL_RESULT) break;
             if (seenImageUrls.has(url) || !isTrustedAttachmentUrl(url)) continue;
             seenImageUrls.add(url);
@@ -525,7 +528,7 @@ export async function streamClaudeChat({
                 const resultText = String((isObjectResult ? content.text : content) ?? "").slice(0, 6000);
                 // The tool_result can only hold the references, so a loaded group's rules follow as a text block.
                 if (refs.length > 0 && content.instructions) extraTexts.push(String(content.instructions));
-                const images = refs.length > 0 || isError ? [] : await toolResultImages(isObjectResult ? content : null, resultText);
+                const images = refs.length > 0 || isError ? [] : await toolResultImages(call.name, isObjectResult ? content : null, resultText);
                 toolResults.push({
                     type: "tool_result",
                     tool_use_id: call.id,
