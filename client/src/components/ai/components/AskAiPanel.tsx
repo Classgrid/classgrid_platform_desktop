@@ -1656,6 +1656,10 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
   const [atMenuQuery, setAtMenuQuery] = useState("");
   const [atMenuSelectedIndex, setAtMenuSelectedIndex] = useState(0);
 
+  const handleApprovalAction = useCallback((text: string) => {
+    askQuestionRef.current?.(text);
+  }, []);
+
   // Auto-open workspace panel when a plan is detected
   const hasPlan = useMemo(() => {
     return messages.some((m) => m.role === 'assistant' && (m.content.includes('"variant": "plan"') || m.content.includes('"variant":"plan"') || m.content.includes("'variant': 'plan'") || m.content.includes('variant="plan"')));
@@ -4411,10 +4415,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                                   isHistorical={index < messages.length - 1}
                                   currentStepIndex={-1}
                                   onRetry={undefined}
-                                  onApprovalAction={(text) => {
-                                    // Use ref to bypass the stale closure issue inside AssistantMessageContent's memo
-                                    askQuestionRef.current?.(text);
-                                  }}
+                                  onApprovalAction={handleApprovalAction}
                                 />
                               )}
                             </div>

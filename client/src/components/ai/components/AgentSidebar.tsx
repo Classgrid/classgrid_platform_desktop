@@ -734,12 +734,21 @@ export function AgentNestedMenu({ searchQuery = "" }: { searchQuery?: string }) 
             </AccordionItem>
 
             <AccordionItem value="previous" className="border-none">
-              <AccordionTrigger className="px-2 py-1.5 hover:no-underline group/acc-trigger flex items-center h-auto min-h-0 border-transparent focus-visible:ring-0 cursor-pointer">
-                <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Previous</span>
+              <AccordionTrigger className="px-2 py-1.5 hover:no-underline group/acc-trigger flex items-center h-auto min-h-0 border-transparent focus-visible:ring-0 cursor-pointer justify-between w-full">
+                <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider truncate mr-2">Previous</span>
+                <div onClick={(e) => e.stopPropagation()} className="pointer-events-auto shrink-0 flex items-center gap-1 justify-end">
+                  <NikhilDateCalendar 
+                     value={dateFilter} 
+                     onChange={setDateFilter}
+                     iconOnly={true}
+                     className="h-6 w-7 p-1.5 flex items-center justify-center border-none shadow-none bg-transparent hover:bg-muted text-[11px]"
+                     placeholder=""
+                  />
+                </div>
               </AccordionTrigger>
               <AccordionContent className="pb-0 pt-1 px-0">
                 <SidebarMenu>
-                  {!loading && previousSessions.length === 0 && <div className="px-2 text-xs text-muted-foreground py-2">No previous chats</div>}
+                  {!loading && previousSessions.length === 0 && <div className="px-2 text-xs text-muted-foreground py-2">{dateFilter && (dateFilter.from || dateFilter.to) ? "No chats in this period" : "No previous chats"}</div>}
                   {previousSessions.map(renderSessionItem)}
                 </SidebarMenu>
               </AccordionContent>
