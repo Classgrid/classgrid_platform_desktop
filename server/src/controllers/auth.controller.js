@@ -2692,7 +2692,8 @@ export const checkEmailForLogin = async (req, res) => {
         const user = await User.findOne({ email: normalizedEmail }).select("+password");
 
         if (user) {
-            return res.status(200).json({ exists: true, hasPassword: !!user.password, role: user.role });
+            // Only a real (bcrypt) password counts; older chat sign-ups stored a random placeholder.
+            return res.status(200).json({ exists: true, hasPassword: isRealPasswordHash(user.password), role: user.role });
         }
 
         // User doesn't exist → send Vercel-style notification email (rate-limited, fire-and-forget)
@@ -3068,6 +3069,29 @@ export const chatOnboard = async (req, res) => {
 
 const CHAT_PUBLIC_ORG_ID = '6ac4b95e0f8a97f45e98b0ff';
 const CHAT_EMAIL_TICKET_PURPOSE = 'chat_email_verified';
+const OTP_TTL_MS = 10 * 60 * 1000;
+const OTP_RESEND_COOLDOWN_MS = 60 * 1000;
+
+// Passwords are only ever checked with bcrypt, so anything else (null, or the plain random placeholder older
+// chat sign-ups stored) is "no password yet".
+function isRealPasswordHash(value) {
+    return typeof value === 'string' && /^\$2[aby]\$\d{2}\$/.test(value);
+}
+
+// The same rules the sign-up screen shows.
+function isStrongChatPassword(pw) {
+    return typeof pw === 'string' && pw.length >= 8 && pw.length <= 64 && /[A-Z]/.test(pw) && /[a-z]/.test(pw)
+        && /[0-9]/.test(pw) && /[@#$%^&*!?_.\-]/.test(pw);
+}
+
+// One code per target per minute: a new code inside the cooldown is refused with the seconds left.
+async function otpResendWaitSeconds(OnboardingOTP, target, type) {
+    const existing = await OnboardingOTP.findOne({ target, type }).select('expires_at').lean();
+    if (!existing?.expires_at) return 0;
+    const sentAt = new Date(existing.expires_at).getTime() - OTP_TTL_MS;
+    const wait = Math.ceil((sentAt + OTP_RESEND_COOLDOWN_MS - Date.now()) / 1000);
+    return wait > 0 ? wait : 0;
+}
 
 export const chatSendEmailOtp = async (req, res) => {
     try {
@@ -3077,12 +3101,16 @@ export const chatSendEmailOtp = async (req, res) => {
         const otp = Math.floor(100000 + Math.random() * 900000).toString();
         
         const OnboardingOTP = (await import('../models/OnboardingOTP.js')).default;
+        const waitSeconds = await otpResendWaitSeconds(OnboardingOTP, email.toLowerCase(), 'email');
+        if (waitSeconds > 0) {
+            return res.status(429).json({ message: `Please wait ${waitSeconds} seconds before requesting a new code.`, retryAfter: waitSeconds });
+        }
         await OnboardingOTP.deleteMany({ target: email.toLowerCase() });
         await OnboardingOTP.create({
             target: email.toLowerCase(),
             type: 'email',
             otp,
-            expires_at: new Date(Date.now() + 10 * 60 * 1000)
+            expires_at: new Date(Date.now() + OTP_TTL_MS)
         });
 
         console.log(`[chatSendEmailOtp] OTP created for ${email.toLowerCase()}, sending email...`);
@@ -3132,7 +3160,7 @@ export const chatVerifyEmailOtp = async (req, res) => {
                 email: email.toLowerCase(),
                 name: name || email.split('@')[0],
                 role: 'user', // Default valid role for public chat
-                password: crypto.randomBytes(16).toString('hex'), // Random password, they login via OTP
+                password: null, // set by /chat/save-password; until then they sign in with an email code
                 isEmailVerified: true,
                 organization_id: "6ac4b95e0f8a97f45e98b0ff" // Required for public chat users
             });
@@ -3173,6 +3201,45 @@ export const chatVerifyEmailOtp = async (req, res) => {
     }
 };
 
+// POST /api/auth/chat/save-password — saves the password chosen in sign-up right away (with the email
+// ticket from chatVerifyEmailOtp), so a user who stops at the WhatsApp step can come back with it.
+// Only sets a first password: an account that already has a real one is never changed here.
+export const chatSavePassword = async (req, res) => {
+    try {
+        await connectDB();
+        const { email, password, emailVerifiedTicket } = req.body;
+        if (!email || !password) return res.status(400).json({ message: 'Email and password are required' });
+        if (!isStrongChatPassword(password)) {
+            return res.status(400).json({ message: 'Password must be 8-64 characters with upper and lower case letters, a number and a special character (@#$%^&*!?_.-).' });
+        }
+
+        let ticket;
+        try {
+            ticket = jwt.verify(emailVerifiedTicket || '', JWT_SECRET);
+        } catch {
+            return res.status(401).json({ message: 'Email verification expired. Please verify your email again.', code: 'TICKET_EXPIRED' });
+        }
+        if (ticket?.purpose !== CHAT_EMAIL_TICKET_PURPOSE || ticket.email !== email.toLowerCase()) {
+            return res.status(401).json({ message: 'Email verification expired. Please verify your email again.', code: 'TICKET_EXPIRED' });
+        }
+
+        const user = await User.findOne({ email: email.toLowerCase() }).select('+password');
+        if (!user || user._id.toString() !== ticket.uid) {
+            return res.status(401).json({ message: 'Email verification expired. Please verify your email again.', code: 'TICKET_EXPIRED' });
+        }
+        if (isRealPasswordHash(user.password)) {
+            return res.status(409).json({ message: 'This account already has a password. Sign in with it, or use "Forgot password" to change it.', code: 'PASSWORD_EXISTS' });
+        }
+
+        user.password = await bcrypt.hash(password, 10);
+        await user.save();
+        res.json({ message: 'Password saved', passwordSet: true });
+    } catch (e) {
+        console.error('chatSavePassword Error:', e.message, e.stack);
+        res.status(500).json({ message: 'Could not save your password. Please try again.' });
+    }
+};
+
 export const chatSendWhatsappOtp = async (req, res) => {
     try {
         await connectDB();
@@ -3189,13 +3256,17 @@ export const chatSendWhatsappOtp = async (req, res) => {
 
         const otp = Math.floor(100000 + Math.random() * 900000).toString();
         const OnboardingOTP = (await import('../models/OnboardingOTP.js')).default;
-        
+        const waitSeconds = await otpResendWaitSeconds(OnboardingOTP, phoneNumber, 'phone');
+        if (waitSeconds > 0) {
+            return res.status(429).json({ message: `Please wait ${waitSeconds} seconds before requesting a new code.`, retryAfter: waitSeconds });
+        }
+
         await OnboardingOTP.deleteMany({ target: phoneNumber, type: 'phone' });
         await OnboardingOTP.create({
             target: phoneNumber,
             type: 'phone',
             otp,
-            expires_at: new Date(Date.now() + 10 * 60 * 1000)
+            expires_at: new Date(Date.now() + OTP_TTL_MS)
         });
 
         if (process.env.WHATSAPP_PHONE_ID && process.env.WHATSAPP_ACCESS_TOKEN) {
@@ -3296,7 +3367,8 @@ export const chatFinalizeOnboarding = async (req, res) => {
         const User = (await import('../models/User.js')).default;
         const bcrypt = (await import('bcryptjs')).default;
 
-        let user = await User.findOne({ email: email.toLowerCase() });
+        // +password: the check below must see whether a real password is already set
+        let user = await User.findOne({ email: email.toLowerCase() }).select('+password');
         const orgId = CHAT_PUBLIC_ORG_ID;
         let passwordSet = true; // false when a chosen password was not applied to an existing account
 
@@ -3341,7 +3413,8 @@ export const chatFinalizeOnboarding = async (req, res) => {
             // Only set the password on an account chatVerifyEmailOtp just created (random placeholder),
             // OR if the account exists but has no password set yet (incomplete onboarding).
             // Never overwrite the password of an account that already existed and had a password.
-            if (password && (ticket.newAccount === true || !user.password)) {
+            // (Normally the password was already saved by /chat/save-password; this covers older clients.)
+            if (password && !isRealPasswordHash(user.password)) {
                user.password = await bcrypt.hash(password, 10);
             } else if (password) {
                passwordSet = false;

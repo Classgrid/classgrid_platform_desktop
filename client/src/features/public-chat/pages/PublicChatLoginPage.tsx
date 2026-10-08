@@ -12,7 +12,7 @@ import { customArray } from "country-codes-list";
 import * as Flags from 'country-flag-icons/react/3x2';
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "react-hot-toast";
-import { getGoogleAuthUrl } from "../../auth/api";
+import { getGoogleAuthUrl, loginWithPassword, requestPasswordReset, verifyDeviceOtp, resendDeviceOtp } from "../../auth/api";
 import { API_BASE_URL, apiClient } from "@/lib/apiClient";
 const Confetti = lazy(() => import("react-confetti"));
 
@@ -48,6 +48,38 @@ const useSession = () => ({ data: null, status: "unauthenticated" });
 const signIn = async (p: any, o: any) => { console.log("Mock signIn", p, o); return { ok: true, error: null }; };
 
 const OTP_TTL_SECONDS = 600;
+// Sign-up progress kept in the browser, so a refresh or reopened tab continues where the user stopped
+// (as long as the 30-minute email verification ticket is still valid).
+const ONBOARDING_STORAGE_KEY = "cg_chat_onboarding";
+type SavedOnboarding = { email: string; firstName: string; lastName: string; ticket: string; step: "otp_verified" | "whatsapp" };
+
+function ticketStillValid(ticket: string) {
+  try {
+    const payload = JSON.parse(atob((ticket.split(".")[1] || "").replace(/-/g, "+").replace(/_/g, "/")));
+    return typeof payload.exp === "number" && payload.exp * 1000 > Date.now() + 30_000;
+  } catch {
+    return false;
+  }
+}
+
+function saveOnboarding(data: SavedOnboarding) {
+  try { localStorage.setItem(ONBOARDING_STORAGE_KEY, JSON.stringify(data)); } catch { /* storage unavailable */ }
+}
+
+function clearOnboarding() {
+  try { localStorage.removeItem(ONBOARDING_STORAGE_KEY); } catch { /* storage unavailable */ }
+}
+
+function loadOnboarding(): SavedOnboarding | null {
+  try {
+    const saved = JSON.parse(localStorage.getItem(ONBOARDING_STORAGE_KEY) || "null");
+    if (saved?.email && saved?.ticket && ticketStillValid(saved.ticket)) return saved;
+  } catch { /* storage unavailable or bad data */ }
+  clearOnboarding();
+  return null;
+}
+// A new code can be requested 60 s after the last one (the server enforces the same wait).
+const RESEND_COOLDOWN_SECONDS = 60;
 
 /** Map NextAuth URL error codes to user-friendly messages */
 const OAUTH_ERROR_MAP: Record<string, string> = {
@@ -209,7 +241,9 @@ function LoginContent() {
   }, [status, session, router, ssoReturnTo, explicitNext, unsubscribeReturnTo]);
 
   const [mode, setMode] = useState<"signin" | "signup">("signin");
-  const [step, setStep] = useState<"email" | "otp" | "otp_verified" | "password" | "whatsapp" | "whatsapp_otp" | "age" | "role" | "success">("email");
+  const [step, setStep] = useState<"email" | "login_password" | "otp" | "otp_verified" | "password" | "whatsapp" | "whatsapp_otp" | "age" | "role" | "success">("email");
+  // The OTP step is also used for the new-device code sent by password sign-in.
+  const [deviceOtpMode, setDeviceOtpMode] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -297,6 +331,29 @@ function LoginContent() {
   // ... (keeping existing handlers up to the return statement)
 
   // Fast-forwarding down to the return JSX...
+
+  useEffect(() => () => {
+    if (timerRef.current) clearInterval(timerRef.current);
+    if (whatsappTimerRef.current) clearInterval(whatsappTimerRef.current);
+  }, []);
+
+  // Continue an unfinished sign-up after a refresh or reopened tab.
+  useEffect(() => {
+    if (searchParams.get("onboard") === "true") return;
+    const saved = loadOnboarding();
+    if (!saved) return;
+    setEmail(saved.email);
+    setFirstName(saved.firstName);
+    setLastName(saved.lastName);
+    setEmailVerifiedTicket(saved.ticket);
+    setMode("signup");
+    setStep(saved.step);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Seconds until "Resend code" unlocks; 0 once the cooldown is over or the code has expired.
+  const resendWait = otpExpired ? 0 : Math.max(0, countdown - (OTP_TTL_SECONDS - RESEND_COOLDOWN_SECONDS));
+  const whatsappResendWait = whatsappOtpExpired ? 0 : Math.max(0, whatsappCountdown - (OTP_TTL_SECONDS - RESEND_COOLDOWN_SECONDS));
 
   const startCountdown = () => {
     setCountdown(OTP_TTL_SECONDS);
@@ -400,7 +457,7 @@ function LoginContent() {
         email: email.trim(),
         password,
         audience: "user",
-        role: "user",
+        role: "student",
         rememberMe: true,
       });
 
@@ -415,7 +472,7 @@ function LoginContent() {
         localStorage.setItem("token", result.token);
       }
       
-      const user = result.user;
+      const user: any = result.user;
       if (user && (!user.metadata?.whatsappPhone || !user.metadata?.age)) {
         // Logged in but needs WhatsApp onboarding
         setEmailVerifiedTicket(result.token || "");
@@ -461,6 +518,25 @@ function LoginContent() {
     }
 
     setLoading(true);
+    if (deviceOtpMode) {
+      try {
+        const result: any = await verifyDeviceOtp({ email: email.trim(), otp: otp.trim() });
+        const user = result?.user;
+        if (user && (!user.metadata?.whatsappPhone || !user.metadata?.age)) {
+          // Signed in, but WhatsApp onboarding is not finished
+          setEmailVerifiedTicket(result.token || "");
+          setDeviceOtpMode(false);
+          setStep("whatsapp");
+          setLoading(false);
+          return;
+        }
+        window.location.href = "/";
+      } catch (err: any) {
+        setError(err?.message || "Device verification failed.");
+        setLoading(false);
+      }
+      return;
+    }
     try {
       const res = await apiClient.post("/api/auth/chat/verify-email-otp", {
         email,
@@ -475,6 +551,9 @@ function LoginContent() {
         if (needsOnboarding) {
           // Proof of email verification, required by /chat/finalize-onboarding
           setEmailVerifiedTicket(res.data.emailVerifiedTicket || "");
+          if (res.data.emailVerifiedTicket) {
+            saveOnboarding({ email: email.trim(), firstName, lastName, ticket: res.data.emailVerifiedTicket, step: "otp_verified" });
+          }
           setStep("otp_verified");
           setLoading(false);
         } else {
@@ -575,9 +654,33 @@ function LoginContent() {
     }
     setLoading(true);
     try {
+      // Saved now, so a user who stops at the WhatsApp step can come back and sign in with it.
+      await apiClient.post("/api/auth/chat/save-password", {
+        email: email.trim(),
+        password,
+        emailVerifiedTicket,
+      });
+      saveOnboarding({ email: email.trim(), firstName, lastName, ticket: emailVerifiedTicket, step: "whatsapp" });
       setStep("whatsapp");
     } catch (err: any) {
-      setError("Failed to setup password.");
+      if (err?.code === "401") {
+        // The 30-minute email verification ran out: verify the email again.
+        clearOnboarding();
+        setPassword("");
+        setConfirmPassword("");
+        setOtp("");
+        setStep("email");
+        setError("Your email verification expired. Please enter your email to get a new code.");
+      } else if (err?.code === "409") {
+        // The password was already saved earlier (email is verified by the ticket): go on to WhatsApp.
+        saveOnboarding({ email: email.trim(), firstName, lastName, ticket: emailVerifiedTicket, step: "whatsapp" });
+        setPassword("");
+        setConfirmPassword("");
+        toast("Your password is already saved. Let's verify your WhatsApp.");
+        setStep("whatsapp");
+      } else {
+        setError(err?.message || "Failed to save your password. Please try again.");
+      }
     } finally {
       setLoading(false);
     }
@@ -662,7 +765,6 @@ function LoginContent() {
       const res = await apiClient.post("/api/auth/chat/finalize-onboarding", {
         email: email.trim(),
         name: `${firstName} ${lastName}`.trim(),
-        password,
         age: Number(age),
         role,
         whatsappPhone: `+${code}${whatsappPhone}`,
@@ -672,10 +774,7 @@ function LoginContent() {
       if (res.data?.token) {
         localStorage.setItem("token", res.data.token);
       }
-      // The account already existed, so the password chosen here was not applied
-      if (res.data?.passwordSet === false && res.data?.notice) {
-        toast(res.data.notice);
-      }
+      clearOnboarding();
       setStep("success");
     } catch (err: any) {
       setError(err?.response?.data?.message || err?.message || "Failed to save role.");
@@ -1037,10 +1136,10 @@ function LoginContent() {
                         setLoading(false);
                       }
                     }}
-                    disabled={loading || (whatsappCountdown > 0 && !whatsappOtpExpired)}
+                    disabled={loading || whatsappResendWait > 0}
                     className="text-slate-900 underline underline-offset-2 transition-opacity hover:opacity-70 disabled:cursor-not-allowed disabled:opacity-30 dark:text-[#f1f1f1]"
                   >
-                    Resend code
+                    {whatsappResendWait > 0 ? `Resend code in ${formatCountdown(whatsappResendWait)}` : "Resend code"}
                   </button>
                 </div>
               </div>
@@ -1301,7 +1400,8 @@ function LoginContent() {
                       setOtp("");
                       setLoading(true);
                       try {
-                        await apiClient.post("/api/auth/chat/send-email-otp", { email: email.trim() });
+                        if (deviceOtpMode) await resendDeviceOtp(email.trim());
+                        else await apiClient.post("/api/auth/chat/send-email-otp", { email: email.trim() });
                         startCountdown();
                       } catch (err: any) {
                         setError(err?.response?.data?.message || err.message || "Failed to resend code.");
@@ -1309,10 +1409,10 @@ function LoginContent() {
                         setLoading(false);
                       }
                     }}
-                    disabled={loading || (countdown > 0 && !otpExpired)}
+                    disabled={loading || resendWait > 0}
                     className="text-slate-900 underline underline-offset-2 transition-opacity hover:opacity-70 disabled:cursor-not-allowed disabled:opacity-30 dark:text-[#f1f1f1]"
                   >
-                    Resend code
+                    {resendWait > 0 ? `Resend code in ${formatCountdown(resendWait)}` : "Resend code"}
                   </button>
                 </div>
               </div>
@@ -1329,7 +1429,7 @@ function LoginContent() {
 
               <button
                 type="button"
-                onClick={() => { setStep("email"); if (timerRef.current) clearInterval(timerRef.current); }}
+                onClick={() => { setStep("email"); setDeviceOtpMode(false); if (timerRef.current) clearInterval(timerRef.current); }}
                 className="w-full text-sm text-slate-500 transition-colors hover:text-slate-900 dark:text-[#888888] dark:hover:text-[#f1f1f1]"
               >
                 Back to email
