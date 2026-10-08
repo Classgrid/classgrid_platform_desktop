@@ -201,11 +201,11 @@ export function ModelUsageSection({ orgs }: { orgs?: { id: string; name: string 
           <div className="grid gap-6 lg:grid-cols-2">
             <Card>
               <CardHeader><CardTitle>Share by Model</CardTitle></CardHeader>
-              <CardContent className="grid gap-6 sm:grid-cols-[200px_1fr] items-start">
-                <div className="relative h-[200px] w-[200px] mx-auto">
+              <CardContent className="flex flex-col items-center gap-6">
+                <div className="relative h-[220px] w-[220px]">
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
-                      <Pie data={ranked} dataKey="value" nameKey="label" innerRadius={62} outerRadius={92} paddingAngle={ranked.length > 1 ? 2 : 0} stroke="none">
+                      <Pie data={ranked} dataKey="value" nameKey="label" innerRadius={70} outerRadius={104} paddingAngle={ranked.length > 1 ? 2 : 0} stroke="none">
                         {ranked.map((r) => <Cell key={r.model} fill={r.color} />)}
                       </Pie>
                       <Tooltip content={<ChartTooltip metric={metric} />} />
@@ -216,7 +216,7 @@ export function ModelUsageSection({ orgs }: { orgs?: { id: string; name: string 
                     <span className="text-xs text-muted-foreground">{METRIC_LABELS[metric]}</span>
                   </div>
                 </div>
-                <ul className="flex flex-col gap-1.5 max-h-[300px] overflow-y-auto pr-1 min-w-0">
+                <ul className="grid w-full gap-x-8 gap-y-2 sm:grid-cols-2 min-w-0">
                   {ranked.map((r) => (
                     <li key={r.model} className="flex items-center gap-2 text-sm min-w-0" title={r.model}>
                       <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: r.color }} />
