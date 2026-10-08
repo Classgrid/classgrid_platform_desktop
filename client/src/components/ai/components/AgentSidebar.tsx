@@ -737,6 +737,19 @@ export function AgentNestedMenu({ searchQuery = "" }: { searchQuery?: string }) 
               <AccordionTrigger className="px-2 py-1.5 hover:no-underline group/acc-trigger flex items-center h-auto min-h-0 border-transparent focus-visible:ring-0 cursor-pointer justify-between w-full">
                 <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider truncate mr-2">Previous</span>
                 <div onClick={(e) => e.stopPropagation()} className="pointer-events-auto shrink-0 flex items-center gap-1 justify-end">
+                  {dateFilter && (dateFilter.from || dateFilter.to) && (
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setDateFilter(undefined);
+                      }}
+                      className="h-5 w-5 rounded-full flex items-center justify-center hover:bg-muted text-muted-foreground hover:text-foreground shrink-0 cursor-pointer"
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  )}
                   <NikhilDateCalendar 
                      value={dateFilter} 
                      onChange={setDateFilter}
