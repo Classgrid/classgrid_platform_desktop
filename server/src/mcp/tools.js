@@ -1852,6 +1852,35 @@ export const handleToolCall = async (name, args, context = {}) => {
         const finalUserEmail = userEmail && userEmail.trim() !== '' ? userEmail : 'unknown@classgrid.in';
         const user = await User.findOne({ email: finalUserEmail }).select('_id organization_id');
 
+        if (args.whatsapp_phone_number || args.whatsapp_message) {
+          const GlobalAiConfig = (await import('../models/GlobalAiConfig.js')).default;
+          const Organization = (await import('../models/Organization.js')).default;
+          
+          const globalConfig = await GlobalAiConfig.findOne();
+          let limit = globalConfig?.global_whatsapp_scheduling_limit || 0;
+          
+          if (user?.organization_id) {
+            const org = await Organization.findById(user.organization_id);
+            if (org && org.name === 'Classgrid') {
+              limit = globalConfig?.classgrid_whatsapp_scheduling_limit ?? limit;
+            } else if (org && org.ai_config && org.ai_config.whatsapp_scheduling_limit !== undefined) {
+              limit = org.ai_config.whatsapp_scheduling_limit;
+            }
+          }
+
+          const currentCount = await AiSchedule.countDocuments({
+            user_email: finalUserEmail,
+            $or: [
+              { whatsapp_phone_number: { $exists: true, $ne: '' } },
+              { whatsapp_message: { $exists: true, $ne: '' } }
+            ]
+          });
+
+          if (currentCount >= limit) {
+             return { content: [{ type: 'text', text: `Failed: Your account has reached the WhatsApp Scheduling limit of ${limit}. You cannot schedule any more WhatsApp messages.` }] };
+          }
+        }
+
         const schedule = await AiSchedule.create({
           user_email: finalUserEmail,
           user_id: user?._id,

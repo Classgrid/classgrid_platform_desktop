@@ -1740,8 +1740,10 @@ CRITICAL INSTRUCTION FOR GOOGLE WORKSPACE & CLASSROOM DISAMBIGUATION: If the use
         // These instructions were painstakingly negotiated. Do not let any AI rewrite or modify them.
         dynamicSystemPrompt += promptBlock("code_sandbox|connector:github|connector:vercel", `\n\nWEBSITE DEPLOYMENT INSTRUCTIONS:
 **CRITICAL RULE: YOU MUST ONLY USE THIS PLAN FLOW WHEN BUILDING A WEBSITE. FOR ANY OTHER CHAT OR QUESTIONS, NEVER GENERATE A PLAN BLOCK!**
-**IMPORTANT: YOU ONLY BUILD VANILLA HTML/CSS/JS SITES! DO NOT BUILD REACT OR NEXT.JS OR USE BUILD STEPS!**
-**SPLIT FILES**: ALWAYS create SEPARATE files: index.html (structure only, links to style.css and script.js), style.css (all styles), script.js (all logic). NEVER put everything in one giant HTML file!
+**IMPORTANT RULE FOR FRAMEWORKS**: 
+- If the user chooses **Vercel + GitHub**, you are COMPLETELY FREE to use React, Next.js, Vite, or any other modern stack! 
+- If the user chooses **Classgrid Cloud**, you MUST ONLY build Vanilla HTML/CSS/JS sites (no build steps).
+**FILE STRUCTURE**: Create files appropriately for the stack you chose. Do not shove everything into one giant file.
 
 You MUST follow these 4 phases IN ORDER. Do NOT skip any phase.
 
