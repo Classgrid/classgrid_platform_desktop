@@ -364,7 +364,15 @@ function LoginContent() {
         // Signup mode — check if account already exists first
         const checkRes = await apiClient.post("/api/auth/check-email", { email: email.toLowerCase() });
         if (checkRes.data.exists) {
-          setError("Account already exists. Please sign in instead.");
+          // Auto switch to sign in if the user already exists
+          setMode("signin");
+          if (checkRes.data.hasPassword) {
+            setStep("login_password");
+          } else {
+            await apiClient.post("/api/auth/chat/send-email-otp", { email: email.toLowerCase() });
+            setStep("otp");
+            startCountdown();
+          }
         } else {
           await apiClient.post("/api/auth/chat/send-email-otp", { email: email.toLowerCase() });
           setStep("otp");
@@ -406,6 +414,15 @@ function LoginContent() {
       if (result.token) {
         localStorage.setItem("token", result.token);
       }
+      
+      const user = result.user;
+      if (user && (!user.metadata?.whatsappPhone || !user.metadata?.age)) {
+        // Logged in but needs WhatsApp onboarding
+        setEmailVerifiedTicket(result.token || "");
+        setStep("whatsapp");
+        return;
+      }
+      
       window.location.href = "/";
     } catch (err: any) {
       if (err && typeof err === "object" && "needsDeviceOtp" in err) {

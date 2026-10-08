@@ -3034,7 +3034,13 @@ export const chatOnboard = async (req, res) => {
             if (user.metadata?.whatsappPhone && user.metadata.whatsappPhone !== whatsappPhone) {
                  return res.status(400).json({ message: "You have already linked a different WhatsApp number to this email." });
             }
-            user.metadata = { ...(user.metadata || {}), age, job_role: role, whatsappPhone, whatsapp_number: whatsappPhone };
+            user.metadata = { 
+                ...(user.metadata || {}), 
+                age: age || user.metadata?.age, 
+                job_role: role || user.metadata?.job_role, 
+                whatsappPhone, 
+                whatsapp_number: whatsappPhone 
+            };
             user.markModified("metadata");
             
             // Only set org and role if they don't have one (prevent downgrading admins)
@@ -3265,7 +3271,14 @@ export const chatFinalizeOnboarding = async (req, res) => {
         } catch (e) {
             return res.status(401).json({ message: 'Email verification expired. Please verify your email again.' });
         }
-        if (ticket?.purpose !== CHAT_EMAIL_TICKET_PURPOSE || ticket.email !== email.toLowerCase()) {
+        
+        if (ticket?.purpose !== CHAT_EMAIL_TICKET_PURPOSE) {
+            // Normal token fallback
+            if (!ticket?.id) {
+                return res.status(401).json({ message: 'Email verification expired. Please verify your email again.' });
+            }
+            ticket.uid = ticket.id;
+        } else if (ticket.email !== email.toLowerCase()) {
             return res.status(401).json({ message: 'Email verification expired. Please verify your email again.' });
         }
 
@@ -3311,7 +3324,13 @@ export const chatFinalizeOnboarding = async (req, res) => {
             if (user.metadata?.whatsappPhone && user.metadata.whatsappPhone !== whatsappPhone) {
                  return res.status(400).json({ message: "You have already linked a different WhatsApp number to this email." });
             }
-            user.metadata = { ...(user.metadata || {}), age, job_role: role, whatsappPhone, whatsapp_number: whatsappPhone };
+            user.metadata = { 
+                ...(user.metadata || {}), 
+                age: age || user.metadata?.age, 
+                job_role: role || user.metadata?.job_role, 
+                whatsappPhone, 
+                whatsapp_number: whatsappPhone 
+            };
             user.markModified("metadata");
             
             if (!user.organization_id) user.organization_id = orgId;
