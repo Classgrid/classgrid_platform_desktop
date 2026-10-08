@@ -36,7 +36,6 @@ import {
     createSharedSnapshot,
     getSharedSnapshot,
     getUserGeneratedImages,
-    searchUserChats,
     memoryCoverage,
     memoryText
 } from "../services/ai-chat.service.js";
@@ -3994,20 +3993,6 @@ Do NOT talk about internal architecture unless asked by a @classgrid.in employee
             res.write('data: [DONE]\n\n');
             res.end();
         }
-    }
-};
-
-// GET /api/ai/sessions/search?q=... — the signed-in user's chats whose title or any message matches.
-export const searchChatSessions = async (req, res) => {
-    try {
-        const email = req.user?.email;
-        if (!email) return res.status(401).json({ error: "Unauthorized" });
-        const q = String(req.query.q || "").trim().slice(0, 100);
-        if (q.length < 2) return res.json({ results: [], messageSearch: "skipped" });
-        res.json(await searchUserChats(email, q));
-    } catch (e) {
-        console.error("Error searching chats:", e);
-        res.status(500).json({ error: "Failed to search chats" });
     }
 };
 

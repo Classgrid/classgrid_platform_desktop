@@ -14,10 +14,6 @@ type SearchResult = {
   title: string;
   created_at: string;
   type: "page" | "chat";
-  // Chat search: the newest matching message in that chat
-  snippet?: string | null;
-  snippetRole?: "user" | "assistant" | null;
-  matchCount?: number;
 };
 
 const ChatBubbleIcon = ({ className }: { className?: string }) => (
@@ -45,10 +41,6 @@ export function AiChatSearchPalette({
   const location = useLocation();
   const effectiveMode = location.pathname.includes('/agent') ? 'chat' : mode;
   const debounceRef = useRef<ReturnType<typeof setTimeout>>();
-  // Only the newest search runs: an older one still in flight is cancelled.
-  const searchAbortRef = useRef<AbortController | null>(null);
-  const [searchFailed, setSearchFailed] = useState(false);
-  const [searchNotice, setSearchNotice] = useState("");
 
   // Focus input when opened
   useEffect(() => {
@@ -77,12 +69,7 @@ export function AiChatSearchPalette({
 
   // Debounced search
   const doSearch = useCallback(async (q: string) => {
-    searchAbortRef.current?.abort();
-    const controller = new AbortController();
-    searchAbortRef.current = controller;
-    setSearchFailed(false);
-    setSearchNotice("");
-    if (q.trim().length < 2 && (effectiveMode !== "chat" || q.trim().length > 0)) {
+    if (q.trim().length < 2) {
       setResults([]);
       setLoading(false);
       return;
@@ -113,44 +100,32 @@ export function AiChatSearchPalette({
         const endpointPrefix = typeof import.meta !== "undefined" && import.meta.env
           ? (import.meta.env.VITE_API_URL || "https://api.classgrid.in")
           : "";
-        if (q.trim()) {
-          // Searches chat titles and every user and AI message on the server
-          const res = await fetch(`${endpointPrefix}/api/ai/sessions/search?q=${encodeURIComponent(q.trim())}`, { credentials: "include", signal: controller.signal });
-          if (!res.ok) throw new Error(`search failed (${res.status})`);
-          const data = await res.json();
-          if (q.trim().length < 3) setSearchNotice("Type 3 or more letters to search inside messages.");
-          else if (data.messageSearch === "off" || data.messageSearch === "failed") setSearchNotice("Message search is unavailable right now. Showing chat title matches only.");
-          chatResults = (data.results || []).map((r: any) => ({
-            id: r.id,
-            title: r.title,
-            created_at: r.matchedAt || r.created_at,
-            type: "chat",
-            snippet: r.snippet,
-            snippetRole: r.snippetRole,
-            matchCount: r.matchCount,
-          }));
-        } else {
-          // If query is empty, only show top 3 recent chats
-          const res = await fetch(`${endpointPrefix}/api/ai/sessions`, { credentials: "include" });
-          const data = await res.json();
-          chatResults = (data.sessions || []).slice(0, 3).map((s: any) => ({
-            id: s.id,
-            title: s.title,
-            created_at: s.created_at,
-            type: "chat",
-          }));
+        const res = await fetch(`${endpointPrefix}/api/ai/sessions`, { credentials: "include" });
+        const data = await res.json();
+        if (data.sessions) {
+          let filtered = data.sessions;
+          if (q.trim()) {
+            filtered = filtered.filter((s: any) => (s.title || "").toLowerCase().includes(q.toLowerCase()));
+          } else {
+            // If query is empty, only show top 3 recent chats
+            filtered = filtered.slice(0, 3);
+          }
+          
+          chatResults = filtered.map((s: any) => ({
+               id: s.id,
+               title: s.title,
+               created_at: s.created_at,
+               type: "chat"
+            }));
         }
       }
 
-      if (controller.signal.aborted) return;
       setResults([...allPages, ...chatResults]);
       setActiveIndex(0);
-    } catch (err: any) {
-      if (controller.signal.aborted || err?.name === "AbortError") return; // a newer search replaced this one
+    } catch {
       setResults([]);
-      setSearchFailed(true);
     } finally {
-      if (!controller.signal.aborted) setLoading(false);
+      setLoading(false);
     }
   }, [location.pathname, effectiveMode]);
 
@@ -168,7 +143,7 @@ export function AiChatSearchPalette({
       return;
     }
     setLoading(true);
-    debounceRef.current = setTimeout(() => doSearch(query), 400);
+    debounceRef.current = setTimeout(() => doSearch(query), 250);
     return () => {
       if (debounceRef.current) clearTimeout(debounceRef.current);
     };
@@ -214,9 +189,8 @@ export function AiChatSearchPalette({
     if (!q.trim()) return text;
     const regex = new RegExp(`(${q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")})`, "gi");
     const parts = text.split(regex);
-    const needle = q.toLowerCase();
     return parts.map((part, i) =>
-      part.toLowerCase() === needle ? (
+      regex.test(part) ? (
         <mark key={i} className="bg-emerald-100 text-emerald-700 dark:bg-emerald-500/25 dark:text-emerald-300 rounded-sm px-0.5 font-medium">
           {part}
         </mark>
@@ -261,7 +235,7 @@ export function AiChatSearchPalette({
                   onChange={(e) => setQuery(e.target.value)}
                   onKeyDown={handleKeyDown}
                   data-no-ring="true"
-                  placeholder={effectiveMode === "global" ? "Search pages..." : "Search all your chats and messages..."}
+                  placeholder={effectiveMode === "global" ? "Search pages..." : "Search chat history..."}
                   className="flex-1 bg-transparent text-[15px] text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-white/35 outline-none focus:ring-0 focus:outline-none focus-visible:ring-0 border-none"
                   autoComplete="off"
                   spellCheck={false}
@@ -286,31 +260,17 @@ export function AiChatSearchPalette({
                   </div>
                 )}
 
-                {/* Search request failed: say so, instead of "no results" */}
-                {query.trim().length >= 2 && !loading && searchFailed && (
-                  <div className="flex flex-col items-center justify-center gap-2 py-12 text-center">
-                    <Search className="h-6 w-6 text-slate-900 dark:text-white/15" />
-                    <p className="text-[13px] text-red-500 dark:text-red-400">Search failed. Please try again.</p>
-                  </div>
-                )}
-
                 {/* No results */}
-                {query.trim().length >= 2 && !loading && !searchFailed && results.length === 0 && (
+                {query.trim().length >= 2 && !loading && results.length === 0 && (
                   <div className="flex flex-col items-center justify-center gap-2 py-12 text-center">
                     <Search className="h-6 w-6 text-slate-900 dark:text-white/15" />
                     <p className="text-[13px] text-slate-900 dark:text-white/40">
-                      {effectiveMode === "global"
+                      {effectiveMode === "global" 
                         ? `No pages found for "${query}"`
                         : `No chats found for "${query}"`
                       }
                     </p>
-                    {searchNotice && <p className="text-[12px] text-slate-500 dark:text-white/35">{searchNotice}</p>}
                   </div>
-                )}
-
-                {/* Notice above the results (e.g. message search unavailable, or under 3 letters) */}
-                {query.trim().length >= 2 && !loading && searchNotice && results.length > 0 && (
-                  <div className="px-4 pt-3 text-[12px] text-slate-500 dark:text-white/40">{searchNotice}</div>
                 )}
 
                 {/* Results list */}
@@ -360,18 +320,9 @@ export function AiChatSearchPalette({
                               {result.type === "page" ? result.created_at : "Chat History"}
                             </span>
                           </div>
-                          {result.type === "chat" && result.snippet && (
-                            <p className="mt-0.5 text-[12.5px] leading-relaxed text-slate-600 dark:text-white/55 line-clamp-2 break-words">
-                              <span className="font-medium text-slate-900 dark:text-white/75">
-                                {result.snippetRole === "user" ? "You: " : "AI: "}
-                              </span>
-                              {highlightMatch(result.snippet, query)}
-                            </p>
-                          )}
                           {result.type === "chat" && (
                             <p className="mt-0.5 text-[12px] leading-relaxed text-slate-900 dark:text-white/35">
                               {new Date(result.created_at).toLocaleDateString()}
-                              {(result.matchCount ?? 0) > 1 && ` · ${result.matchCount} matching messages`}
                             </p>
                           )}
                         </div>

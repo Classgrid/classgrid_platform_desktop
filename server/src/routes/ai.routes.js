@@ -49,7 +49,7 @@ import {
     chatWithSyllabus, 
     getMyPersona 
 } from "../controllers/ai.controller.js";
-import { streamAskAi, getChatSessions, searchChatSessions, getChatSession, getChatSessionMessages, uploadChatImage, updateChatSession, deleteChatSession, shareChatSession, createPublicShare, getPublicShare, submitAiFeedback, getAgentReviews, updateAgentReviewStatus, processAgentReviewsCron, deleteAgentReview, bulkDeleteAgentReviews, generateImage, getMyGeneratedImages, deleteGeneratedImage, getMyUsage, getOrgUsage, getSkills, createSkill, updateSkill, deleteSkill, getPreferences, updatePreferences } from "../controllers/ai-chat.controller.js";
+import { streamAskAi, getChatSessions, getChatSession, getChatSessionMessages, uploadChatImage, updateChatSession, deleteChatSession, shareChatSession, createPublicShare, getPublicShare, submitAiFeedback, getAgentReviews, updateAgentReviewStatus, processAgentReviewsCron, deleteAgentReview, bulkDeleteAgentReviews, generateImage, getMyGeneratedImages, deleteGeneratedImage, getMyUsage, getOrgUsage, getSkills, createSkill, updateSkill, deleteSkill, getPreferences, updatePreferences } from "../controllers/ai-chat.controller.js";
 
 import aiTopUpRoutes from "./ai-credits-topup.routes.js";
 import aiCreditsRoutes from "./ai-credits.routes.js";
@@ -102,7 +102,6 @@ router.get("/org-usage", isAuthenticated, getOrgUsage);
 
 // Chat History & Sessions
 router.get("/sessions", isAuthenticated, getChatSessions);
-router.get("/sessions/search", isAuthenticated, searchChatSessions);
 router.get("/sessions/:id", isAuthenticated, getChatSession);
 router.get("/sessions/:id/messages", isAuthenticated, getChatSessionMessages);
 router.put("/sessions/:id", isAuthenticated, updateChatSession);
