@@ -269,7 +269,7 @@ The sandbox already includes tools such as:
 ### How to Handle User Attachments (CRITICAL INSTRUCTION)
 If the user's message contains "Attached Files:" followed by one or more URLs, you MUST use the appropriate parsing tool:
 1. For Images (.jpg, .png, .jpeg, .webp): You MUST use the \`analyze_image\` tool. Pass the image URL and the user's exact question. CRITICAL RULE: You are STRICTLY FORBIDDEN from writing Python scripts or using terminal commands (like Tesseract or OpenCV) to read or OCR images. NEVER use \`execute_terminal_command\` for images. ALWAYS use the \`analyze_image\` tool natively.
-2. For Documents (.pdf, .txt, .docx): You MUST use the \`parse_document\` tool. 
+2. For Documents (.pdf, .docx, .pptx, .xlsx, .xls, .csv, .txt): You MUST use the \`parse_document\` tool.
 <</G>>
 <<G:off>>
 
@@ -2032,11 +2032,12 @@ Do NOT talk about internal architecture unless asked by a @classgrid.in employee
                     type: "function",
                     function: {
                         name: "parse_document",
-                        description: "Downloads a Document URL (PDF, TXT, DOCX) and extracts its text contents. DO NOT use this for images. Use analyze_image for images.",
+                        description: "Downloads a document URL and extracts its text: PDF, Word (.docx), PowerPoint (.pptx, slide by slide with speaker notes), Excel (.xlsx, .xls), CSV and text files. Long documents come in parts: call again with part: 2, 3, ... when the result says so. DO NOT use this for images. Use analyze_image for images.",
                         parameters: {
                             type: "object",
                             properties: {
-                                url: { type: "string", description: "The full URL of the document to download and parse." }
+                                url: { type: "string", description: "The full URL of the document to download and parse." },
+                                part: { type: "number", description: "Which part of a long document to read (1 = start). Only needed when a previous result said there are more parts." }
                             },
                             required: ["url"]
                         }
@@ -2556,28 +2557,35 @@ Do NOT talk about internal architecture unless asked by a @classgrid.in employee
                             const response = await fetch(url, { headers: { 'User-Agent': 'Mozilla/5.0' } });
                             if (!response.ok) throw new Error(`Failed to fetch URL: ${response.statusText}`);
 
-                            const arrayBuffer = await response.arrayBuffer();
-                            const buffer = Buffer.from(arrayBuffer);
-
-                            const isPdf = url.toLowerCase().includes('.pdf') || url.toLowerCase().includes('ai-chat-uploads');
-
-                            if (isPdf) {
-                                try {
-                                    const pdfParse = (await import('pdf-parse')).default;
-                                    const data = await pdfParse(buffer);
-                                    const text = data.text.trim();
-                                    // If we got substantial text, it's a digital PDF, not just scanned images
-                                    if (text.length > 50) {
-                                        return "DOCUMENT CONTENTS:\n" + text;
-                                    } else {
-                                        return "FAILED: This PDF seems to be scanned and contains no extractable text. Please use the analyze_image tool if you need to read it via vision AI.";
-                                    }
-                                } catch (err) {
-                                    return `FAILED to parse PDF: ${err.message}`;
-                                }
+                            const { extractDocumentText, DocumentReadError, MAX_DOCUMENT_BYTES } = await import('../services/document-text.service.js');
+                            if (Number(response.headers.get('content-length')) > MAX_DOCUMENT_BYTES) {
+                                return "FAILED: The file is larger than 25 MB, which is too big to read here. Read it in the Sandbox instead.";
                             }
+                            const buffer = Buffer.from(await response.arrayBuffer());
 
-                            return "FAILED: This tool is only for PDFs. For images, use the analyze_image tool.";
+                            // The type comes from the file's own bytes (every chat upload shares one storage folder)
+                            let doc;
+                            try {
+                                doc = await extractDocumentText(buffer, {
+                                    fileName: decodeURIComponent(new URL(url).pathname.split('/').pop() || ''),
+                                    contentType: response.headers.get('content-type') || ''
+                                });
+                            } catch (err) {
+                                if (err instanceof DocumentReadError) return `FAILED: ${err.message}`;
+                                throw err;
+                            }
+                            if (!doc.text) return `The ${doc.kind} was opened but contains no text.`;
+
+                            // Tool results are cut at 6000 characters, so long documents are read in parts.
+                            const PART_CHARS = 5200;
+                            const totalParts = Math.ceil(doc.text.length / PART_CHARS);
+                            const part = Math.min(Math.max(parseInt(args.part, 10) || 1, 1), totalParts);
+                            const chunk = doc.text.slice((part - 1) * PART_CHARS, part * PART_CHARS);
+                            const header = `DOCUMENT CONTENTS (${doc.kind}${doc.detail ? `, ${doc.detail}` : ''}${totalParts > 1 ? `, part ${part} of ${totalParts}` : ''}):\n`;
+                            const footer = part < totalParts
+                                ? `\n\n[Part ${part} of ${totalParts}. Call parse_document again with the same url and part: ${part + 1} to read the next part.]`
+                                : '';
+                            return header + chunk + footer;
                         } catch (e) {
                             return `FAILED to parse document: ${e.message}`;
                         }
