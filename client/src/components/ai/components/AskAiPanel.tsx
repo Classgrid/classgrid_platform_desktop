@@ -136,6 +136,8 @@ import FilePreviewModal, { type FilePreviewSource } from "./FilePreviewModal";
 import { DocsImageViewer } from "./DocsImageViewer";
 import { SourceChip, type ChatSource } from "./SourceChip";
 import { AnswerImage, SourceCards } from "./AnswerImages";
+import { ReviewSummary, ScoreBreakdown } from "./ReviewBlocks";
+import { PointsList, RatingCard } from "./PointsBlocks";
 import { ScrollSpyTOC } from "./TOC";
 import AIThinkingBlock from "./AIThinkingBlock";
 import ReactMarkdown from "react-markdown";
@@ -1327,6 +1329,22 @@ const AssistantMessageContent = memo(({ content, sources, isTyping, onApprovalAc
             const parsed = JSON5.parse(String(children));
             const items = Array.isArray(parsed) ? parsed : parsed?.items;
             if (Array.isArray(items)) return <SourceCards items={items} sources={sourcesRef.current} />;
+          } catch {
+            if (isTypingRef.current) return null; // still streaming
+          }
+        }
+
+        // ```review (title, website, big score, summary, verdict) and ```scores (bar per category)
+        // ```points (icon rows: "tiles" box or orange "icons" list) and ```rating (score card with stars)
+        if ((language === "review" || language === "scores" || language === "points" || language === "rating") && !inline) {
+          try {
+            const parsed = JSON5.parse(String(children));
+            if (parsed && typeof parsed === "object") {
+              if (language === "review") return <ReviewSummary data={parsed} sources={sourcesRef.current} />;
+              if (language === "scores") return <ScoreBreakdown data={parsed} />;
+              if (language === "points") return <PointsList data={parsed} sources={sourcesRef.current} />;
+              return <RatingCard data={parsed} sources={sourcesRef.current} />;
+            }
           } catch {
             if (isTypingRef.current) return null; // still streaming
           }
