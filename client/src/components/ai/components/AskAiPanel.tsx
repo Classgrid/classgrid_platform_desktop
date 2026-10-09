@@ -3796,7 +3796,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                   What do you want to know today?
                 </h2>
                 <p className="text-sm text-muted-foreground">
-                  Your AI-powered ERP assistant
+                  Your AI Agent
                 </p>
               </div>
             </div>
@@ -5290,7 +5290,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                       What do you want to know today?
                     </h2>
                     <p className="text-sm text-muted-foreground">
-                      Your AI-powered ERP assistant
+                      Your AI Agent
                     </p>
                   </div>
 
