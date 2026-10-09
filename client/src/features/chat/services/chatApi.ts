@@ -578,7 +578,8 @@ export async function processJoinRequest(groupId: string, requestId: string, sta
 
 export async function processRoleRequest(requestId: string, status: 'approved' | 'rejected') {
   const endpoint = status === 'approved' ? 'accept-role-request' : 'reject-role-request';
-  const res = await apiClient.post(`/api/org/${endpoint}/${requestId}`);
+  // Served by org.routes.js, mounted at /api/org-admin (/api/org is the organization routes)
+  const res = await apiClient.post(`/api/org-admin/${endpoint}/${requestId}`);
   return res.data;
 }
 

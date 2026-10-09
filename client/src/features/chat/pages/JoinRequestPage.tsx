@@ -57,7 +57,7 @@ export function JoinRequestPage() {
   const { data: user } = useCurrentUser();
   const [activeTab, setActiveTab] = useState<'incoming' | 'outgoing'>('incoming');
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isError, refetch, isFetching } = useQuery({
     queryKey: ["join-requests", "unified"],
     queryFn: fetchUnifiedRequests,
   });
@@ -74,7 +74,8 @@ export function JoinRequestPage() {
       toast.success(`Request ${variables.status}`);
     },
     onError: (err: any) => {
-      toast.error(err?.response?.data?.error || "Failed to process request");
+      // apiClient puts the server's body on the error itself ({ error } or { message })
+      toast.error(err?.error || err?.message || "Failed to process request");
     }
   });
 
@@ -82,6 +83,24 @@ export function JoinRequestPage() {
     return (
       <div className="flex h-screen items-center justify-center">
         <Spinner className="w-8 h-8 text-primary" />
+      </div>
+    );
+  }
+
+  // A failed load must not look like "All caught up"
+  if (isError) {
+    return (
+      <div className="flex h-[60vh] flex-col items-center justify-center gap-3 text-center px-4">
+        <p className="text-base font-semibold text-foreground">Couldn't load requests</p>
+        <p className="text-sm text-muted-foreground">Check your connection and try again.</p>
+        <button
+          onClick={() => refetch()}
+          disabled={isFetching}
+          className="mt-2 inline-flex items-center gap-2 rounded-md border border-border px-4 py-2 text-sm font-medium hover:bg-muted disabled:opacity-50"
+        >
+          {isFetching ? <Spinner className="w-4 h-4" /> : null}
+          Retry
+        </button>
       </div>
     );
   }

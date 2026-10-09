@@ -104,7 +104,7 @@ export function SuperAdminProfileView({ profileData }: { profileData: any }) {
       setPendingWhatsappNumber(num);
       toast.success("OTP sent to WhatsApp!");
     } catch (error: any) {
-      toast.error(error?.response?.data?.message || "Failed to send OTP");
+      toast.error(error?.message || error?.response?.data?.message || "Failed to send OTP");
     } finally {
       setIsSendingOtp(false);
     }
@@ -121,7 +121,7 @@ export function SuperAdminProfileView({ profileData }: { profileData: any }) {
       queryClient.invalidateQueries({ queryKey: ["global-profile"] });
       queryClient.invalidateQueries({ queryKey: ["current-user"] });
     } catch (error: any) {
-      toast.error(error?.response?.data?.message || "Invalid OTP");
+      toast.error(error?.message || error?.response?.data?.message || "Invalid OTP");
     } finally {
       setIsVerifyingOtp(false);
     }
@@ -163,7 +163,7 @@ export function SuperAdminProfileView({ profileData }: { profileData: any }) {
       toast.success("Super Admin profile updated successfully");
       setIsEditing(false);
     } catch (error: any) {
-      toast.error(error?.response?.data?.message || "Failed to save profile");
+      toast.error(error?.message || error?.response?.data?.message || "Failed to save profile");
     } finally {
       setIsSaving(false);
     }
