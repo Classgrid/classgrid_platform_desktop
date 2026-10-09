@@ -84,7 +84,7 @@ export function ClockBlock({ data }: { data: ClockData }) {
   const hourAngle = (h % 12) * 30 + mi * 0.5;
 
   return (
-    <div className="my-4 flex max-w-[540px] items-center justify-between gap-6 rounded-3xl border border-black/10 bg-black/[0.04] px-6 py-6 sm:px-8 dark:border-white/[0.12] dark:bg-[#1f1f1f]">
+    <div className="my-4 flex max-w-[540px] items-center justify-between gap-6 rounded-3xl bg-black/[0.05] px-6 py-6 sm:px-8 dark:bg-white/[0.08]">
       <div className="min-w-0">
         <p className="text-[30px] font-semibold leading-tight tabular-nums text-[#2C2C2B] dark:text-[#F0EFED]">{digital}</p>
         <p className="mt-3 text-[16px] text-[#2C2C2B]/85 dark:text-[#F0EFED]/85">{placeText}</p>
@@ -102,7 +102,7 @@ export function ClockBlock({ data }: { data: ClockData }) {
               y={70 + 56 * Math.sin(a)}
               textAnchor="middle"
               dominantBaseline="central"
-              className="fill-[#2C2C2B] text-[14px] font-bold dark:fill-[#F0EFED]"
+              className="fill-[#2C2C2B] text-[13px] font-semibold dark:fill-[#F0EFED]"
             >
               {n}
             </text>
