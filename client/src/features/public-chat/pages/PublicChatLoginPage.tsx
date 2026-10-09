@@ -746,6 +746,8 @@ function LoginContent() {
     } catch (err: any) {
       if (err?.code === "429") {
         // A code was sent to this number under a minute ago and is still valid
+        const wait = Number(err?.retryAfter) || whatsappResendWait;
+        toast(`We already sent a code to this number. Use that code${wait > 0 ? `, or resend in ${formatCountdown(wait)}` : ""}.`);
         setStep("whatsapp_otp");
         if (!whatsappCountdown) startWhatsappCountdown();
         return;
@@ -1035,7 +1037,9 @@ function LoginContent() {
               </button>
             </form>
           ) : step === "whatsapp" ? (
-            <form onSubmit={handleSendWhatsappOtp} className="space-y-4 animate-in slide-in-from-right-4 duration-300">
+            // Own key per step: otherwise React reuses the code screen's elements, and a click on "Back"
+            // finishes as a click on this form's submit button (it re-sent the OTP and jumped back).
+            <form key="whatsapp" onSubmit={handleSendWhatsappOtp} className="space-y-4 animate-in slide-in-from-right-4 duration-300">
               <div className="text-center space-y-1 mb-6">
                  <p className="text-[15px] font-semibold text-slate-900 dark:text-white mb-2">Verify WhatsApp</p>
                  <div className="rounded-lg bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 p-3 mb-4 text-left">
@@ -1112,7 +1116,7 @@ function LoginContent() {
               </button>
             </form>
           ) : step === "whatsapp_otp" ? (
-            <form onSubmit={handleVerifyWhatsappOtp} className="space-y-5 animate-in slide-in-from-right-4 duration-300">
+            <form key="whatsapp_otp" onSubmit={handleVerifyWhatsappOtp} className="space-y-5 animate-in slide-in-from-right-4 duration-300">
               <div className="flex flex-col items-center gap-3">
                 <label className="text-center text-[13px] font-medium text-slate-500 dark:text-[#888888]">
                   Enter the 6-digit code sent to <span className="text-slate-900 dark:text-[#f1f1f1]">{COUNTRY_CODES.find(c => c.value === whatsappCountryCode)?.code} {whatsappPhone}</span>
@@ -1184,7 +1188,8 @@ function LoginContent() {
               
               <button
                 type="button"
-                onClick={() => {
+                onClick={(e) => {
+                  e.preventDefault(); // Back only goes back to edit the number; it never submits
                   setWhatsappOtp("");
                   setError("");
                   setStep("whatsapp");
