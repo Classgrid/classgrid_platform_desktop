@@ -138,6 +138,7 @@ import { SourceChip, type ChatSource } from "./SourceChip";
 import { AnswerImage, SourceCards } from "./AnswerImages";
 import { ReviewSummary, ScoreBreakdown } from "./ReviewBlocks";
 import { PointsList, RatingCard } from "./PointsBlocks";
+import { ClockBlock } from "./ClockBlock";
 import { ScrollSpyTOC } from "./TOC";
 import AIThinkingBlock from "./AIThinkingBlock";
 import ReactMarkdown from "react-markdown";
@@ -1335,6 +1336,16 @@ const AssistantMessageContent = memo(({ content, sources, isTyping, onApprovalAc
         }
 
         // ```review (title, website, big score, summary, verdict) and ```scores (bar per category)
+        // ```clock: live clock card for a place (time is computed in the browser every second)
+        if (language === "clock" && !inline) {
+          try {
+            const parsed = JSON5.parse(String(children));
+            if (parsed && typeof parsed === "object") return <ClockBlock data={parsed} />;
+          } catch {
+            if (isTypingRef.current) return null;
+          }
+        }
+
         // ```points (icon rows: "tiles" box or orange "icons" list) and ```rating (score card with stars)
         if ((language === "review" || language === "scores" || language === "points" || language === "rating") && !inline) {
           try {
