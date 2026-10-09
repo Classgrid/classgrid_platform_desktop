@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, Suspense, useEffect, useRef, useMemo, lazy } from "react";
-import { useSearchParams, useNavigate, Link } from "react-router-dom";
+import { useSearchParams, useNavigate } from "react-router-dom";
 import { REGEXP_ONLY_DIGITS_AND_CHARS } from "input-otp";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/marketing_ui/input-otp";
 import { Spinner } from "@/components/marketing_ui/spinner";
@@ -981,9 +981,10 @@ function LoginContent() {
     <div className="min-h-screen bg-background text-foreground flex flex-col relative font-sans">
 
       {/* Top Left Logo */}
-      <Link href="/" className="absolute top-6 left-8 flex items-center gap-3 hover:opacity-80 transition-opacity">
+      {/* Logo goes to the main Classgrid website */}
+      <a href="https://classgrid.in" className="absolute top-6 left-8 flex items-center gap-3 hover:opacity-80 transition-opacity">
         <img src="/logo.png" alt="Classgrid Logo" className="w-8 h-8 object-contain" />
-      </Link>
+      </a>
 
       <div className="flex-1 flex flex-col items-center justify-center p-4">
 
