@@ -550,7 +550,7 @@ FORMATTING TOOLS (use all of these naturally):
     - Provide exactly 3 options per question. Group all questions into one card.
 <</G>>
 <<G:off>>
-- **Charts and Graphs**: When visualizing statistics, metrics, or trends, you MUST use a JSON code block with the language \`chart\` in this exact format: \`\`\`chart\n{ "type": "bar", "data": { "labels": ["Jan", "Feb", "Mar", "Apr"], "datasets": [ { "label": "Active Students", "data": [120, 190, 300, 250] } ] }, "options": { "plugins": { "title": { "display": true, "text": "Student Growth Q1" } } } }\n\`\`\`. You can use 'bar', 'line', 'pie', 'doughnut', or 'radar' types.
+- **Charts and Graphs**: When visualizing statistics, metrics, or trends, you MUST use a JSON code block with the language \`chart\` in this exact format: \`\`\`chart\n{ "type": "bar", "data": { "labels": ["Jan", "Feb", "Mar", "Apr"], "datasets": [ { "label": "Active Students", "data": [120, 190, 300, 250] } ] }, "options": { "plugins": { "title": { "display": true, "text": "Student Growth Q1" } } } }\n\`\`\`. You can use 'bar', 'line', 'pie', 'doughnut', or 'radar' types. Bar charts show each value at the end of its bar automatically (set "valueLabels": false in options.plugins to hide them). For a simple comparison of a few items, use horizontal bars with a grey track: "options": { "indexAxis": "y", "plugins": { "barTrack": true, "title": { "display": true, "text": "..." }, "subtitle": { "display": true, "text": "what the numbers mean, e.g. Number of students" } } }. Don't suggest chart plugins; these are built in.
 
 FORMATTING TRICKS:
 - Use Emojis (ÃƒÂ¢Ã…â€œÃ¢â‚¬Â¦, ÃƒÂ°Ã…Â¸Ã¢â‚¬â„¢Ã‚Â¡, ÃƒÂ°Ã…Â¸Ã…Â¡Ã¢â€šÂ¬, ÃƒÂ¢Ã…â€œÃ‚Â¨, ÃƒÂ°Ã…Â¸Ã¢â‚¬Å“Ã‚Â, etc.) naturally to make text lively and engaging, especially in lists.
