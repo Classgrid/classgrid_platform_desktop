@@ -225,6 +225,12 @@
     border-color: var(--border);
   }
 
+  /* Hand cursor on everything clickable (Tailwind v4 leaves buttons on the default arrow) */
+  button:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]) {
+    cursor: pointer;
+  }
+
   /* Global rule to force focus rings on all inputs/elements */
   *:focus-visible {
     outline: none !important;

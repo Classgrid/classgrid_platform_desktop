@@ -107,6 +107,13 @@ export function RequireAuth() {
     }
   }
 
+  // chat.classgrid.in: no chat until sign-up is finished (verified WhatsApp number); the login page
+  // continues the sign-up at the WhatsApp step.
+  const isChatHost = typeof window !== "undefined" && window.location.hostname.split(".")[0] === "chat";
+  if (isChatHost && user?.needsChatOnboarding) {
+    return <Navigate to="/login?continue=signup" replace />;
+  }
+
   const isPasswordSetupRoute = path === "/required-password-reset";
   const isOrganizationSetupRoute = path === "/enter-org-code";
   const needsPasswordReset = user?.mustResetPassword === true;

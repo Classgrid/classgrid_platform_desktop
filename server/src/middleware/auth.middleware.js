@@ -47,6 +47,7 @@ import User from "../models/User.js";
 import SystemSettings from "../models/SystemSettings.js";
 import Organization from "../models/Organization.js";
 import connectDB from "../../config/db.js";
+import { needsChatOnboarding } from "../utils/chat-onboarding.js";
 
 const JWT_SECRET = process.env.JWT_SECRET || "dev_secret";
 
@@ -257,6 +258,19 @@ export const requirePasswordSet = (req, res, next) => {
         return res.status(403).json({
             message: "You must set your password before accessing the dashboard.",
             code: "MUST_RESET_PASSWORD",
+        });
+    }
+    next();
+};
+
+/**
+ * Blocks the AI for public chat accounts that haven't finished sign-up (verified WhatsApp number + age).
+ */
+export const requireChatOnboarding = (req, res, next) => {
+    if (!req.isImpersonating && needsChatOnboarding(req.user)) {
+        return res.status(403).json({
+            message: "Please finish signing up by verifying your WhatsApp number.",
+            code: "CHAT_ONBOARDING_REQUIRED",
         });
     }
     next();

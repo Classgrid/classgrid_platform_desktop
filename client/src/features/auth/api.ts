@@ -73,20 +73,23 @@ type LoginPayload = {
   audience: AuthAudience;
   role: AuthLoginRole;
   rememberMe?: boolean;
+  /** "chat": the chat.classgrid.in sign-in, which accepts public chat accounts only */
+  portal?: "chat";
 };
 
-export async function loginWithPassword({ email, password, audience, role, rememberMe = false }: LoginPayload) {
+export async function loginWithPassword({ email, password, audience, role, rememberMe = false, portal }: LoginPayload) {
   const loginIntent = getAuthIntent(audience, role);
   const isStandardUser = loginIntent === "student" || loginIntent === "teacher";
+  const isChat = portal === "chat";
   const recaptchaAction = "login";
   const recaptchaToken = await executeRecaptcha(recaptchaAction);
 
   const response = await apiClient.post<LoginResponse>("/api/auth/login", {
     email,
     password,
-    expectedLoginType: isStandardUser ? "standard" : loginIntent,
-    loginTab: isStandardUser ? loginIntent : loginIntent === "admin" ? "admin" : undefined,
-    role: loginIntent,
+    expectedLoginType: isChat ? "chat" : isStandardUser ? "standard" : loginIntent,
+    loginTab: isChat ? undefined : isStandardUser ? loginIntent : loginIntent === "admin" ? "admin" : undefined,
+    role: isChat ? "chat" : loginIntent,
     rememberMe,
     deviceFingerprint: getClientDeviceFingerprint(),
     recaptchaToken,

@@ -11,7 +11,7 @@ import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@
 import { customArray } from "country-codes-list";
 import * as Flags from 'country-flag-icons/react/3x2';
 import { motion, AnimatePresence } from "framer-motion";
-import { toast } from "react-hot-toast";
+import { toast } from "sonner"; // the app's mounted Toaster (components/marketing_ui/sonner)
 import { getGoogleAuthUrl, loginWithPassword, requestPasswordReset, verifyDeviceOtp, resendDeviceOtp } from "../../auth/api";
 import { API_BASE_URL, apiClient } from "@/lib/apiClient";
 const Confetti = lazy(() => import("react-confetti"));
@@ -341,13 +341,33 @@ function LoginContent() {
   useEffect(() => {
     if (searchParams.get("onboard") === "true") return;
     const saved = loadOnboarding();
-    if (!saved) return;
-    setEmail(saved.email);
-    setFirstName(saved.firstName);
-    setLastName(saved.lastName);
-    setEmailVerifiedTicket(saved.ticket);
-    setMode("signup");
-    setStep(saved.step);
+    if (saved) {
+      setEmail(saved.email);
+      setFirstName(saved.firstName);
+      setLastName(saved.lastName);
+      setEmailVerifiedTicket(saved.ticket);
+      setMode("signup");
+      setStep(saved.step);
+      return;
+    }
+    // Signed in, but WhatsApp is not verified yet (the chat sends such accounts here): go to the WhatsApp
+    // step with the session token, which finalize-onboarding accepts in place of the email ticket.
+    if (searchParams.get("logout") === "success") return;
+    let cancelled = false;
+    apiClient.get("/api/auth/me")
+      .then((res: any) => {
+        const me = res?.data?.user || res?.data;
+        if (cancelled || !me?.needsChatOnboarding) return;
+        const [first = "", ...rest] = String(me.name || "").trim().split(/\s+/);
+        setEmail(me.email || "");
+        setFirstName(first);
+        setLastName(rest.join(" "));
+        setEmailVerifiedTicket(res.data.token || localStorage.getItem("token") || "");
+        setMode("signup");
+        setStep("whatsapp");
+      })
+      .catch(() => { /* not signed in: normal sign-in page */ });
+    return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -474,6 +494,7 @@ function LoginContent() {
         audience: "user",
         role: "student",
         rememberMe: true,
+        portal: "chat",
       });
 
       if (result.needsDeviceOtp) {
@@ -486,15 +507,9 @@ function LoginContent() {
       if (result.token) {
         localStorage.setItem("token", result.token);
       }
-      
-      const user: any = result.user;
-      if (user && (!user.metadata?.whatsappPhone || !user.metadata?.age)) {
-        // Logged in but needs WhatsApp onboarding
-        setEmailVerifiedTicket(result.token || "");
-        setStep("whatsapp");
-        return;
-      }
-      
+
+      // The chat checks the sign-up: an account without a verified WhatsApp number comes back here
+      // and continues at the WhatsApp step.
       window.location.href = "/";
     } catch (err: any) {
       if (err && typeof err === "object" && "needsDeviceOtp" in err) {
@@ -535,16 +550,8 @@ function LoginContent() {
     setLoading(true);
     if (deviceOtpMode) {
       try {
-        const result: any = await verifyDeviceOtp({ email: email.trim(), otp: otp.trim() });
-        const user = result?.user;
-        if (user && (!user.metadata?.whatsappPhone || !user.metadata?.age)) {
-          // Signed in, but WhatsApp onboarding is not finished
-          setEmailVerifiedTicket(result.token || "");
-          setDeviceOtpMode(false);
-          setStep("whatsapp");
-          setLoading(false);
-          return;
-        }
+        await verifyDeviceOtp({ email: email.trim(), otp: otp.trim() });
+        // Unfinished sign-ups are sent back from the chat to the WhatsApp step.
         window.location.href = "/";
       } catch (err: any) {
         setError(err?.message || "Device verification failed.");

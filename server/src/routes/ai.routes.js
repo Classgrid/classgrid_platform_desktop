@@ -43,7 +43,7 @@
  */
 
 import express from "express";
-import { isAuthenticated, requireRole } from "../middleware/auth.middleware.js";
+import { isAuthenticated, requireRole, requireChatOnboarding } from "../middleware/auth.middleware.js";
 import { 
     indexMaterial, 
     chatWithSyllabus, 
@@ -63,7 +63,7 @@ const router = express.Router();
 router.post("/index-material", isAuthenticated, requireRole("teacher", "super-admin"), indexMaterial);
 
 // Chat with indexed syllabus
-router.post("/syllabus-chat", isAuthenticated, chatWithSyllabus);
+router.post("/syllabus-chat", isAuthenticated, requireChatOnboarding, chatWithSyllabus);
 
 // ── STUDENT PERSONA ────────────────────────────────────────
 
@@ -73,7 +73,7 @@ router.get("/my-persona", isAuthenticated, getMyPersona);
 // ── GLOBAL AI ASSISTANT ────────────────────────────────────
 
 // Global AI Panel SSE Chat
-router.post("/ask", isAuthenticated, streamAskAi);
+router.post("/ask", isAuthenticated, requireChatOnboarding, streamAskAi);
 router.post("/feedback", isAuthenticated, submitAiFeedback);
 router.get("/agent-reviews", isAuthenticated, getAgentReviews);
 router.put("/agent-reviews/:id/status", isAuthenticated, updateAgentReviewStatus);
@@ -82,7 +82,7 @@ router.post("/agent-reviews/bulk-delete", isAuthenticated, bulkDeleteAgentReview
 router.get("/cron-process-reviews", processAgentReviewsCron);
 
 // Image Generation
-router.post("/generate-image", isAuthenticated, generateImage);
+router.post("/generate-image", isAuthenticated, requireChatOnboarding, generateImage);
 router.get("/my-images", isAuthenticated, getMyGeneratedImages);
 router.delete("/my-images/:id", isAuthenticated, deleteGeneratedImage);
 
@@ -113,7 +113,7 @@ router.post("/sessions/:id/public-share", isAuthenticated, createPublicShare);
 router.get("/shared/:shareId", getPublicShare);
 
 // R2 Image Upload for Chat
-router.post("/upload", isAuthenticated, uploadChatImage);
+router.post("/upload", isAuthenticated, requireChatOnboarding, uploadChatImage);
 
 // Top-up Routes
 router.use("/topup", aiTopUpRoutes);

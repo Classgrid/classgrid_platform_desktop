@@ -86,6 +86,7 @@ import { trackOnboardingEvent } from "../services/onboarding-event.service.js";
 import { syncDerivedOnboardingProgress } from "../services/onboarding-progress.service.js";
 import { sendSMS } from "../services/sms.service.js";
 import { RecaptchaVerificationError, verifyRecaptchaToken } from "../services/recaptcha.service.js";
+import { isPublicChatAccount, needsChatOnboarding } from "../utils/chat-onboarding.js";
 
 const JWT_SECRET = process.env.JWT_SECRET || "dev_secret";
 const getFrontendUrl = () => {
@@ -1456,6 +1457,11 @@ export const login = async (req, res) => {
             if (user.role !== 'super_admin') return res.status(403).json({ message: `This account is registered as ${userRoleLabel}. Please use the correct login portal for your role.` });
         } else if (reqRole === 'admin' || reqRole === 'org_admin') {
             if (!isInstitutionAdminRole(user.role)) return res.status(403).json({ message: `This account is registered as ${userRoleLabel}. Please use the correct login portal.` });
+        } else if (reqRole === 'chat') {
+            // chat.classgrid.in: public chat accounts, plus the student/teacher accounts the standard sign-in allowed
+            if (!isPublicChatAccount(user) && !['student', 'faculty', 'teacher'].includes(user.role)) {
+                return res.status(403).json({ message: `This is a Classgrid ERP account (${userRoleLabel}). Please sign in from your ERP portal.` });
+            }
         } else if (reqRole === 'standard' || reqRole === 'student' || reqRole === 'teacher') {
             if (!['student', 'faculty', 'teacher'].includes(user.role)) return res.status(403).json({ message: `This account is registered as ${userRoleLabel}. Please use the Admin Login portal instead.` });
         }
@@ -2412,6 +2418,8 @@ export const getCurrentUser = async (req, res) => {
                 role: req.realUser.role,
             } : null,
             metadata: req.user.metadata || {},
+            // Public chat account that still has to verify WhatsApp (the chat app sends it back to sign-up)
+            needsChatOnboarding: !req.isImpersonating && needsChatOnboarding(req.user),
             google_access_token: req.user.google_access_token || null,
             zoom_access_token: req.user.zoom_access_token || null,
             token: generateToken(req.user, req, req.authRememberMe === true)
