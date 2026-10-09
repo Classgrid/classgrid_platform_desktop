@@ -41,6 +41,21 @@ function relativeLabel(now: Date, timeZone?: string) {
   return `${day}, ${sign}${mins ? `${hrs}:${String(mins).padStart(2, "0")}` : hrs}hrs`;
 }
 
+// Short zone code like "IST", "BST", "CEST", "AEST". en-US only names US zones (India comes out as
+// "GMT+5:30"), so a few English locales are tried and the first real code wins; else the GMT offset.
+function zoneAbbreviation(timeZone: string | undefined, date: Date) {
+  let fallback = "";
+  for (const locale of ["en-US", "en-GB", "en-IN", "en-AU"]) {
+    try {
+      const name = new Intl.DateTimeFormat(locale, { timeZone, timeZoneName: "short" })
+        .formatToParts(date).find((p) => p.type === "timeZoneName")?.value || "";
+      if (name && !/^(GMT|UTC)[+-]/.test(name)) return name;
+      if (!fallback) fallback = name;
+    } catch { /* unsupported locale */ }
+  }
+  return fallback;
+}
+
 export function ClockBlock({ data }: { data: ClockData }) {
   const timeZone = useMemo(() => validZone(data.timeZone), [data.timeZone]);
   const [now, setNow] = useState(() => new Date());
@@ -59,18 +74,20 @@ export function ClockBlock({ data }: { data: ClockData }) {
   const { h, mi } = partsIn(now, timeZone);
   const s = partsIn(now, timeZone).s + now.getMilliseconds() / 1000;
   const digital = new Intl.DateTimeFormat("en-US", { timeZone, hour: "numeric", minute: "2-digit", hour12: true }).format(now);
-  const zoneName = new Intl.DateTimeFormat("en-US", { timeZone, timeZoneName: "short" })
-    .formatToParts(now).find((p) => p.type === "timeZoneName")?.value;
+  const zoneName = useMemo(() => zoneAbbreviation(timeZone, now), [timeZone, now.getHours()]); // eslint-disable-line react-hooks/exhaustive-deps
+  const placeText = data.place
+    ? (zoneName && !data.place.includes(`(${zoneName})`) ? `${data.place} (${zoneName})` : data.place)
+    : zoneName || "Local time";
 
   const secondAngle = s * 6;
   const minuteAngle = mi * 6 + s * 0.1;
   const hourAngle = (h % 12) * 30 + mi * 0.5;
 
   return (
-    <div className="my-4 flex max-w-[540px] items-center justify-between gap-6 rounded-3xl bg-black/[0.05] px-6 py-6 sm:px-8 dark:bg-white/[0.08]">
+    <div className="my-4 flex max-w-[540px] items-center justify-between gap-6 rounded-3xl border border-black/10 bg-black/[0.04] px-6 py-6 sm:px-8 dark:border-white/[0.12] dark:bg-[#1f1f1f]">
       <div className="min-w-0">
         <p className="text-[30px] font-semibold leading-tight tabular-nums text-[#2C2C2B] dark:text-[#F0EFED]">{digital}</p>
-        <p className="mt-3 text-[16px] text-[#2C2C2B]/85 dark:text-[#F0EFED]/85">{data.place || zoneName || "Local time"}</p>
+        <p className="mt-3 text-[16px] text-[#2C2C2B]/85 dark:text-[#F0EFED]/85">{placeText}</p>
         <p className="mt-1 text-[16px] text-[#2C2C2B]/85 dark:text-[#F0EFED]/85">{relativeLabel(now, timeZone)}</p>
       </div>
 
@@ -85,7 +102,7 @@ export function ClockBlock({ data }: { data: ClockData }) {
               y={70 + 56 * Math.sin(a)}
               textAnchor="middle"
               dominantBaseline="central"
-              className="fill-[#2C2C2B] text-[13px] font-semibold dark:fill-[#F0EFED]"
+              className="fill-[#2C2C2B] text-[14px] font-bold dark:fill-[#F0EFED]"
             >
               {n}
             </text>
