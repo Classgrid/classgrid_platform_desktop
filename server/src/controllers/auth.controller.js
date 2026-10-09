@@ -1554,7 +1554,7 @@ export const login = async (req, res) => {
                         failedAttempts: 0,
                         resendCount: 0,
                         lastResentAt: new Date(),
-                        expiresAt: new Date(Date.now() + 60 * 1000) // 60 seconds
+                        expiresAt: new Date(Date.now() + 10 * 60 * 1000) // 10 minutes, as the screen shows (resend wait stays 60 s via lastResentAt)
                     },
                     { upsert: true, returnDocument: 'after', setDefaultsOnInsert: true, sort: { createdAt: -1 } }
                 );
@@ -1702,7 +1702,7 @@ export const requestLoginOtp = async (req, res) => {
                 failedAttempts: 0,
                 resendCount: newResendCount,
                 lastResentAt: new Date(),
-                expiresAt: new Date(Date.now() + 60 * 1000) // 60 seconds
+                expiresAt: new Date(Date.now() + 10 * 60 * 1000) // 10 minutes, as the screen shows (resend wait stays 60 s via lastResentAt)
             },
             { upsert: true, returnDocument: 'after', setDefaultsOnInsert: true }
         );
@@ -2508,7 +2508,7 @@ export const resendDeviceOtp = async (req, res) => {
                     failedAttempts: 0,
                     resendCount: newResendCount,
                     lastResentAt: new Date(),
-                    expiresAt: new Date(Date.now() + 60 * 1000) // 60 seconds
+                    expiresAt: new Date(Date.now() + 10 * 60 * 1000) // 10 minutes, as the screen shows (resend wait stays 60 s via lastResentAt)
                 }
             },
             { upsert: true, returnDocument: 'after', setDefaultsOnInsert: true, sort: { createdAt: -1 } }
