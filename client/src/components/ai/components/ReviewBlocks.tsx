@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { ArrowUpRight } from "lucide-react";
 import { DocsImageViewer, type DocsViewerImage } from "./DocsImageViewer";
-import { SourceChip, type ChatSource } from "./SourceChip";
+import { SourceChip, takeCitations, type ChatSource } from "./SourceChip";
 
 // ```review and ```scores blocks: a report-style rating (title, website, big score, summary, verdict)
 // and a score breakdown with one bar per category, like ChatGPT's website reviews.
@@ -47,7 +47,8 @@ export function ReviewSummary({ data, sources }: { data: ReviewData; sources?: C
   const score = data.score !== undefined ? Math.min(Math.max(toNumber(data.score, 0), 0), max) : null;
   const website = typeof data.website === "string" && /^https?:\/\//i.test(data.website) ? data.website : "";
   const host = website ? hostOf(website) : "";
-  const cited = (sources || []).filter((s) => (data.cite || []).includes(s.id));
+  const { text: summary, ids } = takeCitations(data.summary, data.cite);
+  const cited = (sources || []).filter((s) => ids.includes(s.id));
   const image = !imageFailed && typeof data.image === "string" && /^https:\/\//i.test(data.image) ? data.image : "";
   const images = useMemo<DocsViewerImage[]>(
     () => (image ? [{ id: "review-image", src: image, alt: data.title || "", ...(host ? { sourceUrl: website, sourceLabel: host } : {}) }] : []),
@@ -110,9 +111,9 @@ export function ReviewSummary({ data, sources }: { data: ReviewData; sources?: C
             </p>
           )}
           {data.scoreLabel && <p className="mt-2 text-[15px] text-black/55 dark:text-white/55">{data.scoreLabel}</p>}
-          {(data.summary || cited.length > 0) && (
+          {(summary || cited.length > 0) && (
             <p className="mt-3 text-[16px] leading-[26px] text-[#2C2C2B] dark:text-[#F0EFED]">
-              {data.summary}
+              {summary}
               {cited.length > 0 && <> <SourceChip sources={cited} /></>}
             </p>
           )}

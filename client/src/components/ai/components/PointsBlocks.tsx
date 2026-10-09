@@ -4,7 +4,7 @@ import {
   Sparkles, Heart, Globe, Smartphone, Settings, Wrench, ThumbsUp, ThumbsDown, CircleX, BadgeDollarSign,
   BookOpen, GraduationCap, MessageCircle, Eye, Palette, ListChecks, Flag, StarHalf, type LucideIcon,
 } from "lucide-react";
-import { SourceChip, type ChatSource } from "./SourceChip";
+import { SourceChip, takeCitations, type ChatSource } from "./SourceChip";
 
 // ```points (icon + bold title + text rows: "tiles" in a bordered box, or "icons" with orange line icons)
 // and ```rating (overall rating card with a big score and stars) — ChatGPT-style report pieces.
@@ -41,7 +41,8 @@ export function PointsList({ data, sources }: { data: PointsData; sources?: Chat
 
   const rows = items.map((it, i) => {
     const Icon = iconFor(it.icon);
-    const cited = (sources || []).filter((s) => (it.cite || []).includes(s.id));
+    const { text: itemText, ids } = takeCitations(it.text, it.cite);
+    const cited = (sources || []).filter((s) => ids.includes(s.id));
     return (
       <div key={i} className={tiles ? "flex gap-4" : "flex gap-3.5 py-5 first:pt-1 last:pb-1"}>
         {tiles ? (
@@ -57,9 +58,9 @@ export function PointsList({ data, sources }: { data: PointsData; sources?: Chat
               {it.title}
             </p>
           )}
-          {(it.text || cited.length > 0) && (
+          {(itemText || cited.length > 0) && (
             <p className={`${tiles ? "" : "mt-1"} text-[16px] leading-[26px] text-[#2C2C2B] dark:text-[#F0EFED]`}>
-              {it.text}
+              {itemText}
               {cited.length > 0 && <> <SourceChip sources={cited} /></>}
             </p>
           )}
@@ -102,7 +103,8 @@ export function RatingCard({ data, sources }: { data: RatingData; sources?: Chat
   const ratio = max > 0 ? score / max : 0;
   const starCount = Math.min(Math.max(Math.round(toNumber(data.stars, max <= 10 ? max : 5)), 1), 10);
   const filled = ratio * starCount;
-  const cited = (sources || []).filter((s) => (data.cite || []).includes(s.id));
+  const { text: summary, ids } = takeCitations(data.summary, data.cite);
+  const cited = (sources || []).filter((s) => ids.includes(s.id));
   const shown = Number.isInteger(score) ? `${score}` : `${Math.round(score * 10) / 10}`;
 
   return (
@@ -125,9 +127,9 @@ export function RatingCard({ data, sources }: { data: RatingData; sources?: Chat
           {data.caption && <span className="text-[13px] text-black/50 dark:text-white/55">{data.caption}</span>}
         </span>
       </div>
-      {(data.summary || cited.length > 0) && (
+      {(summary || cited.length > 0) && (
         <p className="mt-4 text-[16px] leading-[26px] text-[#2C2C2B] dark:text-[#F0EFED]">
-          {data.summary}
+          {summary}
           {cited.length > 0 && <> <SourceChip sources={cited} /></>}
         </p>
       )}

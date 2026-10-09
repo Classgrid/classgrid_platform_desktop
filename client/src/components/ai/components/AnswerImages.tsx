@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { DocsImageViewer, type DocsViewerImage } from "./DocsImageViewer";
-import { SourceChip, type ChatSource } from "./SourceChip";
+import { SourceChip, takeCitations, type ChatSource } from "./SourceChip";
 
 function hostOf(url: string) {
   try { return new URL(url).hostname.replace(/^www\./, ""); } catch { return ""; }
@@ -63,7 +63,8 @@ export function SourceCards({ items, sources }: { items: SourceCardItem[]; sourc
         <div className="my-4 divide-y divide-black/10 dark:divide-white/10">
           {rows.map((row, i) => {
             const img = imgs.find((x) => x.id === `card-${i}`);
-            const cited = (sources || []).filter((s) => (row.cite || []).includes(s.id));
+            const { text: rowText, ids } = takeCitations(row.text, row.cite);
+            const cited = (sources || []).filter((s) => ids.includes(s.id));
             return (
               <div key={i} className="flex gap-4 py-5 first:pt-1 last:pb-1 sm:gap-6">
                 {img && (
@@ -87,9 +88,9 @@ export function SourceCards({ items, sources }: { items: SourceCardItem[]; sourc
                   {row.title && (
                     <p className="text-[17px] font-semibold leading-snug text-[#2C2C2B] dark:text-[#F0EFED]">{row.title}</p>
                   )}
-                  {(row.text || cited.length > 0) && (
+                  {(rowText || cited.length > 0) && (
                     <p className="mt-1.5 text-[16px] leading-[26px] text-[#2C2C2B] dark:text-[#F0EFED]">
-                      {row.text}
+                      {rowText}
                       {cited.length > 0 && <> <SourceChip sources={cited} /></>}
                     </p>
                   )}

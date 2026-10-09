@@ -23,6 +23,22 @@ function SiteIcon({ domain, className }: { domain: string; className?: string })
   );
 }
 
+/**
+ * Text inside the report blocks (cards, review, points, rating) is plain text, so "[1]" markers the AI wrote
+ * there would show as literal "[1]" next to the chip. This removes them and adds their ids to the block's cite.
+ */
+export function takeCitations(text: string | undefined, cite: number[] | undefined): { text: string; ids: number[] } {
+  const ids = new Set<number>(Array.isArray(cite) ? cite.filter((n) => Number.isFinite(n)) : []);
+  const cleaned = String(text || "")
+    .replace(/\s*\[(\d{1,3}(?:\s*,\s*\d{1,3})*)\]/g, (_m, list: string) => {
+      for (const n of list.split(",")) ids.add(Number(n.trim()));
+      return "";
+    })
+    .replace(/\s+([.,;:!?])/g, "$1")
+    .trim();
+  return { text: cleaned, ids: [...ids] };
+}
+
 /** The pill shown after a sentence: site icon + domain (+N when several pages back it). Hover lists them. */
 export function SourceChip({ sources }: { sources: ChatSource[] }) {
   const first = sources[0];
