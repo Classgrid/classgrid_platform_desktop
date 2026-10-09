@@ -37,12 +37,20 @@ const ROLES = [
   { value: "other", label: "Other", icon: Star },
 ];
 
+// Territories with no permanent residents (only temporary research / military staff), so nobody signs up
+// from there: Antarctica, Bouvet Island, British Indian Ocean Territory, French Southern and Antarctic
+// Lands, Heard Island and McDonald Islands, South Georgia and the South Sandwich Islands, US Minor
+// Outlying Islands.
+const UNINHABITED_TERRITORIES = new Set(["AQ", "BV", "IO", "TF", "HM", "GS", "UM"]);
+
 const COUNTRY_CODES = customArray({
   label: "{countryNameEn}",
   code: "+{countryCallingCode}",
   flag: "{flag}",
   value: "{countryCode}",
-}).sort((a, b) => a.label.localeCompare(b.label));
+})
+  .filter((c) => !UNINHABITED_TERRITORIES.has(c.value))
+  .sort((a, b) => a.label.localeCompare(b.label));
 
 // Country code picker with search: digits ("91", "+44") match the calling code, letters match the country name.
 function CountryCodePicker({ value, onChange }: { value: string; onChange: (value: string) => void }) {
