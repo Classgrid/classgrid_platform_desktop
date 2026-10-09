@@ -6,8 +6,9 @@ import { REGEXP_ONLY_DIGITS_AND_CHARS } from "input-otp";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/marketing_ui/input-otp";
 import { Spinner } from "@/components/marketing_ui/spinner";
 import { useTheme } from "next-themes";
-import { Eye, EyeOff, Check, GraduationCap, BookOpen, Shield, Code, PenTool, Database, Microscope, Target, Megaphone, TrendingUp, Headset, Settings, PenLine, Laptop, Users, Building, UserPlus, PiggyBank, Scale, Star, ChevronRight } from "lucide-react";
+import { Eye, EyeOff, Check, GraduationCap, BookOpen, Shield, Code, PenTool, Database, Microscope, Target, Megaphone, TrendingUp, Headset, Settings, PenLine, Laptop, Users, Building, UserPlus, PiggyBank, Scale, Star, ChevronRight, ChevronDown, Search } from "lucide-react";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/marketing_ui/select";
+import { Popover, PopoverTrigger, PopoverContent } from "@/components/marketing_ui/popover";
 import { customArray } from "country-codes-list";
 import * as Flags from 'country-flag-icons/react/3x2';
 import { motion, AnimatePresence } from "framer-motion";
@@ -42,6 +43,86 @@ const COUNTRY_CODES = customArray({
   flag: "{flag}",
   value: "{countryCode}",
 }).sort((a, b) => a.label.localeCompare(b.label));
+
+// Country code picker with search: digits ("91", "+44") match the calling code, letters match the country name.
+function CountryCodePicker({ value, onChange }: { value: string; onChange: (value: string) => void }) {
+  const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState("");
+  const selected = COUNTRY_CODES.find((c) => c.value === value);
+
+  const results = useMemo(() => {
+    const q = query.trim().toLowerCase().replace(/^\+/, "");
+    if (!q) return COUNTRY_CODES;
+    if (/^\d+$/.test(q)) {
+      return COUNTRY_CODES
+        .filter((c) => c.code.slice(1).startsWith(q))
+        .sort((x, y) => Number(y.code === `+${q}`) - Number(x.code === `+${q}`) || x.code.length - y.code.length);
+    }
+    return COUNTRY_CODES.filter((c) => c.label.toLowerCase().includes(q) || c.value.toLowerCase() === q);
+  }, [query]);
+
+  const choose = (code: string) => {
+    onChange(code);
+    setOpen(false);
+    setQuery("");
+  };
+  const SelectedFlag = selected ? Flags[selected.value as keyof typeof Flags] : null;
+
+  return (
+    <Popover open={open} onOpenChange={(next) => { setOpen(next); if (!next) setQuery(""); }}>
+      <PopoverTrigger className="flex w-full h-12 items-center justify-between gap-1 rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-900 transition-all outline-none focus:border-emerald-500 focus:shadow-[0_0_18px_rgba(16,185,129,0.2)] dark:border-[#2a2a2a] dark:bg-[#161616] dark:text-[#f1f1f1] dark:focus:border-emerald-500">
+        {selected ? (
+          <span className="flex items-center gap-2">
+            {SelectedFlag ? <SelectedFlag className="w-4 h-auto rounded-[2px]" /> : null}
+            {selected.code}
+          </span>
+        ) : (
+          <span className="text-slate-400">Code</span>
+        )}
+        <ChevronDown className="w-4 h-4 opacity-60" />
+      </PopoverTrigger>
+      <PopoverContent side="top" align="start" className="w-64 p-2 gap-2">
+        <div className="relative">
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+          <input
+            autoFocus
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                if (results[0]) choose(results[0].value);
+              }
+            }}
+            placeholder="Search code or country"
+            className="w-full h-9 rounded-md border border-slate-200 bg-transparent pl-8 pr-2 text-sm outline-none focus:border-emerald-500 dark:border-[#2a2a2a]"
+          />
+        </div>
+        <div className="max-h-64 overflow-y-auto">
+          {results.length === 0 ? (
+            <p className="px-2 py-3 text-center text-[13px] text-slate-400">No country found</p>
+          ) : (
+            results.map((c) => {
+              const FlagComponent = Flags[c.value as keyof typeof Flags];
+              return (
+                <button
+                  key={c.value}
+                  type="button"
+                  onClick={() => choose(c.value)}
+                  className={`flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm hover:bg-slate-100 dark:hover:bg-[#222] ${c.value === value ? "bg-slate-100 dark:bg-[#222]" : ""}`}
+                >
+                  {FlagComponent ? <FlagComponent className="w-4 h-auto shrink-0 rounded-[2px]" /> : <span>{c.flag}</span>}
+                  <span className="w-12 shrink-0 font-medium">{c.code}</span>
+                  <span className="truncate text-slate-500 dark:text-[#888]">{c.label}</span>
+                </button>
+              );
+            })
+          )}
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
+}
 
 
 const useSession = () => ({ data: null, status: "unauthenticated" });
@@ -1064,35 +1145,7 @@ function LoginContent() {
               </div>
               <div className="space-y-1.5 flex gap-2">
                 <div className="w-[100px] shrink-0">
-                  <Select value={whatsappCountryCode} onValueChange={setWhatsappCountryCode}>
-                    <SelectTrigger className="w-full !h-12 rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-900 transition-all outline-none focus:border-emerald-500 focus-visible:ring-0 focus-visible:border-emerald-500 focus:shadow-[0_0_18px_rgba(16,185,129,0.2)] dark:border-[#2a2a2a] dark:bg-[#161616] dark:text-[#f1f1f1] dark:focus:border-emerald-500" size="default">
-                      <SelectValue placeholder="Code" className="hidden" />
-                      {whatsappCountryCode ? (() => {
-                        const selected = COUNTRY_CODES.find(c => c.value === whatsappCountryCode);
-                        if (!selected) return <span className="flex-1 text-left">Code</span>;
-                        const FlagComponent = Flags[selected.value as keyof typeof Flags];
-                        return (
-                          <div className="flex flex-1 items-center gap-2 text-left">
-                            {FlagComponent ? <FlagComponent className="w-4 h-auto rounded-[2px]" /> : null}
-                            <span>{selected.code}</span>
-                          </div>
-                        );
-                      })() : <span className="flex-1 text-left text-slate-400">Code</span>}
-                    </SelectTrigger>
-                    <SelectContent side="top">
-                      {COUNTRY_CODES.map((c) => {
-                        const FlagComponent = Flags[c.value as keyof typeof Flags];
-                        return (
-                          <SelectItem key={c.value} value={c.value}>
-                            <div className="flex items-center gap-2">
-                              {FlagComponent ? <FlagComponent className="w-4 h-auto rounded-[2px]" /> : <span>{c.flag}</span>}
-                              <span>{c.code}</span>
-                            </div>
-                          </SelectItem>
-                        );
-                      })}
-                    </SelectContent>
-                  </Select>
+                  <CountryCodePicker value={whatsappCountryCode} onChange={setWhatsappCountryCode} />
                 </div>
                 <div className="flex-1">
                   <input
