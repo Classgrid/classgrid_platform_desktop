@@ -182,7 +182,7 @@ export function OAuthConsentPage() {
           </div>
         </div>
         <div className="bg-muted/50 p-4 text-center text-xs text-muted-foreground border-t border-border">
-          By allowing access, you are granting this application permission to interact with your Classgrid ERP data. You can revoke this access at any time from your settings.
+          By allowing access, you are granting this application permission to interact with your Classgrid data. You can revoke this access at any time from your settings.
         </div>
       </div>
     </div>

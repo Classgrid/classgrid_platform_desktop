@@ -50,7 +50,7 @@ const API_BASE = "https://api.classgrid.in";
 
 // ─── System Subdomains (always show Classgrid branding) ────────────
 const SYSTEM_SUBDOMAINS = new Set([
-  "www", "app", "admin", "api", "dev", "staging", "mail", "superadmin"
+  "www", "app", "admin", "api", "dev", "staging", "mail", "superadmin", "chat"
 ]);
 
 // ─── Per-Instance Branding Cache ───────────────────────────────────

@@ -59,7 +59,7 @@ const mockBranding = {
   authType: "platform",
   name: "Classgrid",
   shortName: "Classgrid",
-  tagline: "Classgrid ERP",
+  tagline: "Classgrid",
   logoUrl: "/logos/logo.png",
   campusImageUrl: "",
   leftVariant: "default",
