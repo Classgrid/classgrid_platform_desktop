@@ -51,6 +51,7 @@ import {
 } from "../controllers/ai.controller.js";
 import { streamAskAi, getChatSessions, getChatSession, getChatSessionMessages, uploadChatImage, updateChatSession, deleteChatSession, shareChatSession, createPublicShare, getPublicShare, submitAiFeedback, getAgentReviews, updateAgentReviewStatus, processAgentReviewsCron, deleteAgentReview, bulkDeleteAgentReviews, generateImage, getMyGeneratedImages, deleteGeneratedImage, getMyUsage, getOrgUsage, getSkills, createSkill, updateSkill, deleteSkill, getPreferences, updatePreferences } from "../controllers/ai-chat.controller.js";
 
+import { getFavicon } from "../controllers/ai-favicon.controller.js";
 import aiTopUpRoutes from "./ai-credits-topup.routes.js";
 import aiCreditsRoutes from "./ai-credits.routes.js";
 
@@ -108,6 +109,9 @@ router.put("/sessions/:id", isAuthenticated, updateChatSession);
 router.delete("/sessions/:id", isAuthenticated, deleteChatSession);
 router.post("/sessions/:id/share", isAuthenticated, shareChatSession);
 router.post("/sessions/:id/public-share", isAuthenticated, createPublicShare);
+
+// Site icons for the AI's source chips (public: loaded by <img>, no token)
+router.get("/favicon", getFavicon);
 
 // Public shared chat viewer (NO auth required)
 router.get("/shared/:shareId", getPublicShare);

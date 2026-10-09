@@ -1924,6 +1924,9 @@ Do NOT talk about internal architecture unless asked by a @classgrid.in employee
 
         // 3. Initialize the real LLM Client from the Classgrid SDK using the fallback hierarchy
         let accSteps = []; // hoisted here so tool wrappers can push to it
+        // Web pages search_web used in this answer, numbered across searches so [n] in the reply points at
+        // one page. Streamed as a "sources" event and saved with the message (the chat shows them as chips).
+        let accSources = [];
 
         // 🚨 AI WARNING: DO NOT ADD NEW MODELS OR CHANGE EXISTING MODELS WITHOUT THE PLATFORM OWNER'S APPROVAL 🚨
         // Approved chat models: DeepSeek V4 Pro (main) and DeepSeek V4 Flash (simple messages), see pickChatModel;
@@ -2003,7 +2006,7 @@ Do NOT talk about internal architecture unless asked by a @classgrid.in employee
                     type: "function",
                     function: {
                         name: "search_web",
-                        description: "Search the live web for competitor analysis, news, or external facts.",
+                        description: "Search the live web for competitor analysis, news, or external facts. Each result has an id: cite it as [id] after the sentence that uses it.",
                         parameters: {
                             type: "object",
                             properties: {
@@ -2661,6 +2664,8 @@ Do NOT talk about internal architecture unless asked by a @classgrid.in employee
                                     search_depth: "advanced",
                                     include_answer: false,
                                     include_raw_content: true,
+                                    include_images: true,
+                                    include_image_descriptions: true,
                                     max_results: 10
                                 })
                             });
@@ -2670,9 +2675,32 @@ Do NOT talk about internal architecture unless asked by a @classgrid.in employee
                             }
 
                             const searchData = await tavilyRes.json();
+                            const results = Array.isArray(searchData.results) ? searchData.results : [];
+                            const numbered = results.map((r) => {
+                                const known = accSources.find((src) => src.url === r.url);
+                                if (known) return { ...r, id: known.id };
+                                let domain = "";
+                                try { domain = new URL(r.url).hostname.replace(/^www\./, ""); } catch { /* bad url */ }
+                                const src = {
+                                    id: accSources.length + 1,
+                                    url: r.url,
+                                    title: String(r.title || domain).slice(0, 200),
+                                    domain,
+                                    snippet: String(r.content || "").replace(/\s+/g, " ").trim().slice(0, 240),
+                                };
+                                accSources.push(src);
+                                return { ...r, id: src.id };
+                            });
+                            try { if (!res.writableEnded) res.write(`data: ${JSON.stringify({ type: "sources", sources: accSources })}\n\n`); } catch (e) { }
+                            const images = (Array.isArray(searchData.images) ? searchData.images : [])
+                                .map((img) => (typeof img === "string" ? { url: img } : { url: img?.url, description: img?.description || "" }))
+                                .filter((img) => typeof img.url === "string" && /^https:\/\//i.test(img.url))
+                                .slice(0, 6);
                             return JSON.stringify({
+                                how_to_cite: "Cite facts from these results with the result id in square brackets right after the sentence, like 'Fees start at Rs 999 [2].' or '[1][3]' for several. Never write raw URLs or a list of sources at the end; the app turns [n] into a source chip with the site's icon. To show a picture, put one of images as markdown ![short description](url) on its own line (at most 3, only when it helps). For a review, comparison or list where each point fits a picture, you may use a fenced code block with the language cards whose body is JSON like {\"items\":[{\"title\":\"Clear product purpose\",\"text\":\"One or two sentences.\",\"image\":\"<one of images>\",\"cite\":[1]}]} (3-6 items, image optional); the app shows each item as a row with the picture on the left.",
                                 answer: searchData.answer || null,
-                                results: searchData.results || []
+                                results: numbered,
+                                images
                             });
                         } catch (e) {
                             return "Web Search failed: " + e;
@@ -3573,6 +3601,7 @@ Do NOT talk about internal architecture unless asked by a @classgrid.in employee
                 }
                 accThought = "";
                 accSteps = [];
+                accSources = [];
 
                 console.log(`[AI-DEBUG] ===== GENERATE START ===== attempt=${attempt} question="${(body.question || '').slice(0, 100)}" messagesCount=${messages.length} timestamp=${new Date().toISOString()}`);
                 const generateStartTime = Date.now();
@@ -3943,7 +3972,8 @@ Do NOT talk about internal architecture unless asked by a @classgrid.in employee
                         classgrid_ai_message: true,
                         content: answer,
                         thought: accThought,
-                        steps: accSteps
+                        steps: accSteps,
+                        ...(accSources.length > 0 ? { sources: accSources } : {})
                     });
                 }
                 saveMessage(sessionId, "assistant", savedContent, []).catch(err => console.error("Failed to save assistant message:", err));

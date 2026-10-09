@@ -134,6 +134,8 @@ import { ModelPicker, useSelectedModel } from "./ModelPicker";
 import { toast } from "sonner";
 import FilePreviewModal, { type FilePreviewSource } from "./FilePreviewModal";
 import { DocsImageViewer } from "./DocsImageViewer";
+import { SourceChip, type ChatSource } from "./SourceChip";
+import { AnswerImage, SourceCards } from "./AnswerImages";
 import { ScrollSpyTOC } from "./TOC";
 import AIThinkingBlock from "./AIThinkingBlock";
 import ReactMarkdown from "react-markdown";
@@ -322,6 +324,8 @@ export type ChatMessage = {
   content: string;
   thought?: string;
   steps?: AgentStep[];
+  /** Web pages the answer cites as [n] (search_web) */
+  sources?: ChatSource[];
   typing?: boolean;
   tocSummary?: string;
   fileUrls?: string[];
@@ -1242,7 +1246,27 @@ const CraftingBlock = () => {
   );
 };
 
-const AssistantMessageContent = memo(({ content, isTyping, onApprovalAction, isHistorical, onRetry, currentStepIndex, setActiveBuildSessionId }: { content: string, isTyping?: boolean, onApprovalAction?: (text: string) => void, isHistorical?: boolean, onRetry?: (error: string) => void, currentStepIndex?: number, setActiveBuildSessionId?: (id: string) => void }) => {
+// [n] citations in web-search answers become markdown links that the `a` renderer swaps for source chips.
+// Matches "[1]", "[1][3]" and "[1, 3]" for ids that exist; leaves markdown links "[1](...)", footnote
+// definitions "[1]: ..." and inline code alone. (Fenced code is split off before this runs.)
+const CITE_HREF_PREFIX = "#cg-cite-";
+function linkCitations(text: string, sources: ChatSource[]): string {
+  const known = new Set(sources.map((s) => s.id));
+  return text
+    .split(/(`[^`\n]*`)/g)
+    .map((chunk, i) => {
+      if (i % 2 === 1) return chunk;
+      return chunk.replace(/(?:\[\d{1,3}(?:\s*,\s*\d{1,3})*\]\s?)+(?![(:])/g, (group) => {
+        const ids = [...new Set((group.match(/\d{1,3}/g) || []).map(Number).filter((n) => known.has(n)))];
+        if (ids.length === 0) return group;
+        const trailing = /\s$/.test(group) ? " " : "";
+        return `[cite](${CITE_HREF_PREFIX}${ids.join("-")})${trailing}`;
+      });
+    })
+    .join("");
+}
+
+const AssistantMessageContent = memo(({ content, sources, isTyping, onApprovalAction, isHistorical, onRetry, currentStepIndex, setActiveBuildSessionId }: { content: string, sources?: ChatSource[], isTyping?: boolean, onApprovalAction?: (text: string) => void, isHistorical?: boolean, onRetry?: (error: string) => void, currentStepIndex?: number, setActiveBuildSessionId?: (id: string) => void }) => {
   // `components` below must keep a stable identity: a new object makes ReactMarkdown remount
   // every code block and Mermaid diagram. So it reads changing props from refs, which are
   // assigned during render so the markdown rendered in this same pass sees current values.
@@ -1252,6 +1276,8 @@ const AssistantMessageContent = memo(({ content, isTyping, onApprovalAction, isH
   const isHistoricalRef = React.useRef(isHistorical);
   const currentStepIndexRef = React.useRef(currentStepIndex);
   const contentRef = React.useRef(content);
+  const sourcesRef = React.useRef(sources);
+  sourcesRef.current = sources;
   onApprovalActionRef.current = onApprovalAction;
   isTypingRef.current = isTyping;
   onRetryRef.current = onRetry;
@@ -1282,10 +1308,11 @@ const AssistantMessageContent = memo(({ content, isTyping, onApprovalAction, isH
           .replace(/(\S)(?:\r?\n)+\s*\//g, '$1 /')
           .replace(/\/\s*(?:\r?\n)+\s*(\S)/g, '/ $1')
           .replace(/\(([^)]+)\)/g, (match, inner) => `(${inner.replace(/\s*(?:\r?\n)+\s*/g, ' ').trim()})`);
+        if (sources && sources.length > 0) parts[i] = linkCitations(parts[i] ?? "", sources);
       }
     }
     return parts.join('');
-  }, [content]);
+  }, [content, sources]);
   const components = React.useMemo(() => {
     return {
       ...MarkdownComponents,
@@ -1293,6 +1320,17 @@ const AssistantMessageContent = memo(({ content, isTyping, onApprovalAction, isH
         const match = /language-(\w+)/.exec(className || "");
         const language = match ? match[1] : "";
         const isApprovalLang = !inline && language && "approval".startsWith(language.toLowerCase());
+
+        // ```cards: rows with a thumbnail, title, text and source chip (web-search answers)
+        if (language === "cards" && !inline) {
+          try {
+            const parsed = JSON5.parse(String(children));
+            const items = Array.isArray(parsed) ? parsed : parsed?.items;
+            if (Array.isArray(items)) return <SourceCards items={items} sources={sourcesRef.current} />;
+          } catch {
+            if (isTypingRef.current) return null; // still streaming
+          }
+        }
 
         if (language === "chart" && !inline) {
           try {
@@ -1449,7 +1487,17 @@ const AssistantMessageContent = memo(({ content, isTyping, onApprovalAction, isH
       td({ children, ...props }: any) {
         return <td className="p-4 align-middle text-slate-600 dark:text-slate-300 border-r border-slate-200 dark:border-white/10 last:border-r-0" {...props}>{children}</td>;
       },
+      img({ src, alt }: any) {
+        // Images in the answer text: rounded thumbnail that opens the full-screen viewer
+        return <AnswerImage src={typeof src === "string" ? src : undefined} alt={typeof alt === "string" ? alt : ""} />;
+      },
       a({ href, children, ...props }) {
+        // [n] citations (see linkCitations) become a source chip with the site's icon
+        if (typeof href === "string" && href.startsWith(CITE_HREF_PREFIX)) {
+          const ids = href.slice(CITE_HREF_PREFIX.length).split("-").map(Number);
+          const cited = (sourcesRef.current || []).filter((s) => ids.includes(s.id));
+          return cited.length > 0 ? <SourceChip sources={cited} /> : null;
+        }
         const external = href && /^https?:\/\//i.test(href);
         return (
           <a
@@ -1520,6 +1568,7 @@ const AssistantMessageContent = memo(({ content, isTyping, onApprovalAction, isH
 }, (prevProps, nextProps) => {
   return (
     prevProps.content === nextProps.content &&
+    prevProps.sources === nextProps.sources &&
     prevProps.isTyping === nextProps.isTyping &&
     prevProps.isHistorical === nextProps.isHistorical
   );
@@ -2427,6 +2476,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
             let content = m.content;
             let thought = undefined;
             let steps = undefined;
+            let sources = undefined;
 
             if (m.role === 'assistant') {
               let parsed = m.content;
@@ -2441,6 +2491,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                 content = parsed.content;
                 thought = parsed.thought;
                 steps = parsed.steps;
+                sources = parsed.sources;
               }
             }
 
@@ -2449,6 +2500,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
               content: content,
               thought: thought,
               steps: steps,
+              sources: sources,
               fileUrls: m.file_urls || undefined,
               attachments: m.file_urls && m.file_urls.length > 0 ? m.file_urls.map((url: string) => ({
                 url: url,
@@ -2503,6 +2555,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
             let content = m.content;
             let thought = undefined;
             let steps = undefined;
+            let sources = undefined;
 
             if (m.role === 'assistant') {
               let parsed = m.content;
@@ -2517,6 +2570,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                 content = parsed.content;
                 thought = parsed.thought;
                 steps = parsed.steps;
+                sources = parsed.sources;
               }
             }
 
@@ -2526,6 +2580,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
               content: content,
               thought: thought,
               steps: steps,
+              sources: sources,
               fileUrls: m.file_urls || undefined,
               attachments: m.file_urls && m.file_urls.length > 0 ? m.file_urls.map((url: string) => ({
                 url: url,
@@ -3442,6 +3497,13 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                     ...targetPrev.slice(0, -1),
                     { ...lastMsg, steps: [...(lastMsg.steps || []), newStep] }
                   ];
+                });
+              } else if (event.type === "sources") {
+                // Numbered web pages for [n] citations (the full list so far for this answer)
+                setMessages((prev) => {
+                  const lastMsg = prev[prev.length - 1];
+                  if (!lastMsg || lastMsg.role !== "assistant" || !Array.isArray(event.sources)) return prev;
+                  return [...prev.slice(0, -1), { ...lastMsg, sources: event.sources }];
                 });
               } else if (event.type === "tool_result") {
                 setMessages((prev) => {
@@ -4413,6 +4475,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                               ) : (
                                 <AssistantMessageContent
                                   content={message.content}
+                                  sources={message.sources}
                                   isTyping={message.typing}
                                   isHistorical={index < messages.length - 1}
                                   currentStepIndex={-1}

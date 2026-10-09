@@ -11,12 +11,15 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Download } from "lucide-react";
+import { X, Download, ChevronLeft, ChevronRight } from "lucide-react";
 
 export interface DocsViewerImage {
   id: string;
   src: string;
   alt: string;
+  /** Optional: the page or site the image comes from, shown as a link at the bottom (web-search images) */
+  sourceUrl?: string;
+  sourceLabel?: string;
 }
 
 interface DocsImageViewerProps {
@@ -74,15 +77,31 @@ export function DocsImageViewer({ images, renderThumbnails, defaultOpenIndex, on
     return () => { document.body.style.overflow = ""; };
   }, [selectedImage]);
 
-  // ── Keyboard: Escape to close ──
+  // ── Several images: "2 / 5" counter and previous / next (buttons and arrow keys) ──
+  const currentIndex = selectedImage ? images.findIndex((img) => img.id === selectedImage.id) : -1;
+  const hasMany = images.length > 1;
+  const showAt = useCallback((delta: number) => {
+    if (images.length < 2) return;
+    const from = selectedImage ? images.findIndex((img) => img.id === selectedImage.id) : 0;
+    const next = images[(from + delta + images.length) % images.length];
+    if (next) {
+      thumbnailRectRef.current = null;
+      setZoom(1);
+      setSelectedImage(next);
+    }
+  }, [images, selectedImage]);
+
+  // ── Keyboard: Escape to close, arrows to browse ──
   useEffect(() => {
     if (!selectedImage) return;
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") closeImage();
+      else if (e.key === "ArrowRight") showAt(1);
+      else if (e.key === "ArrowLeft") showAt(-1);
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [selectedImage, closeImage]);
+  }, [selectedImage, closeImage, showAt]);
 
   // ── Zoom with mouse scroll ──
   useEffect(() => {
@@ -201,10 +220,45 @@ export function DocsImageViewer({ images, renderThumbnails, defaultOpenIndex, on
                   />
                 </div>
 
-                {/* ── Hint ── */}
-                <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-[10000] text-black/25 dark:text-white/25 text-[10px] tracking-wide select-none pointer-events-none">
-                  Click or press Esc to close
-                </div>
+                {/* ── Counter + previous / next (only with several images) ── */}
+                {hasMany && (
+                  <>
+                    <div className="absolute top-5 left-1/2 -translate-x-1/2 z-[10000] rounded-full bg-black/10 px-3 py-1 text-[13px] font-medium tabular-nums text-black/70 dark:bg-white/10 dark:text-white/80 select-none">
+                      {currentIndex + 1} / {images.length}
+                    </div>
+                    <button
+                      className="absolute left-3 top-1/2 -translate-y-1/2 z-[10000] p-2.5 rounded-full bg-black/10 dark:bg-white/10 hover:bg-black/20 dark:hover:bg-white/20 text-black/60 dark:text-white/70 transition-all cursor-pointer sm:left-6"
+                      onClick={(e) => { e.stopPropagation(); showAt(-1); }}
+                      aria-label="Previous image"
+                    >
+                      <ChevronLeft className="w-5 h-5" />
+                    </button>
+                    <button
+                      className="absolute right-3 top-1/2 -translate-y-1/2 z-[10000] p-2.5 rounded-full bg-black/10 dark:bg-white/10 hover:bg-black/20 dark:hover:bg-white/20 text-black/60 dark:text-white/70 transition-all cursor-pointer sm:right-6"
+                      onClick={(e) => { e.stopPropagation(); showAt(1); }}
+                      aria-label="Next image"
+                    >
+                      <ChevronRight className="w-5 h-5" />
+                    </button>
+                  </>
+                )}
+
+                {/* ── Source link (web images) or the close hint ── */}
+                {selectedImage.sourceUrl ? (
+                  <a
+                    href={selectedImage.sourceUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    onClick={(e) => e.stopPropagation()}
+                    className="absolute bottom-5 left-1/2 -translate-x-1/2 z-[10000] max-w-[80vw] truncate rounded-full bg-black/70 px-4 py-2 text-[14px] font-medium text-white underline underline-offset-4 hover:bg-black/80 dark:bg-white/15 dark:hover:bg-white/25"
+                  >
+                    {selectedImage.sourceLabel || selectedImage.sourceUrl}
+                  </a>
+                ) : (
+                  <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-[10000] text-black/25 dark:text-white/25 text-[10px] tracking-wide select-none pointer-events-none">
+                    Click or press Esc to close
+                  </div>
+                )}
               </motion.div>
             );
           })()}
