@@ -140,6 +140,8 @@ import { ReviewSummary, ScoreBreakdown } from "./ReviewBlocks";
 import { PointsList, RatingCard } from "./PointsBlocks";
 import { ClockBlock } from "./ClockBlock";
 import { WeatherCard, MarketCard, MapCard, CountdownCard } from "./LiveCards";
+import { FollowUps, ActionCards, ReportCard, Timetable, AttendanceCalendar, StudyPlanner } from "./StudyBlocks";
+import { WidgetBlock } from "./WidgetBlock";
 import { ScrollSpyTOC } from "./TOC";
 import AIThinkingBlock from "./AIThinkingBlock";
 import ReactMarkdown from "react-markdown";
@@ -1007,6 +1009,36 @@ const preprocessLaTeX = (content: string) => {
   return processed;
 };
 
+// A flashcard slide's answer starts at a line like "Answer:", "**Answer:**" or "💡 **Answer:** ..."
+const FLASHCARD_ANSWER_RE = /^[ \t]*(?:[^\w\s*#>]+[ \t]*)?(?:[*_]{1,2})?A(?:ns)?(?:wer)?(?:[*_]{1,2})?[ \t]*[:：]/im;
+
+// One slide: plain slides render as before; flashcards keep the answer hidden until "Show answer"
+const CarouselSlide = ({ slide, components }: { slide: string, components: any }) => {
+  const [shown, setShown] = React.useState(false);
+  const match = FLASHCARD_ANSWER_RE.exec(slide);
+  const question = match ? slide.slice(0, match.index).trim() : slide;
+  const answer = match ? slide.slice(match.index).trim() : "";
+  const render = (text: string) => (
+    <ReactMarkdown remarkPlugins={[remarkMath, remarkGfm, remarkGithubAlerts]} rehypePlugins={[rehypeKatex]} components={components}>
+      {text}
+    </ReactMarkdown>
+  );
+  if (!match || !question) return <>{render(slide)}</>;
+  return (
+    <>
+      {render(question)}
+      {shown && render(answer)}
+      <button
+        type="button"
+        onClick={() => setShown((s) => !s)}
+        className={`mt-2 w-full rounded-full px-4 py-2.5 text-[15px] font-medium transition-colors ${shown ? "border border-black/15 hover:bg-black/[0.04] dark:border-white/20 dark:hover:bg-white/[0.06]" : "bg-[#2C2C2B] text-white hover:bg-black dark:bg-[#F0EFED] dark:text-[#1A1A19] dark:hover:bg-white"}`}
+      >
+        {shown ? "Hide answer" : "Show answer"}
+      </button>
+    </>
+  );
+};
+
 // MarkdownCarousel Component for rendering swipeable flashcards/slides inside the chat
 const MarkdownCarousel = memo(({ content, components }: { content: string, components: any }) => {
   const rawSlides = content.split(/(?:<!--\s*slide\s*-->|^-{3,}$)/m);
@@ -1023,13 +1055,7 @@ const MarkdownCarousel = memo(({ content, components }: { content: string, compo
               <div className="p-1 h-full">
                 <div className="bg-white dark:bg-[#2C2C2C] border border-slate-200 dark:border-white/10 rounded-xl p-6 min-h-[200px] h-full shadow-sm flex flex-col justify-center">
                   <div className="space-y-4 text-[16px] leading-[24px] overflow-visible break-words max-w-none">
-                    <ReactMarkdown
-                      remarkPlugins={[remarkMath, remarkGfm, remarkGithubAlerts]}
-                      rehypePlugins={[rehypeKatex]}
-                      components={components}
-                    >
-                      {slide}
-                    </ReactMarkdown>
+                    <CarouselSlide slide={slide} components={components} />
                   </div>
                 </div>
               </div>
@@ -1336,6 +1362,30 @@ const AssistantMessageContent = memo(({ content, sources, createdAt, isTyping, o
             if (Array.isArray(items)) return <SourceCards items={items} sources={sourcesRef.current} />;
           } catch {
             if (isTypingRef.current) return null; // still streaming
+          }
+        }
+
+        // ```widget: the AI's own HTML card, run in a sandboxed iframe (anything no built-in block covers)
+        if (language === "widget" && !inline) {
+          return <WidgetBlock code={String(children)} isTyping={isTypingRef.current} onAsk={(text) => onApprovalActionRef.current?.(text)} />;
+        }
+
+        // ```followups / ```actions (buttons send a message), ```reportcard, ```timetable, ```attendance, ```planner
+        if ((language === "followups" || language === "actions" || language === "reportcard" || language === "timetable" || language === "attendance" || language === "planner") && !inline) {
+          try {
+            const parsed = JSON5.parse(String(children));
+            if (parsed && typeof parsed === "object") {
+              const ask = (text: string) => onApprovalActionRef.current?.(text);
+              // Next-question suggestions only under the latest answer, like ChatGPT
+              if (language === "followups") return isHistoricalRef.current ? null : <FollowUps data={Array.isArray(parsed) ? { questions: parsed } : parsed} onAsk={ask} />;
+              if (language === "actions") return <ActionCards data={Array.isArray(parsed) ? { items: parsed } : parsed} onAsk={ask} />;
+              if (language === "reportcard") return <ReportCard data={parsed} />;
+              if (language === "timetable") return <Timetable data={parsed} />;
+              if (language === "attendance") return <AttendanceCalendar data={parsed} />;
+              return <StudyPlanner data={parsed} onAsk={ask} />;
+            }
+          } catch {
+            if (isTypingRef.current) return null;
           }
         }
 

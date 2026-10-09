@@ -2,7 +2,8 @@ import {
   CircleCheck, ShieldCheck, Shield, Layers, LayoutGrid, TrendingUp, Gauge, Zap, Target, Star, TriangleAlert,
   CircleAlert, Info, Lightbulb, Rocket, Users, Lock, Clock, Search, FileText, ChartColumn, MousePointerClick,
   Sparkles, Heart, Globe, Smartphone, Settings, Wrench, ThumbsUp, ThumbsDown, CircleX, BadgeDollarSign,
-  BookOpen, GraduationCap, MessageCircle, Eye, Palette, ListChecks, Flag, StarHalf, type LucideIcon,
+  BookOpen, GraduationCap, MessageCircle, Eye, Palette, ListChecks, Flag, StarHalf, Brain, GitBranch, PencilRuler,
+  CalendarCheck, Download, Code, type LucideIcon,
 } from "lucide-react";
 import { SourceChip, takeCitations, type ChatSource } from "./SourceChip";
 
@@ -25,9 +26,12 @@ const ICONS: Record<string, LucideIcon> = {
   "x-circle": CircleX, price: BadgeDollarSign, pricing: BadgeDollarSign, money: BadgeDollarSign, book: BookOpen,
   learn: BookOpen, education: GraduationCap, "graduation-cap": GraduationCap, message: MessageCircle, chat: MessageCircle,
   eye: Eye, visibility: Eye, design: Palette, palette: Palette, list: ListChecks, checklist: ListChecks, flag: Flag,
+  brain: Brain, quiz: Brain, practice: Brain, mcq: Brain, diagram: GitBranch, flowchart: GitBranch, "git-branch": GitBranch,
+  draw: PencilRuler, steps: PencilRuler, pencil: PencilRuler, calendar: CalendarCheck, reminder: CalendarCheck,
+  schedule: CalendarCheck, download: Download, notes: Download, code: Code, course: GraduationCap, cap: GraduationCap,
 };
 
-function iconFor(name?: string): LucideIcon {
+export function iconFor(name?: string): LucideIcon {
   return ICONS[String(name || "").trim().toLowerCase()] || CircleCheck;
 }
 
