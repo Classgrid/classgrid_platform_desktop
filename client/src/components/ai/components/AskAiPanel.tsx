@@ -1270,7 +1270,7 @@ function linkCitations(text: string, sources: ChatSource[]): string {
     .join("");
 }
 
-const AssistantMessageContent = memo(({ content, sources, isTyping, onApprovalAction, isHistorical, onRetry, currentStepIndex, setActiveBuildSessionId }: { content: string, sources?: ChatSource[], isTyping?: boolean, onApprovalAction?: (text: string) => void, isHistorical?: boolean, onRetry?: (error: string) => void, currentStepIndex?: number, setActiveBuildSessionId?: (id: string) => void }) => {
+const AssistantMessageContent = memo(({ content, sources, createdAt, isTyping, onApprovalAction, isHistorical, onRetry, currentStepIndex, setActiveBuildSessionId }: { content: string, sources?: ChatSource[], createdAt?: number, isTyping?: boolean, onApprovalAction?: (text: string) => void, isHistorical?: boolean, onRetry?: (error: string) => void, currentStepIndex?: number, setActiveBuildSessionId?: (id: string) => void }) => {
   // `components` below must keep a stable identity: a new object makes ReactMarkdown remount
   // every code block and Mermaid diagram. So it reads changing props from refs, which are
   // assigned during render so the markdown rendered in this same pass sees current values.
@@ -1282,6 +1282,9 @@ const AssistantMessageContent = memo(({ content, sources, isTyping, onApprovalAc
   const contentRef = React.useRef(content);
   const sourcesRef = React.useRef(sources);
   sourcesRef.current = sources;
+  // When this answer was written: timers ("duration" countdowns) count from here, to the second
+  const createdAtRef = React.useRef(createdAt);
+  createdAtRef.current = createdAt;
   onApprovalActionRef.current = onApprovalAction;
   isTypingRef.current = isTyping;
   onRetryRef.current = onRetry;
@@ -1345,7 +1348,7 @@ const AssistantMessageContent = memo(({ content, sources, isTyping, onApprovalAc
               if (language === "weather") return <WeatherCard data={parsed} />;
               if (language === "market") return <MarketCard data={parsed} />;
               if (language === "map") return <MapCard data={parsed} />;
-              return <CountdownCard data={parsed} />;
+              return <CountdownCard data={parsed} startedAt={createdAtRef.current} />;
             }
           } catch {
             if (isTypingRef.current) return null;
@@ -4521,6 +4524,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                                 <AssistantMessageContent
                                   content={message.content}
                                   sources={message.sources}
+                                  createdAt={message.createdAt}
                                   isTyping={message.typing}
                                   isHistorical={index < messages.length - 1}
                                   currentStepIndex={-1}

@@ -647,6 +647,7 @@ export const getMcpTools = () => [
         summary: { type: 'string', description: 'A short one-line summary shown on the schedule card (e.g. "Reminder to pay ₹15,000 tuition fee before Oct 5"). This is NOT the email subject — it is for UI display only.' },
         action_info: { type: 'string', description: 'Detailed plain-text information shown when the user clicks the schedule card. Include all relevant details like amounts, dates, links, names, instructions. This is NOT the email body — it is for UI display only.' },
         scheduled_at: { type: 'string', description: 'ISO 8601 datetime string for when to send the email (e.g. 2026-10-06T10:00:00.000Z)' },
+        durationSeconds: { type: 'number', description: 'For "in N seconds/minutes/hours" requests: the delay in seconds from now (e.g. 60 for "in 1 minute"). When given, it is used instead of scheduled_at so the time is exact; still fill scheduled_at with your best guess.' },
         email_subject: { type: 'string', description: 'Subject line for the email that will be sent' },
         email_body: { type: 'string', description: 'Full beautiful HTML email body with inline CSS to send at scheduled time' },
         whatsapp_phone_number: { type: 'string', description: 'The recipient phone number with country code for WhatsApp (e.g. 919876543210)' },
@@ -1894,7 +1895,10 @@ export const handleToolCall = async (name, args, context = {}) => {
           description: args.description || '',
           summary: args.summary || '',
           action_info: args.action_info || '',
-          scheduled_at: new Date(args.scheduled_at),
+          // A relative delay ("in 1 minute") is counted from now on the server, so the AI can't round it off
+          scheduled_at: Number(args.durationSeconds) > 0
+            ? new Date(Date.now() + Number(args.durationSeconds) * 1000)
+            : new Date(args.scheduled_at),
           email_subject: args.email_subject,
           email_body: args.email_body,
           whatsapp_phone_number: args.whatsapp_phone_number,
@@ -1904,7 +1908,7 @@ export const handleToolCall = async (name, args, context = {}) => {
 
         await emitScheduleUpdate(user?._id, schedule._id);
 
-        return { content: [{ type: 'text', text: `Successfully scheduled task "${args.title}" for ${args.scheduled_at}. The user will receive an email at that time. IMPORTANT: The schedule_id is ${schedule._id}. Save this ID if you need to update or delete it later.` }] };
+        return { content: [{ type: 'text', text: `Successfully scheduled task "${args.title}" for ${schedule.scheduled_at.toISOString()}. The user will receive an email at that time. IMPORTANT: The schedule_id is ${schedule._id}. Save this ID if you need to update or delete it later.` }] };
       } catch (e) {
         return { content: [{ type: 'text', text: `Error creating schedule: ${e.message}` }] };
       }

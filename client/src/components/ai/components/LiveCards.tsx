@@ -292,31 +292,46 @@ export function MapCard({ data }: { data: MapData }) {
 }
 
 // ── Countdown ──────────────────────────────────────────────────────────────────────────────────────
-export type CountdownData = { title?: string; date?: string };
+// A date ("date": ISO) for deadlines, or a length ("seconds" / "minutes" / "hours") for timers. A timer counts
+// from `startedAt` (when the answer was written), to the second — the AI only knows the time to the minute,
+// so "1 minute from now" as a date could end almost at once.
+export type CountdownData = { title?: string; date?: string; seconds?: number; minutes?: number; hours?: number };
 
-export function CountdownCard({ data }: { data: CountdownData }) {
-  const target = useMemo(() => (data.date ? new Date(data.date).getTime() : NaN), [data.date]);
+export function CountdownCard({ data, startedAt }: { data: CountdownData; startedAt?: number }) {
+  const [mountedAt] = useState(() => Date.now());
+  const durationMs = ((Number(data.hours) || 0) * 3600 + (Number(data.minutes) || 0) * 60 + (Number(data.seconds) || 0)) * 1000;
+  const isTimer = durationMs > 0;
+  const target = useMemo(
+    () => (isTimer ? (startedAt ?? mountedAt) + durationMs : data.date ? new Date(data.date).getTime() : NaN),
+    [isTimer, startedAt, mountedAt, durationMs, data.date],
+  );
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
-    const t = setInterval(() => setNow(Date.now()), 1000);
+    const t = setInterval(() => setNow(Date.now()), 250);
     return () => clearInterval(t);
   }, []);
 
   if (!Number.isFinite(target)) return <CardMessage>That date couldn&apos;t be read.</CardMessage>;
   const diff = target - now;
   const passed = diff <= 0;
-  const abs = Math.abs(diff);
+  // A finished timer stops at zero; a past date counts the time since
+  const abs = isTimer && passed ? 0 : Math.abs(diff);
+  // Whole seconds, rounded up while counting down (a 60 s timer shows 01:00 at the start, not 00:59)
+  const total = passed ? Math.floor(abs / 1000) : Math.ceil(abs / 1000);
   const units = [
-    { label: "days", value: Math.floor(abs / 86400000) },
-    { label: "hours", value: Math.floor(abs / 3600000) % 24 },
-    { label: "minutes", value: Math.floor(abs / 60000) % 60 },
-    { label: "seconds", value: Math.floor(abs / 1000) % 60 },
+    { label: "days", value: Math.floor(total / 86400) },
+    { label: "hours", value: Math.floor(total / 3600) % 24 },
+    { label: "minutes", value: Math.floor(total / 60) % 60 },
+    { label: "seconds", value: total % 60 },
   ];
-  const when = new Date(target).toLocaleString("en-IN", { dateStyle: "full", timeStyle: "short" });
+  const when = isTimer
+    ? `Ends at ${new Date(target).toLocaleTimeString("en-IN", { hour: "numeric", minute: "2-digit", second: "2-digit" })}`
+    : new Date(target).toLocaleString("en-IN", { dateStyle: "full", timeStyle: "short" });
+  const finishedTimer = isTimer && passed;
 
   return (
-    <div className={CARD}>
-      <p className={`text-[15px] font-medium ${TEXT}`}>{data.title || "Countdown"}</p>
+    <div className={`${CARD} ${finishedTimer ? "ring-2 ring-emerald-500/60" : ""}`}>
+      <p className={`text-[15px] font-medium ${TEXT}`}>{data.title || (isTimer ? "Timer" : "Countdown")}</p>
       <p className={`text-[13px] ${MUTED}`}>{when}</p>
       <div className="mt-4 grid grid-cols-4 gap-2 sm:gap-3">
         {units.map((u) => (
@@ -326,7 +341,9 @@ export function CountdownCard({ data }: { data: CountdownData }) {
           </div>
         ))}
       </div>
-      <p className={`mt-3 text-[13px] ${MUTED}`}>{passed ? "This date has passed (time since)." : "Counting down live."}</p>
+      <p className={`mt-3 text-[13px] ${finishedTimer ? "font-medium text-emerald-600 dark:text-emerald-400" : MUTED}`}>
+        {finishedTimer ? "⏰ Time's up!" : passed ? "This date has passed (time since)." : "Counting down live."}
+      </p>
     </div>
   );
 }
