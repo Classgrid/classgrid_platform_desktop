@@ -139,6 +139,7 @@ import { AnswerImage, SourceCards } from "./AnswerImages";
 import { ReviewSummary, ScoreBreakdown } from "./ReviewBlocks";
 import { PointsList, RatingCard } from "./PointsBlocks";
 import { ClockBlock } from "./ClockBlock";
+import { WeatherCard, MarketCard, MapCard, CountdownCard } from "./LiveCards";
 import { ScrollSpyTOC } from "./TOC";
 import AIThinkingBlock from "./AIThinkingBlock";
 import ReactMarkdown from "react-markdown";
@@ -1336,6 +1337,21 @@ const AssistantMessageContent = memo(({ content, sources, isTyping, onApprovalAc
         }
 
         // ```review (title, website, big score, summary, verdict) and ```scores (bar per category)
+        // ```weather / ```market / ```map / ```countdown: live cards that fetch their own fresh data
+        if ((language === "weather" || language === "market" || language === "map" || language === "countdown") && !inline) {
+          try {
+            const parsed = JSON5.parse(String(children));
+            if (parsed && typeof parsed === "object") {
+              if (language === "weather") return <WeatherCard data={parsed} />;
+              if (language === "market") return <MarketCard data={parsed} />;
+              if (language === "map") return <MapCard data={parsed} />;
+              return <CountdownCard data={parsed} />;
+            }
+          } catch {
+            if (isTypingRef.current) return null;
+          }
+        }
+
         // ```clock: live clock card for a place (time is computed in the browser every second)
         if (language === "clock" && !inline) {
           try {

@@ -100,6 +100,23 @@ Happy Birthday...
 - Current time / "what time is it in X": show a live clock card, then one short line with the time zone (e.g. "Time zone: IST (Indian Standard Time), UTC+5:30."): \`\`\`clock
 { "timeZone": "Asia/Kolkata", "place": "Pimpri, Maharashtra, India" }
 \`\`\` (IANA time zone; the card shows the real time and keeps ticking, so don't also write the time as text).
+- Clickable questions card: EVERY time you ask the user to pick between options, and EVERY time you give MCQs, a quiz or a test, output the questions card instead of writing A/B/C as plain text: \`\`\`approval
+{ "variant": "questions", "title": "Photosynthesis Quiz", "questions": [ { "id": "q1", "prompt": "Where does photosynthesis happen?", "options": ["Mitochondria", "Chloroplast", "Nucleus", "Ribosome"] }, { "id": "q2", "prompt": "Which gas do plants release?", "options": ["Oxygen", "Nitrogen", "Carbon dioxide"] } ] }
+\`\`\` The user clicks an option (or types their own with "Something else"), moves with Next / Skip, and the answers come back to you as their next message. For a quiz: never reveal the correct answers inside the card; after they submit, mark each answer right or wrong, explain the correct one in a line, and give the score (e.g. 4/5). For choices (setup, preferences, "which one should I…"): 2-5 short options per question, at most 5 questions per card. Use plain text only when the user asked for the questions as text or a printable worksheet.
+- Live cards (they fetch fresh data themselves, so never invent the numbers; add one short sentence around them):
+  Weather / temperature / "will it rain" in a place: \`\`\`weather
+{ "place": "Pune, Maharashtra, India" }
+\`\`\` (optional "unit": "fahrenheit"). Stock price: \`\`\`market
+{ "kind": "stock", "symbol": "RELIANCE.NS" }
+\`\`\` (Yahoo symbols: NSE stocks end in .NS, BSE in .BO, US plain like AAPL, indices like ^NSEI, crypto like BTC-USD). Currency rate: \`\`\`market
+{ "kind": "fx", "from": "USD", "to": "INR" }
+\`\`\` Where is a place / show it on a map: \`\`\`map
+{ "place": "Gateway of India, Mumbai" }
+\`\`\` Route between two places: \`\`\`map
+{ "from": "Pune", "to": "Mumbai" }
+\`\`\` Days until a date, deadline or exam: \`\`\`countdown
+{ "title": "Board exams start", "date": "2027-02-15T10:00:00+05:30" }
+\`\`\` (ISO date with the user's time zone offset). Use these automatically whenever the question fits.
 - Reviews and ratings (a website, app, product, essay, plan): JSON code blocks the app shows like a report. Overall score: \`\`\`review
 { "title": "Classgrid Website Review", "website": "https://classgrid.in", "date": "October 9, 2026", "score": 8, "max": 10, "scoreLabel": "Overall design and product-marketing rating", "summary": "Two or three sentences.", "cite": [1], "verdict": "Strong foundation with room to improve", "image": "optional picture URL from search results" }
 \`\`\` Score breakdown: \`\`\`scores
@@ -559,9 +576,9 @@ FORMATTING TOOLS (use all of these naturally):
 - **Swipeable Carousels (Flashcards)**: When giving step-by-step tutorials or flashcards, use a markdown code block with the language \`carousel\`. Separate slides using \`---\`.
 <</G>>
 <<G:code_sandbox|connector:github|connector:vercel>>
-- **Interactive UI Cards**: Only use the approval block when the user asks to build a website or a multi-step project (3+ steps). For normal chat, small questions, or quick answers, NEVER output an approval block. Use plain text instead.
+- **Interactive UI Cards**: Only use the plan card (approval block with "variant": "plan") when the user asks to build a website or a multi-step project (3+ steps); for normal chat use plain text. The questions card ("variant": "questions") is different: use it in ANY chat whenever the user must choose between options, and for every MCQ or quiz.
   - When applicable for big projects, use: \`\`\`approval\n{ "variant": "plan", "planTitle": "Migration", "planSummary": "Ship updates.", "plan": [ { "id": "p1", "title": "Add migration", "detail": "Create SQL" } ] }\n\`\`\`.
-  - For multiple-choice questions (only for setup questions), use: \`\`\`approval\n{ "variant": "questions", "title": "Setup Questions", "questions": [ { "id": "q1", "prompt": "Which auth approach?", "options": ["Cookies", "JWT", "OAuth"] } ] }\n\`\`\`.
+  - For multiple-choice questions (setup questions, choices, MCQs and quizzes), use: \`\`\`approval\n{ "variant": "questions", "title": "Setup Questions", "questions": [ { "id": "q1", "prompt": "Which auth approach?", "options": ["Cookies", "JWT", "OAuth"] } ] }\n\`\`\`.
     - Provide exactly 3 options per question. Group all questions into one card.
 <</G>>
 <<G:off>>
