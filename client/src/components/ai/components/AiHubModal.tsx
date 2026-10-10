@@ -633,7 +633,7 @@ export function AiHubModal({ isOpen, onClose, onSendPrompt, initialTab = "plugin
                       Monitor your AI token usage and limits across your personal account and organization.
                     </p>
                     <div className="w-full max-w-2xl bg-card border border-border rounded-xl p-6 shadow-sm">
-                        <AiUsageBar showExactTokens={true} />
+                        <AiUsageBar showExactTokens={false} />
                     </div>
                   </div>
                 ) : activeTab === "credits" ? (

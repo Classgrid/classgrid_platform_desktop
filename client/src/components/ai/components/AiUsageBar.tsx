@@ -3,8 +3,8 @@ import React, { useEffect, useState, useMemo } from 'react';
 import { apiClient } from '@/lib/apiClient';
 import { getSocket } from '@/lib/socketClient';
 
-// Show "<1" for small non-zero usage instead of rounding down to 0%
-const formatPercent = (pct: number) => (pct > 0 && pct < 1 ? "<1" : String(Math.round(pct)));
+// Whole percent only (no "<1"); any usage above zero shows at least 1%.
+const formatPercent = (pct: number) => (pct > 0 && pct < 1 ? "1" : String(Math.round(pct)));
 
 // Countdown text for the weekly reset, computed from the resetDate the API returns
 const formatResetCountdown = (resetDate?: string | null) => {
