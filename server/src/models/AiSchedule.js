@@ -23,6 +23,12 @@ const aiScheduleSchema = new mongoose.Schema({
     default: 'pending' 
   },
   sent_at: { type: Date },
+  // Repeating schedules (utils/schedule-repeat.js): after each send scheduled_at moves to the next run
+  repeat: { type: String, enum: ['once', 'daily', 'weekly', 'custom'], default: 'once' },
+  repeat_days: [{ type: Number, min: 0, max: 6 }], // weekdays for "custom", 0 = Sunday
+  repeat_until: { type: Date },
+  repeat_tz: { type: String },
+  run_count: { type: Number, default: 0 },
   error_message: { type: String },
   reschedule_history: [{
     previous_date: Date,

@@ -638,7 +638,7 @@ export const getMcpTools = () => [
   },
   {
     name: 'create_schedule',
-    description: 'Schedule an email AND WhatsApp reminder/task for a specific date and time. Use this when the user mentions a future event, exam, task, or deadline they want to be reminded about. You MUST schedule BOTH an email AND a WhatsApp message every time. CRITICAL RULES: 1. The content MUST be different! Email must be highly professional and formatted in HTML. WhatsApp must be very short, friendly, and plain text (use emojis). 2. The title MUST be a very short 2-4 word summary (e.g. "Fee Reminder", "Gmail Review"). Do NOT make the title a long sentence. Put all the highly specific details and context into the description and summary instead. You MUST also provide a summary and action_info for the schedule card display.',
+    description: 'Schedule an email AND WhatsApp reminder/task for a specific date and time, once or repeating (daily, weekly or chosen weekdays until an end date: use ONE repeating schedule for routines, never many one-time ones). Use this when the user mentions a future event, exam, task, or deadline they want to be reminded about. You MUST schedule BOTH an email AND a WhatsApp message every time. CRITICAL RULES: 1. The content MUST be different! Email must be highly professional and formatted in HTML. WhatsApp must be very short, friendly, and plain text (use emojis). 2. The title MUST be a very short 2-4 word summary (e.g. "Fee Reminder", "Gmail Review"). Do NOT make the title a long sentence. Put all the highly specific details and context into the description and summary instead. You MUST also provide a summary and action_info for the schedule card display.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -648,6 +648,10 @@ export const getMcpTools = () => [
         action_info: { type: 'string', description: 'Detailed plain-text information shown when the user clicks the schedule card. Include all relevant details like amounts, dates, links, names, instructions. This is NOT the email body — it is for UI display only.' },
         scheduled_at: { type: 'string', description: 'ISO 8601 datetime string for when to send the email (e.g. 2026-10-06T10:00:00.000Z)' },
         durationSeconds: { type: 'number', description: 'For "in N seconds/minutes/hours" requests: the delay in seconds from now (e.g. 60 for "in 1 minute"). When given, it is used instead of scheduled_at so the time is exact; still fill scheduled_at with your best guess.' },
+        repeat: { type: 'string', enum: ['once', 'daily', 'weekly', 'custom'], description: 'How often it repeats (default "once"). For "every day", "every Monday", "daily for a week", a study plan or any routine, create ONE repeating schedule instead of many separate ones. scheduled_at is the first run; later runs are at the same time of day.' },
+        repeat_days: { type: 'array', items: { type: 'string' }, description: 'For repeat "custom": the weekdays, e.g. ["mon", "wed", "fri"].' },
+        repeat_until: { type: 'string', description: 'Last day of the repeat as YYYY-MM-DD (e.g. the exam date), or an ISO datetime. Default 30 days, maximum 90.' },
+        repeat_timezone: { type: 'string', description: 'IANA time zone the repeat days are counted in (default "Asia/Kolkata").' },
         email_subject: { type: 'string', description: 'Subject line for the email that will be sent' },
         email_body: { type: 'string', description: 'Full beautiful HTML email body with inline CSS to send at scheduled time' },
         whatsapp_phone_number: { type: 'string', description: 'The recipient phone number with country code for WhatsApp (e.g. 919876543210)' },
@@ -1875,14 +1879,34 @@ export const handleToolCall = async (name, args, context = {}) => {
           ? await User.findById(context.userId).select('_id organization_id')
           : await User.findOne({ email: finalUserEmail }).select('_id organization_id');
 
+        // A relative delay ("in 1 minute") is counted from now on the server, so the AI can't round it off
+        const firstRun = Number(args.durationSeconds) > 0
+          ? new Date(Date.now() + Number(args.durationSeconds) * 1000)
+          : new Date(args.scheduled_at);
+        if (Number.isNaN(firstRun.getTime())) {
+          return { content: [{ type: 'text', text: `Failed: scheduled_at "${args.scheduled_at}" is not a valid date. Nothing was scheduled.` }] };
+        }
+        const { normalizeRepeat, runsWithin, describeRepeat } = await import('../utils/schedule-repeat.js');
+        const rep = normalizeRepeat(args, firstRun);
+        if (rep.error) {
+          return { content: [{ type: 'text', text: `Failed: ${rep.error}. Nothing was scheduled.` }] };
+        }
+
         if (args.whatsapp_phone_number || args.whatsapp_message) {
           if (!user) {
             return { content: [{ type: 'text', text: `Failed: Sign in to schedule WhatsApp messages.` }] };
           }
           const { checkWhatsappLimit, normalizeWhatsappNumber } = await import('../services/ai-feature-limits.js');
-          const { allowed, limit, used } = await checkWhatsappLimit(user);
+          const { allowed, limit, used } = await checkWhatsappLimit(user, { includeUpcomingRepeats: rep.repeat !== 'once' });
           if (!allowed) {
              return { content: [{ type: 'text', text: `Failed: This user has used ${used} of ${limit} WhatsApp messages allowed in the last 7 days (the limit is set by Classgrid admins). Nothing was scheduled. Tell the user exactly this; do not guess other reasons.` }] };
+          }
+          // A repeat must fit its first week of WhatsApp messages into what is left of the weekly limit
+          if (rep.repeat !== 'once') {
+            const weekRuns = runsWithin(rep, rep.first, 7 * 24 * 60 * 60 * 1000);
+            if (used + weekRuns > limit) {
+              return { content: [{ type: 'text', text: `Failed: This repeat would send ${weekRuns} WhatsApp messages in its first 7 days, but the user has only ${Math.max(0, limit - used)} of ${limit} weekly WhatsApp messages left (the limit is set by Classgrid admins). Nothing was scheduled. Tell the user exactly this and offer fewer days or email only.` }] };
+            }
           }
           if (args.whatsapp_phone_number) args.whatsapp_phone_number = normalizeWhatsappNumber(args.whatsapp_phone_number);
         }
@@ -1895,10 +1919,11 @@ export const handleToolCall = async (name, args, context = {}) => {
           description: args.description || '',
           summary: args.summary || '',
           action_info: args.action_info || '',
-          // A relative delay ("in 1 minute") is counted from now on the server, so the AI can't round it off
-          scheduled_at: Number(args.durationSeconds) > 0
-            ? new Date(Date.now() + Number(args.durationSeconds) * 1000)
-            : new Date(args.scheduled_at),
+          scheduled_at: rep.first || firstRun,
+          repeat: rep.repeat,
+          repeat_days: rep.repeat_days || [],
+          repeat_until: rep.repeat_until,
+          repeat_tz: rep.repeat_tz,
           email_subject: args.email_subject,
           email_body: args.email_body,
           whatsapp_phone_number: args.whatsapp_phone_number,
@@ -1908,7 +1933,10 @@ export const handleToolCall = async (name, args, context = {}) => {
 
         await emitScheduleUpdate(user?._id, schedule._id);
 
-        return { content: [{ type: 'text', text: `Successfully scheduled task "${args.title}" for ${schedule.scheduled_at.toISOString()}. The user will receive an email at that time. IMPORTANT: The schedule_id is ${schedule._id}. Save this ID if you need to update or delete it later.` }] };
+        const when = schedule.repeat === 'once'
+          ? `for ${schedule.scheduled_at.toISOString()}`
+          : `to repeat ${describeRepeat(schedule)}, first run ${schedule.scheduled_at.toISOString()}`;
+        return { content: [{ type: 'text', text: `Successfully scheduled task "${args.title}" ${when}. The user will receive it at that time. IMPORTANT: The schedule_id is ${schedule._id}. Save this ID if you need to update or delete it later (deleting it stops the whole repeat).` }] };
       } catch (e) {
         return { content: [{ type: 'text', text: `Error creating schedule: ${e.message}` }] };
       }

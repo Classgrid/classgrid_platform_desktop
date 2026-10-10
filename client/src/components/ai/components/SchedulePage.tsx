@@ -1,7 +1,7 @@
 // CLASSGRID USES CLOUDFLARE USAGE TO CALCULATE TOKENS, NOT GPT-TOKENIZER (WHICH IS ONLY A FALLBACK)
 import React, { useEffect, useState } from "react";
 import { format, formatDistanceToNow } from "date-fns";
-import { Calendar, Trash2, CheckCircle2, Clock, XCircle, AlertCircle, Plus, Search, Send, Mail, Bell, FileText, BarChart3, BookOpen, GraduationCap, ArrowRight, Video, Presentation, MonitorPlay, Link2, Copy, ExternalLink } from "lucide-react";
+import { Calendar, Trash2, CheckCircle2, Clock, XCircle, AlertCircle, Plus, Search, Send, Mail, Bell, FileText, BarChart3, BookOpen, GraduationCap, ArrowRight, Video, Presentation, MonitorPlay, Link2, Copy, ExternalLink, Repeat } from "lucide-react";
 import { Button } from "@/components/marketing_ui/button";
 import { Badge } from "@/components/marketing_ui/badge";
 import { toast } from "sonner";
@@ -9,11 +9,12 @@ import { apiClient as api } from "@/lib/apiClient";
 import { Skeleton } from "@/components/marketing_ui/skeleton";
 import { DangerConfirmDialog } from "@/components/marketing_ui/danger-confirm-dialog";
 import { getSocket } from "@/lib/socketClient";
+import { repeatLabel, type ScheduleRepeat } from "./scheduleRepeat";
 import { useNavigate, useLocation } from "react-router-dom";
 
 type ScheduleStatus = "pending" | "sent" | "failed" | "cancelled";
 
-interface AiSchedule {
+interface AiSchedule extends ScheduleRepeat {
   _id: string;
   title: string;
   description: string;
@@ -321,8 +322,14 @@ export const SchedulePage: React.FC = () => {
                     </p>
                   )}
                   <span className="text-xs text-muted-foreground/70">
+                    {schedule.status === "pending" && repeatLabel(schedule) ? "Next: " : ""}
                     {format(new Date(schedule.scheduled_at), "EEEE, MMM d, yyyy 'at' h:mm a")}
                   </span>
+                  {repeatLabel(schedule) && (
+                    <span className="mt-1 flex items-center gap-1 text-xs font-medium text-muted-foreground">
+                      <Repeat className="h-3 w-3" /> {repeatLabel(schedule)}
+                    </span>
+                  )}
                 </div>
                 {/* Copy link button */}
                 <button

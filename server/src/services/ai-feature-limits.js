@@ -27,10 +27,13 @@ export function resolveFeatureLimit(feature, org, globalConfig, orgId = org?._id
 const directSendKey = (userId) => `ai:wa-direct:${userId}`;
 
 /**
- * WhatsApp messages a user has used in the last 7 days: scheduled ones (not cancelled) + ones sent right away.
+ * WhatsApp messages a user has used in the last 7 days: one-time scheduled ones (not cancelled) + ones sent
+ * right away + each run of a repeating schedule (those are recorded like direct sends when they go out).
+ * With { includeUpcomingRepeats: true } (when a new repeat is created) the runs other active repeats will send
+ * in the next 7 days count too, so several repeats can't together go over the limit.
  * Returns { allowed, limit, used }.
  */
-export async function checkWhatsappLimit(user) {
+export async function checkWhatsappLimit(user, { includeUpcomingRepeats = false } = {}) {
     const [{ default: GlobalAiConfig }, { default: Organization }, { default: AiSchedule }] = await Promise.all([
         import("../models/GlobalAiConfig.js"),
         import("../models/Organization.js"),
@@ -47,10 +50,24 @@ export async function checkWhatsappLimit(user) {
         user_id: user._id,
         createdAt: { $gte: since },
         status: { $in: ["pending", "sent"] },
+        repeat: { $nin: ["daily", "weekly", "custom"] },
         whatsapp_failed: { $ne: true },
         whatsapp_phone_number: { $exists: true, $ne: "" },
         whatsapp_message: { $exists: true, $ne: "" },
     });
+
+    let upcoming = 0;
+    if (includeUpcomingRepeats) {
+        const { runsWithin } = await import("../utils/schedule-repeat.js");
+        const repeats = await AiSchedule.find({
+            user_id: user._id,
+            status: "pending",
+            repeat: { $in: ["daily", "weekly", "custom"] },
+            whatsapp_phone_number: { $exists: true, $ne: "" },
+            whatsapp_message: { $exists: true, $ne: "" },
+        }).select("scheduled_at repeat repeat_days repeat_until repeat_tz").lean();
+        for (const r of repeats) upcoming += runsWithin(r, new Date(r.scheduled_at), WEEK_MS);
+    }
 
     let direct = 0;
     try {
@@ -59,7 +76,7 @@ export async function checkWhatsappLimit(user) {
         direct = await redis.zcard(key);
     } catch (e) { /* Redis down: count only the scheduled ones */ }
 
-    const used = scheduled + direct;
+    const used = scheduled + direct + upcoming;
     return { allowed: used < limit, limit, used };
 }
 

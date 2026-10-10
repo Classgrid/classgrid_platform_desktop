@@ -24,10 +24,11 @@ import { Breadcrumb, BreadcrumbItem, BreadcrumbList, BreadcrumbPage, BreadcrumbS
 import { toast } from "sonner";
 import { apiClient as api } from "@/lib/apiClient";
 import { getSocket } from "@/lib/socketClient";
+import { repeatLabel, type ScheduleRepeat } from "./scheduleRepeat";
 
 type ScheduleStatus = "pending" | "sent" | "failed" | "cancelled";
 
-interface AiSchedule {
+interface AiSchedule extends ScheduleRepeat {
   _id: string;
   title: string;
   description?: string;
@@ -267,6 +268,11 @@ export const ScheduleDetailPage: React.FC<{ id?: string }> = ({ id: propId }) =>
                   </span>
                 </div>
                 <p className="text-[11px] text-muted-foreground mt-1">Asia/Kolkata · IST</p>
+                {repeatLabel(schedule) && (
+                  <p className="text-xs font-medium text-muted-foreground mt-1.5">
+                    {repeatLabel(schedule)}{schedule.status === "pending" ? " · the time above is the next run" : ""}
+                  </p>
+                )}
               </Field>
               <Field label="Created On">
                 <div className="flex items-center gap-2">

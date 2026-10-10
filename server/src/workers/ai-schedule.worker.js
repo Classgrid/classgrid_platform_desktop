@@ -2,7 +2,8 @@
 import cron from 'node-cron';
 import AiSchedule from '../models/AiSchedule.js';
 import { sendEmail } from '../services/aws-ses.service.js';
-import { normalizeWhatsappNumber } from '../services/ai-feature-limits.js';
+import { normalizeWhatsappNumber, checkWhatsappLimit, recordDirectWhatsappSend } from '../services/ai-feature-limits.js';
+import { nextRun } from '../utils/schedule-repeat.js';
 
 // Run every minute
 cron.schedule('* * * * *', async () => {
@@ -15,13 +16,23 @@ cron.schedule('* * * * *', async () => {
     });
 
     for (const schedule of pendingSchedules) {
+        const isRepeat = schedule.repeat && schedule.repeat !== 'once';
+        // A repeating schedule moves on to its next run (runs missed while the server was down are skipped,
+        // not sent all at once); after the last run it is done like a one-time schedule.
+        let next = isRepeat ? nextRun(schedule, schedule.scheduled_at) : null;
+        while (next && next <= now) next = nextRun(schedule, next);
+
         // As requested by user: Trust MongoDB. Mark as sent immediately BEFORE AWS SES even tries.
-        schedule.status = 'sent';
-        schedule.sent_at = new Date();
-        schedule.error_message = ''; 
-        await schedule.save();
-        
-        console.log(`[AiSchedule Worker] Successfully marked schedule ${schedule._id} as sent for ${schedule.user_email}`);
+        // Claimed atomically (only if still pending at this run time), so a run is never sent twice.
+        const claimed = await AiSchedule.findOneAndUpdate(
+          { _id: schedule._id, status: 'pending', scheduled_at: schedule.scheduled_at },
+          next
+            ? { scheduled_at: next, sent_at: new Date(), error_message: '', whatsapp_failed: false, $inc: { run_count: 1 } }
+            : { status: 'sent', sent_at: new Date(), error_message: '', $inc: { run_count: 1 } },
+        );
+        if (!claimed) continue;
+
+        console.log(`[AiSchedule Worker] Successfully marked schedule ${schedule._id} as sent for ${schedule.user_email}${next ? ` (next run ${next.toISOString()})` : ''}`);
 
         try {
           const { getIO } = await import('../services/socket.service.js');
@@ -41,8 +52,23 @@ cron.schedule('* * * * *', async () => {
           });
         }
 
+        // Each run of a repeating schedule counts toward the weekly WhatsApp limit when it goes out;
+        // over the limit, that run sends the email only
+        let whatsappAllowed = true;
+        if (isRepeat && schedule.whatsapp_phone_number && schedule.whatsapp_message && schedule.user_id) {
+          try {
+            const { allowed, used, limit } = await checkWhatsappLimit({ _id: schedule.user_id, organization_id: schedule.organization_id });
+            if (!allowed) {
+              whatsappAllowed = false;
+              await AiSchedule.updateOne({ _id: schedule._id }, { error_message: `WhatsApp skipped: weekly limit reached (${used}/${limit})` });
+            }
+          } catch (limitErr) {
+            console.warn(`[AiSchedule Worker] WhatsApp limit check failed: ${limitErr.message}`);
+          }
+        }
+
         // Fire and forget WhatsApp if whatsapp fields exist
-        if (schedule.whatsapp_phone_number && schedule.whatsapp_message) {
+        if (whatsappAllowed && schedule.whatsapp_phone_number && schedule.whatsapp_message) {
           if (process.env.WHATSAPP_PHONE_ID && process.env.WHATSAPP_ACCESS_TOKEN) {
             fetch(`https://graph.facebook.com/v17.0/${process.env.WHATSAPP_PHONE_ID}/messages`, {
               method: 'POST',
@@ -67,6 +93,7 @@ cron.schedule('* * * * *', async () => {
                 return AiSchedule.updateOne({ _id: schedule._id }, { whatsapp_failed: true, error_message: `WhatsApp: ${JSON.stringify(data.error).slice(0, 300)}` });
               }
               const messageId = data.messages?.[0]?.id;
+              if (isRepeat && schedule.user_id) recordDirectWhatsappSend(schedule.user_id, messageId);
               if (messageId) return AiSchedule.updateOne({ _id: schedule._id }, { whatsapp_message_id: messageId });
             }).catch(waErr => {
               console.warn(`[AiSchedule Worker] WhatsApp fetch failed. Error: ${waErr.message}`);
