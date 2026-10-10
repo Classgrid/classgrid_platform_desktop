@@ -53,6 +53,7 @@ import type { OrgUser } from "../services/chatApi";
 import { DEFAULT_USER_AVATAR } from "@/lib/constants";
 import { useOrgRoles } from "@/features/org/queries/useOrgRoles";
 import { useCurrentUser } from "@/features/auth/queries/useCurrentUser";
+import { GROUP_SETTING_LABELS } from "./groupSettingLabels";
 
 interface GroupCreateSidebarProps {
   onClose: () => void;
@@ -407,7 +408,7 @@ export function GroupCreateSidebar({
                     }}
                  >
                     <SelectTrigger className="w-full bg-transparent border-b border-border rounded-none px-0 py-2 text-sm text-foreground outline-none shadow-none h-auto">
-                       <SelectValue />
+                       <SelectValue>{(v: string) => GROUP_SETTING_LABELS[v] ?? v}</SelectValue>
                     </SelectTrigger>
                     <SelectContent>
                        <SelectItem value="private">Private (Hidden, Invite Only)</SelectItem>
@@ -429,7 +430,7 @@ export function GroupCreateSidebar({
                     onValueChange={(value) => setGroupPermissions({ ...groupPermissions, group_type: value })}
                  >
                     <SelectTrigger className="w-full bg-transparent border-b border-border rounded-none px-0 py-2 text-sm text-foreground outline-none shadow-none h-auto">
-                       <SelectValue />
+                       <SelectValue>{(v: string) => GROUP_SETTING_LABELS[v] ?? v}</SelectValue>
                     </SelectTrigger>
                     <SelectContent>
                        <SelectItem value="general">General</SelectItem>
@@ -449,7 +450,7 @@ export function GroupCreateSidebar({
                     onValueChange={(value) => setMessageTtl(Number(value))}
                  >
                     <SelectTrigger className="w-full bg-transparent border-b border-border rounded-none px-0 py-2 text-sm text-foreground outline-none shadow-none h-auto">
-                       <SelectValue />
+                       <SelectValue>{(v: string) => GROUP_SETTING_LABELS[v] ?? v}</SelectValue>
                     </SelectTrigger>
                     <SelectContent>
                        <SelectItem value="0">Off</SelectItem>
@@ -473,7 +474,7 @@ export function GroupCreateSidebar({
                     })}
                  >
                     <SelectTrigger className="w-full bg-transparent border-b border-border rounded-none px-0 py-2 text-sm text-foreground outline-none shadow-none h-auto">
-                       <SelectValue />
+                       <SelectValue>{(v: string) => GROUP_SETTING_LABELS[v] ?? v}</SelectValue>
                     </SelectTrigger>
                     <SelectContent>
                        <SelectItem value="all">Members & Admins</SelectItem>

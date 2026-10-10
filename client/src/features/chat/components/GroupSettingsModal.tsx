@@ -77,6 +77,7 @@ import { DangerConfirmDialog } from "@/components/marketing_ui/danger-confirm-di
 
 import { Input } from "@/components/marketing_ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/marketing_ui/select";
+import { GROUP_SETTING_LABELS } from "./groupSettingLabels";
 
 interface GroupSettingsModalProps {
   groupId: string;
@@ -578,7 +579,7 @@ export function GroupSettingsModal({ groupId, onClose, onLeaveGroup, onUserClick
                         }}
                      >
                         <SelectTrigger className="w-full bg-background border border-border text-sm text-foreground">
-                           <SelectValue />
+                           <SelectValue>{(v: string) => GROUP_SETTING_LABELS[v] ?? v}</SelectValue>
                         </SelectTrigger>
                         <SelectContent>
                            <SelectItem value="private">Private (Hidden, Invite Only)</SelectItem>
@@ -602,7 +603,7 @@ export function GroupSettingsModal({ groupId, onClose, onLeaveGroup, onUserClick
                         onValueChange={(value) => handleUpdatePermissions({ send_message_policy: value })}
                      >
                         <SelectTrigger className="w-full bg-background border border-border rounded-md px-3 text-sm h-9">
-                           <SelectValue />
+                           <SelectValue>{(v: string) => GROUP_SETTING_LABELS[v] ?? v}</SelectValue>
                         </SelectTrigger>
                         <SelectContent>
                            <SelectItem value="all">Members & Admins</SelectItem>
@@ -620,7 +621,7 @@ export function GroupSettingsModal({ groupId, onClose, onLeaveGroup, onUserClick
                         onValueChange={(value) => handleUpdatePermissions({ send_attachments_policy: value })}
                      >
                         <SelectTrigger className="w-full bg-background border border-border rounded-md px-3 text-sm h-9">
-                           <SelectValue />
+                           <SelectValue>{(v: string) => GROUP_SETTING_LABELS[v] ?? v}</SelectValue>
                         </SelectTrigger>
                         <SelectContent>
                            <SelectItem value="all">Members & Admins</SelectItem>
@@ -640,7 +641,7 @@ export function GroupSettingsModal({ groupId, onClose, onLeaveGroup, onUserClick
                         onValueChange={(value) => handleUpdatePermissions({ add_member_policy: value })}
                      >
                         <SelectTrigger className="w-full bg-background border border-border rounded-md px-3 text-sm h-9">
-                           <SelectValue />
+                           <SelectValue>{(v: string) => GROUP_SETTING_LABELS[v] ?? v}</SelectValue>
                         </SelectTrigger>
                         <SelectContent>
                            <SelectItem value="all">Members & Admins</SelectItem>
@@ -658,7 +659,7 @@ export function GroupSettingsModal({ groupId, onClose, onLeaveGroup, onUserClick
                         onValueChange={(value) => handleUpdatePermissions({ edit_info_policy: value })}
                      >
                         <SelectTrigger className="w-full bg-background border border-border rounded-md px-3 text-sm h-9">
-                           <SelectValue />
+                           <SelectValue>{(v: string) => GROUP_SETTING_LABELS[v] ?? v}</SelectValue>
                         </SelectTrigger>
                         <SelectContent>
                            <SelectItem value="all">Members & Admins</SelectItem>
@@ -676,7 +677,7 @@ export function GroupSettingsModal({ groupId, onClose, onLeaveGroup, onUserClick
                         onValueChange={(value) => handleUpdatePermissions({ message_ttl: Number(value) })}
                      >
                         <SelectTrigger className="w-full bg-background border border-border rounded-md px-3 text-sm h-9">
-                           <SelectValue />
+                           <SelectValue>{(v: string) => GROUP_SETTING_LABELS[v] ?? v}</SelectValue>
                         </SelectTrigger>
                         <SelectContent>
                            <SelectItem value="0">Off</SelectItem>
@@ -696,7 +697,7 @@ export function GroupSettingsModal({ groupId, onClose, onLeaveGroup, onUserClick
                         onValueChange={(value) => handleUpdatePermissions({ group_type: value })}
                      >
                         <SelectTrigger className="w-full bg-background border border-border rounded-md px-3 text-sm h-9">
-                           <SelectValue />
+                           <SelectValue>{(v: string) => GROUP_SETTING_LABELS[v] ?? v}</SelectValue>
                         </SelectTrigger>
                         <SelectContent>
                            <SelectItem value="general">General</SelectItem>
