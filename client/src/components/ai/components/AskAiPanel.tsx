@@ -1366,8 +1366,13 @@ const AssistantMessageContent = memo(({ content, sources, createdAt, isTyping, o
         }
 
         // ```widget: the AI's own HTML card, run in a sandboxed iframe (anything no built-in block covers)
+        // It draws live while being written; its scripts run once its own block has closed (not the whole answer)
         if (language === "widget" && !inline) {
-          return <WidgetBlock code={String(children)} isTyping={isTypingRef.current} onAsk={(text) => onApprovalActionRef.current?.(text)} />;
+          const code = String(children).replace(/\n$/, "");
+          const raw = contentRef.current;
+          const at = code ? raw.indexOf(code) : -1;
+          const closed = at >= 0 && /^\s*```/.test(raw.slice(at + code.length));
+          return <WidgetBlock code={code} done={!isTypingRef.current || closed} onAsk={(text) => onApprovalActionRef.current?.(text)} />;
         }
 
         // ```followups / ```actions (buttons send a message), ```reportcard, ```timetable, ```attendance, ```planner
