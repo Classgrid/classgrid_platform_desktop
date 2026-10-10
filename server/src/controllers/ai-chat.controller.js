@@ -949,6 +949,7 @@ export const streamAskAi = async (req, res) => {
         const resetDate = user?.ai_tokens?.week_reset_date ? new Date(user.ai_tokens.week_reset_date) : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
         return { error: check.reason === "Insufficient tokens." ? "ai_quota_exceeded" : "ai_blocked", message: check.reason, resetDate: resetDate.toISOString() };
     };
+    let fablePaidOnly = false;
     // Claude Fable 5.1 (most expensive model) is locked until the person has topped up ₹100 in total.
     // 402, not 403: the chat page treats 403 as a ban.
     if (body.selectedModel === "claude-fable-5-1") {
@@ -963,6 +964,8 @@ export const streamAskAi = async (req, res) => {
                 }));
                 return;
             }
+            // Once unlocked, Fable is paid from paid credits only (super admins / @classgrid.in are exempt)
+            fablePaidOnly = !access.exempt;
         } catch (err) {
             console.error("Fable access check error:", err);
             res.writeHead(503, { "Content-Type": "application/json" });
@@ -972,7 +975,12 @@ export const streamAskAi = async (req, res) => {
     }
 
     try {
-        const check = await hasEnoughTokens(userId, orgId, estimatePromptTokens([body.question || ""]) + MIN_PROMPT_TOKENS + REPLY_TOKEN_ALLOWANCE);
+        const check = await hasEnoughTokens(userId, orgId, estimatePromptTokens([body.question || ""]) + MIN_PROMPT_TOKENS + REPLY_TOKEN_ALLOWANCE, { paidOnly: fablePaidOnly });
+        if (!check.allowed && check.paidOnly) {
+            res.writeHead(402, { "Content-Type": "application/json" });
+            res.end(JSON.stringify({ error: "Claude Fable 5.1 runs on paid AI credits only, and you have none left. Top up AI credits to keep using it, or pick another model (your free weekly tokens work with every other model).", code: "fable_needs_paid_credits" }));
+            return;
+        }
         if (!check.allowed) {
             const blocked = await quotaBlocked(check);
             res.writeHead(429, { "Content-Type": "application/json" });
@@ -3593,7 +3601,11 @@ Do NOT talk about internal architecture unless asked by a @classgrid.in employee
         try {
             const estimatedPromptTokens = estimatePromptTokens([...messages.map(m => m.content), activeToolList]);
             const estimatedCost = chargeableTokens({ prompt_tokens: estimatedPromptTokens, completion_tokens: REPLY_TOKEN_ALLOWANCE }, isClaudeRequest ? body.selectedModel : CF_PRO_MODEL);
-            const check = await hasEnoughTokens(userId, orgId, estimatedCost);
+            const check = await hasEnoughTokens(userId, orgId, estimatedCost, { paidOnly: fablePaidOnly });
+            if (!check.allowed && check.paidOnly) {
+                res.write(`data: ${JSON.stringify({ type: "error", error: "Claude Fable 5.1 runs on paid AI credits only, and you don't have enough left for this message. Top up AI credits, or pick another model (your free weekly tokens work with every other model)." })}\n\n`);
+                return;
+            }
             if (!check.allowed) {
                 const blocked = await quotaBlocked(check);
                 console.warn(`[AI-TOKEN] Blocked before the model call: estimate=${estimatedCost} (prompt ~${estimatedPromptTokens}) reason="${check.reason}"`);

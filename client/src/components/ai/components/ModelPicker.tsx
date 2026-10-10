@@ -132,7 +132,7 @@ export function ModelPicker({ value, onChange, disabled }: ModelPickerProps) {
   const selected = ALL_MODELS.find((m) => m.id === value);
   const { data: access } = useQuery({
     queryKey: ["model-access"],
-    queryFn: async () => (await apiClient.get("/api/ai/model-access")).data as { fable: { unlocked: boolean; toppedUpInr: number; requiredInr: number } },
+    queryFn: async () => (await apiClient.get("/api/ai/model-access")).data as { fable: { unlocked: boolean; exempt?: boolean; toppedUpInr: number; requiredInr: number } },
     staleTime: 60 * 1000,
   });
   const fableLocked = access ? !access.fable.unlocked : false;
@@ -191,7 +191,7 @@ export function ModelPicker({ value, onChange, disabled }: ModelPickerProps) {
                   <div className="flex flex-col flex-1 min-w-0">
                     <span className={cn("truncate", locked && "text-muted-foreground")}>{model.name}</span>
                     <span className="text-xs text-muted-foreground truncate">
-                      {locked ? (access?.fable.toppedUpInr ? `Top up ₹${fableLeft} more to unlock` : `Top up ₹${access?.fable.requiredInr ?? 100} to unlock`) : model.description}
+                      {locked ? (access?.fable.toppedUpInr ? `Top up ₹${fableLeft} more to unlock` : `Top up ₹${access?.fable.requiredInr ?? 100} to unlock`) : model.id === FABLE_ID && access && !access.fable.exempt ? "Most capable · uses paid credits only" : model.description}
                     </span>
                   </div>
                   {locked ? <Lock className="h-4 w-4 mt-0.5 text-muted-foreground" /> : value === model.id && <Check className="h-4 w-4 mt-0.5" />}

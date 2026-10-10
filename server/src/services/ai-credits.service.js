@@ -51,7 +51,7 @@ export function resolveWeeklyLimit(user, org, globalConfig, orgId = org?._id) {
     return weeklyLimit;
 }
 
-export const hasEnoughTokens = async (userId, orgId, requiredTokens = 1) => {
+export const hasEnoughTokens = async (userId, orgId, requiredTokens = 1, { paidOnly = false } = {}) => {
     // 1. Check if user is blocked or suspended
     const user = await User.findById(userId).select('ai_tokens role status');
     if (!user) {
@@ -68,6 +68,14 @@ export const hasEnoughTokens = async (userId, orgId, requiredTokens = 1) => {
     const globalConfig = await GlobalAiConfig.findOne({ key: "singleton" }).select("global_user_weekly_limit global_ai_blocked classgrid_custom_limits_enabled classgrid_user_weekly_limit").lean() || {};
     if (globalConfig.global_ai_blocked) {
         return { allowed: false, reason: "AI access is globally blocked by administrators." };
+    }
+
+    // Premium models (Claude Fable 5.1): paid credits only, never free weekly, promotion or org-pool tokens
+    if (paidOnly) {
+        let paid = user.ai_tokens?.ai_credits_balance || 0;
+        if (user.ai_tokens?.ai_credits_end_date && new Date(user.ai_tokens.ai_credits_end_date).getTime() < Date.now()) paid = 0;
+        if (paid >= requiredTokens) return { allowed: true, source: "personal", remaining: paid };
+        return { allowed: false, reason: "Insufficient paid credits.", paidOnly: true, remaining: Math.max(0, paid) };
     }
 
     // --- SHARED ORG POOL & ORG CUSTOM LIMITS (STEP 2) ---
