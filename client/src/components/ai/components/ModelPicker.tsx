@@ -3,7 +3,9 @@
 // The chosen id is sent to /api/ai/ask as `selectedModel`; "auto" lets the backend router decide.
 
 import React from "react";
-import { Check, ChevronDown, Sparkles } from "lucide-react";
+import { Check, ChevronDown, Sparkles, Lock } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { apiClient } from "@/lib/apiClient";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -123,8 +125,25 @@ interface ModelPickerProps {
   disabled?: boolean;
 }
 
+// Claude Fable 5.1 is locked until the person has topped up ₹100 in total (server enforces it too)
+const FABLE_ID = "claude-fable-5-1";
+
 export function ModelPicker({ value, onChange, disabled }: ModelPickerProps) {
   const selected = ALL_MODELS.find((m) => m.id === value);
+  const { data: access } = useQuery({
+    queryKey: ["model-access"],
+    queryFn: async () => (await apiClient.get("/api/ai/model-access")).data as { fable: { unlocked: boolean; toppedUpInr: number; requiredInr: number } },
+    staleTime: 60 * 1000,
+  });
+  const fableLocked = access ? !access.fable.unlocked : false;
+  const fableLeft = access ? Math.max(0, access.fable.requiredInr - access.fable.toppedUpInr) : 0;
+
+  // A locked Fable that is still selected (e.g. saved from before) falls back to Auto
+  React.useEffect(() => {
+    if (fableLocked && value === FABLE_ID) onChange(AUTO_MODEL_ID);
+  }, [fableLocked, value, onChange]);
+
+  const openTopUp = () => window.dispatchEvent(new CustomEvent("open-ai-hub", { detail: { tab: "upgrade" } }));
 
   return (
     <DropdownMenu>
@@ -159,20 +178,26 @@ export function ModelPicker({ value, onChange, disabled }: ModelPickerProps) {
           <React.Fragment key={group.label}>
             <DropdownMenuSeparator className="bg-slate-100 dark:bg-white/10 my-1" />
             <DropdownMenuLabel className="px-2 pt-1.5 pb-1">{group.label}</DropdownMenuLabel>
-            {group.models.map((model) => (
-              <DropdownMenuItem
-                key={model.id}
-                onClick={() => onChange(model.id)}
-                className="gap-2.5 cursor-pointer py-1.5 items-start"
-              >
-                <ModelLogoImg logo={model.logo} className="mt-0.5" />
-                <div className="flex flex-col flex-1 min-w-0">
-                  <span className="truncate">{model.name}</span>
-                  <span className="text-xs text-muted-foreground truncate">{model.description}</span>
-                </div>
-                {value === model.id && <Check className="h-4 w-4 mt-0.5" />}
-              </DropdownMenuItem>
-            ))}
+            {group.models.map((model) => {
+              const locked = model.id === FABLE_ID && fableLocked;
+              return (
+                <DropdownMenuItem
+                  key={model.id}
+                  onClick={() => (locked ? openTopUp() : onChange(model.id))}
+                  className="gap-2.5 cursor-pointer py-1.5 items-start"
+                  title={locked ? `Top up ₹${access?.fable.requiredInr ?? 100} in total to unlock` : undefined}
+                >
+                  <ModelLogoImg logo={model.logo} className={cn("mt-0.5", locked && "opacity-50")} />
+                  <div className="flex flex-col flex-1 min-w-0">
+                    <span className={cn("truncate", locked && "text-muted-foreground")}>{model.name}</span>
+                    <span className="text-xs text-muted-foreground truncate">
+                      {locked ? (access?.fable.toppedUpInr ? `Top up ₹${fableLeft} more to unlock` : `Top up ₹${access?.fable.requiredInr ?? 100} to unlock`) : model.description}
+                    </span>
+                  </div>
+                  {locked ? <Lock className="h-4 w-4 mt-0.5 text-muted-foreground" /> : value === model.id && <Check className="h-4 w-4 mt-0.5" />}
+                </DropdownMenuItem>
+              );
+            })}
           </React.Fragment>
         ))}
       </DropdownMenuContent>

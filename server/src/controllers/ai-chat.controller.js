@@ -949,6 +949,28 @@ export const streamAskAi = async (req, res) => {
         const resetDate = user?.ai_tokens?.week_reset_date ? new Date(user.ai_tokens.week_reset_date) : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
         return { error: check.reason === "Insufficient tokens." ? "ai_quota_exceeded" : "ai_blocked", message: check.reason, resetDate: resetDate.toISOString() };
     };
+    // Claude Fable 5.1 (most expensive model) is locked until the person has topped up ₹100 in total.
+    // 402, not 403: the chat page treats 403 as a ban.
+    if (body.selectedModel === "claude-fable-5-1") {
+        try {
+            const { fableAccess, FABLE_UNLOCK_INR } = await import("../services/model-access.service.js");
+            const access = await fableAccess(req.user);
+            if (!access.unlocked) {
+                res.writeHead(402, { "Content-Type": "application/json" });
+                res.end(JSON.stringify({
+                    error: `Claude Fable 5.1 unlocks after you top up ₹${FABLE_UNLOCK_INR} or more in total (you have topped up ₹${access.toppedUpInr} so far). Top up AI credits, or pick another model to continue.`,
+                    code: "fable_locked",
+                }));
+                return;
+            }
+        } catch (err) {
+            console.error("Fable access check error:", err);
+            res.writeHead(503, { "Content-Type": "application/json" });
+            res.end(JSON.stringify({ error: "We couldn't check access to Claude Fable 5.1 right now. Please try again or pick another model." }));
+            return;
+        }
+    }
+
     try {
         const check = await hasEnoughTokens(userId, orgId, estimatePromptTokens([body.question || ""]) + MIN_PROMPT_TOKENS + REPLY_TOKEN_ALLOWANCE);
         if (!check.allowed) {

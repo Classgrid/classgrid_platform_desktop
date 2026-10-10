@@ -98,6 +98,16 @@ router.delete("/skills/:id", isAuthenticated, deleteSkill);
 router.get("/preferences", isAuthenticated, getPreferences);
 router.put("/preferences", isAuthenticated, updatePreferences);
 
+// Premium model access (model picker lock for Claude Fable 5.1)
+router.get("/model-access", isAuthenticated, async (req, res) => {
+    try {
+        const { fableAccess } = await import("../services/model-access.service.js");
+        res.json({ fable: await fableAccess(req.user) });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 // Token Usage Tracking
 router.get("/my-usage", isAuthenticated, getMyUsage);
 router.get("/org-usage", isAuthenticated, getOrgUsage);
