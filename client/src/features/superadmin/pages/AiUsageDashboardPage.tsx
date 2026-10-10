@@ -146,29 +146,38 @@ export function AiUsageDashboardPage() {
   const [orgsTime, setOrgsTime] = useState<"daily" | "weekly" | "monthly">("daily");
   const [usersTime, setUsersTime] = useState<"daily" | "weekly" | "monthly">("daily");
   const [spendingCurrency, setSpendingCurrency] = useState<"USD" | "INR">("USD");
+  const [live, setLive] = useState(false); // WebSocket connected and listening for usage updates
 
   useEffect(() => {
     const socket = socketClient.getSocket();
     
-    if (socket) {
-      socketClient.joinAiUsageDashboard();
-      socket.on("ai_usage_updated", () => {
-         // Invalidate EVERY query related to AI usage to ensure 100% live updates across all graphs and drilldowns
-         queryClient.invalidateQueries({ queryKey: ["ai-usage-global"] });
-         queryClient.invalidateQueries({ queryKey: ["ai-usage-orgs"] });
-         queryClient.invalidateQueries({ queryKey: ["ai-usage-org"] });
-         queryClient.invalidateQueries({ queryKey: ["ai-usage-org-users"] });
-         queryClient.invalidateQueries({ queryKey: ["ai-usage-user"] });
-         queryClient.invalidateQueries({ queryKey: ["ai-usage-models"] });
-         queryClient.invalidateQueries({ queryKey: ["globalAiConfig"] });
-      });
-    }
+    if (!socket) return;
+
+    const refreshAll = () => {
+      // Invalidate EVERY query related to AI usage to ensure 100% live updates across all graphs and drilldowns
+      queryClient.invalidateQueries({ queryKey: ["ai-usage-global"] });
+      queryClient.invalidateQueries({ queryKey: ["ai-usage-orgs"] });
+      queryClient.invalidateQueries({ queryKey: ["ai-usage-org"] });
+      queryClient.invalidateQueries({ queryKey: ["ai-usage-org-users"] });
+      queryClient.invalidateQueries({ queryKey: ["ai-usage-user"] });
+      queryClient.invalidateQueries({ queryKey: ["ai-usage-models"] });
+      queryClient.invalidateQueries({ queryKey: ["globalAiConfig"] });
+    };
+    // The server forgets room membership whenever the connection drops (server restart, deploy, Wi-Fi blip),
+    // so re-join on every (re)connect and refresh at once to catch anything missed.
+    const onConnect = () => { socketClient.joinAiUsageDashboard(); setLive(true); refreshAll(); };
+    const onDisconnect = () => setLive(false);
+
+    socket.on("ai_usage_updated", refreshAll);
+    socket.on("connect", onConnect);
+    socket.on("disconnect", onDisconnect);
+    if (socket.connected) { socketClient.joinAiUsageDashboard(); setLive(true); }
 
     return () => {
       socketClient.leaveAiUsageDashboard();
-      if (socket) {
-        socket.off("ai_usage_updated");
-      }
+      socket.off("ai_usage_updated", refreshAll);
+      socket.off("connect", onConnect);
+      socket.off("disconnect", onDisconnect);
     };
   }, [queryClient]);
   
@@ -998,6 +1007,13 @@ export function AiUsageDashboardPage() {
           ...(path.userName ? [{ label: path.userName }] : [])
         ]}
       />
+
+      <div className="flex justify-end">
+        <span className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 text-[13px] font-medium ${live ? "border-emerald-500/30 text-emerald-700 dark:text-emerald-400" : "border-border text-muted-foreground"}`}>
+          <span className={`h-2 w-2 rounded-full ${live ? "bg-emerald-500 animate-pulse" : "bg-muted-foreground/50"}`} />
+          {live ? "Live" : "Connecting…"}
+        </span>
+      </div>
 
       {!path.orgId && renderGlobalStats()}
 

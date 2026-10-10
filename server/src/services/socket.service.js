@@ -246,8 +246,12 @@ export const initSocket = (server) => {
         });
 
         // --- Superadmin AI Usage Dashboard Realtime Updates ---
-        socket.on("join_ai_usage_dashboard", () => {
-            socket.join("superadmin:ai_usage");
+        socket.on("join_ai_usage_dashboard", async () => {
+            // Super admins only (role read from the database, never trusted from the client)
+            try {
+                const u = await User.findById(socket.userId).select("role").lean();
+                if (u?.role === "super_admin" || u?.role === "co_super_admin") socket.join("superadmin:ai_usage");
+            } catch (e) { /* ignore */ }
         });
 
         socket.on("leave_ai_usage_dashboard", () => {

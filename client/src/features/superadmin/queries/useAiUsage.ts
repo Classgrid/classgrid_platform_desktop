@@ -39,6 +39,8 @@ export const aiUsageApi = {
 export const useGlobalAiStats = (orgId?: string, month?: number, year?: number) => useQuery({
   queryKey: ["ai-usage-global", orgId, month, year],
   queryFn: () => aiUsageApi.getGlobalStats(orgId, month, year),
+  refetchInterval: 30000,
+  refetchIntervalInBackground: true,
 });
 
 export type ModelUsageTotals = { requests: number; tokens: number; costUSD: number };
@@ -58,11 +60,15 @@ export const useAiModelBreakdown = (params: { from: string; to: string; orgId?: 
 export const useAiUsageOrgs = () => useQuery({
   queryKey: ["ai-usage-orgs"],
   queryFn: aiUsageApi.getOrgs,
+  refetchInterval: 30000,
+  refetchIntervalInBackground: true,
 });
 
 export const useAiOrgDetail = (orgId: string) => useQuery({
   queryKey: ["ai-usage-org", orgId],
   queryFn: () => aiUsageApi.getOrgDetail(orgId),
+  refetchInterval: 30000,
+  refetchIntervalInBackground: true,
   enabled: !!orgId,
 });
 
@@ -71,11 +77,14 @@ export const useAiOrgUsers = (orgId: string) => useQuery({
   queryFn: () => aiUsageApi.getOrgUsers(orgId),
   enabled: !!orgId,
   refetchInterval: 30000,
+  refetchIntervalInBackground: true,
 });
 
 export const useAiUserDetail = (userId: string) => useQuery({
   queryKey: ["ai-usage-user", userId],
   queryFn: () => aiUsageApi.getUserDetail(userId),
+  refetchInterval: 30000,
+  refetchIntervalInBackground: true,
   enabled: !!userId,
 });
 
