@@ -767,8 +767,10 @@ export function GroupSettingsModal({ groupId, onClose, onLeaveGroup, onUserClick
                         className="flex-1 py-2 rounded bg-secondary text-secondary-foreground text-sm font-medium hover:bg-secondary/80 transition-colors"
                         onClick={() => {
                           onClose();
-                          if (user?.role === 'super_admin') {
-                            navigate('/superadmin/audit'); 
+                          if (window.location.hostname.startsWith('chat.')) {
+                            navigate('/audit');
+                          } else if (user?.role === 'super_admin') {
+                            navigate('/superadmin/audit-logs');
                           } else if (user?.role === 'org_admin') {
                             navigate('/org/audit');
                           } else {
@@ -782,7 +784,8 @@ export function GroupSettingsModal({ groupId, onClose, onLeaveGroup, onUserClick
                         className="flex-1 py-2 rounded bg-secondary text-secondary-foreground text-sm font-medium hover:bg-secondary/80 transition-colors"
                         onClick={() => {
                           onClose();
-                          navigate(`/join-requests/${groupId}`);
+                          // chat.classgrid.in has its requests page at /requests
+                          navigate(window.location.hostname.startsWith('chat.') ? `/requests/${groupId}` : `/join-requests/${groupId}`);
                         }}
                      >
                         Join Requests

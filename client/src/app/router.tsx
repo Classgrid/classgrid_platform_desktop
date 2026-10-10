@@ -426,7 +426,7 @@ export function AppRouter() {
           <Route path="/c/:sessionId/*" element={<DashboardHomePage />} />
           <Route path="/agent/chat" element={<ChatPage />} />
           <Route path="/requests" element={<JoinRequestPage />} />
-          <Route path="/drive" element={<GenericPage title="Google Drive" />} />
+          <Route path="/requests/:groupId" element={<JoinRequestPage />} />
           <Route path="/agent/profile" element={<SharedProfilePage />} />
           <Route path="/agent/settings" element={<SharedSettingsPage />} />
           {/* Website CMS */}
@@ -537,7 +537,8 @@ export function AppRouter() {
           <Route path="/platform-feedback" element={<GenericPage title="Platform Feedback" />} />
           <Route path="/marketplace" element={<GenericPage title="Marketplace" />} />
           <Route path="/my-requests" element={<JoinRequestPage />} />
-          <Route path="/audit" element={<AuditPage />} />
+          {/* chat.classgrid.in: group audit logs (the ERP audit report doesn't apply to public chat accounts) */}
+          <Route path="/audit" element={typeof window !== "undefined" && window.location.hostname.startsWith("chat.") ? <GenericPage title="Audit Logs" /> : <AuditPage />} />
           <Route path="profile" element={<SharedProfilePage />} />
           <Route path="settings" element={<SharedSettingsPage />} />
           <Route path="classrooms" element={<ClassroomsPage />} />
