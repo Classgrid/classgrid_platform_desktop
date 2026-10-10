@@ -88,8 +88,8 @@ import { UserDetailPage } from "@/features/superadmin/pages/UserDetailPage";
 import { GdprPage } from "@/features/superadmin/pages/GdprPage";
 import { BackupPage } from "@/features/superadmin/pages/BackupPage";
 import { CustomDomainsPage } from "@/features/superadmin/pages/CustomDomainsPage";
-import { AnalyticsPage } from "@/features/superadmin/pages/AnalyticsPage";
 import { AuditLogsPage } from "@/features/superadmin/pages/AuditLogsPage";
+import { SuperadminChatAnalyticsPage } from "@/features/superadmin/pages/SuperadminChatAnalyticsPage";
 import { ClassgridTalkPage } from "@/features/superadmin/pages/ClassgridTalkPage";
 import { TeamPage } from "@/features/superadmin/pages/TeamPage";
 import { BillingPage } from "@/features/superadmin/pages/BillingPage"; // Original, may be repurposed
@@ -306,7 +306,7 @@ export function AppRouter() {
           <Route path="/superadmin/agent/:sessionId/*" element={<DashboardHomePage />} />
           <Route path="/superadmin/agent-reviews" element={<AgentReviewsPage />} />
           <Route path="/superadmin/ai-usage" element={<AiUsageDashboardPage />} />
-          <Route path="/superadmin/analytics" element={<AnalyticsPage />} />
+          <Route path="/superadmin/analytics" element={<SuperadminChatAnalyticsPage />} />
           <Route path="/superadmin/audit-logs" element={<AuditLogsPage />} />
 
           <Route path="/superadmin/orgs" element={<OrganizationsPage />} />

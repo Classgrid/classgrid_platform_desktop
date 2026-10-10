@@ -4,9 +4,10 @@ import { Download, X, ChevronLeft, ChevronRight } from "lucide-react";
 import { apiClient } from "@/lib/apiClient";
 import { DataTable } from "@/components/marketing_ui/data-table";
 import { ResponsiveSelect } from "@/components/marketing_ui/responsive-select";
-import { NikhilTimeCalendar } from "@/components/marketing_ui/nikhil_time_calendar";
+import { NikhilDateCalendar } from "@/components/marketing_ui/nikhil_date_calendar";
 import { SuperadminFilterBar } from "@/features/superadmin/components/SuperadminFilterBar";
 import { toast } from "sonner";
+import { GROUP_SETTING_LABELS } from "../components/groupSettingLabels";
 
 // Group audit log (Grid): who did what in which group, from GET /api/group-chat/audit-logs.
 // Super admin sees every group, org admins their org's groups, everyone else the groups they admin.
@@ -121,6 +122,34 @@ function formatTime(iso: string) {
   };
 }
 
+// Readable value for one changed field (people, not developers, read this)
+function readable(key: string, v: any): string {
+  if (v === null || v === undefined || v === "") return "—";
+  if (typeof v === "boolean") return v ? "On" : "Off";
+  if (key === "message_ttl") return GROUP_SETTING_LABELS[String(v)] || `${v} seconds`;
+  if (key === "message") return `“${String(v)}”`;
+  if (key === "role") return v === "admin" ? "Group admin" : "Member";
+  if (key === "avatar_url" || key === "banner_url") return "New picture";
+  if (key === "deleted_by") return v === "admin" ? "An admin" : "The author";
+  if (Array.isArray(v)) return v.length ? v.map((x) => (typeof x === "object" ? readableItem(x) : (GROUP_SETTING_LABELS[String(x)] || String(x).replace(/_/g, " ")))).join(", ") : "None";
+  if (typeof v === "object") return readableItem(v);
+  return GROUP_SETTING_LABELS[String(v)] || String(v);
+}
+function readableItem(o: any): string {
+  if (o && typeof o === "object") return o.message ? `“${String(o.message)}”` : o.name || Object.values(o).filter((x) => typeof x === "string").join(" · ");
+  return String(o);
+}
+const HIDDEN_KEYS = new Set(["sender_id", "user_id", "id"]);
+function changeRows(log: AuditLog): { label: string; before: string | null; after: string | null }[] {
+  const oldV = log.old_value && typeof log.old_value === "object" ? log.old_value : {};
+  const newV = log.new_value && typeof log.new_value === "object" ? log.new_value : {};
+  const keys = [...new Set([...Object.keys(oldV), ...Object.keys(newV)])].filter((k) => !HIDDEN_KEYS.has(k));
+  return keys.map((k) => {
+    const label = k === "messages" ? "Messages" : k === "count" ? "How many" : k === "added_by" ? "Added by" : k === "deleted_by" ? "Deleted by" : k === "reason" ? "Reason" : (FIELD_LABELS[k] || k.replace(/_/g, " ").replace(/^\w/, (c) => c.toUpperCase()));
+    return { label, before: k in oldV ? readable(k, oldV[k]) : null, after: k in newV ? readable(k, newV[k]) : null };
+  });
+}
+
 const PAGE_SIZE = 50;
 
 export function GroupAuditLogsPage() {
@@ -204,13 +233,13 @@ export function GroupAuditLogsPage() {
   return (
     <div className="mx-auto w-full max-w-[1400px] p-4 sm:p-6 lg:p-8">
       <SuperadminFilterBar searchQuery={searchInput} onSearchChange={setSearchInput} searchPlaceholder="Search name, group, action…">
-        <div className="w-[180px]">
+        <div className="w-[150px] shrink-0">
           <ResponsiveSelect className="flex h-9 w-full items-center rounded-md border border-border bg-transparent px-3 py-1 text-sm shadow-sm transition-colors hover:bg-accent/50" value={groupId} onChange={(e: any) => setGroupId(e.target.value)}>
             <option value="">Group: All</option>
             {(data?.groups || []).map((g) => <option key={g.id} value={g.id}>{g.name}</option>)}
           </ResponsiveSelect>
         </div>
-        <div className="w-[180px]">
+        <div className="w-[150px] shrink-0">
           <ResponsiveSelect className="flex h-9 w-full items-center rounded-md border border-border bg-transparent px-3 py-1 text-sm shadow-sm transition-colors hover:bg-accent/50" value={action} onChange={(e: any) => setAction(e.target.value)}>
             <option value="">Action: All</option>
             <option value="group_created,group_deleted,group_details_changed,group_photo_changed,group_banner_changed,permissions_updated,disappearing_messages_changed">Group changes</option>
@@ -219,16 +248,23 @@ export function GroupAuditLogsPage() {
             {Object.entries(ACTIONS).map(([k, m]) => <option key={k} value={k}>{m.label}</option>)}
           </ResponsiveSelect>
         </div>
-        {[{ value: dateFrom, set: setDateFrom, ph: "From date" }, { value: dateTo, set: setDateTo, ph: "To date" }].map((d, i) => (
-          <div key={i} className="relative w-[160px] max-w-[160px] overflow-hidden">
-            <NikhilTimeCalendar value={d.value} onChange={d.set as any} placeholder={d.ph} popDirection="down" showTime={false} className="h-9 w-full pr-8" />
-            {d.value && (
-              <button type="button" onClick={(e) => { e.stopPropagation(); d.set(undefined); }} className="absolute right-3 top-1/2 z-10 -translate-y-1/2 rounded-full bg-background p-0.5 text-muted-foreground hover:bg-accent hover:text-foreground" title="Clear date">
-                <X size={14} />
-              </button>
-            )}
-          </div>
-        ))}
+        <div className="relative w-[210px] max-w-[210px] shrink-0 overflow-hidden">
+          <NikhilDateCalendar 
+            value={{ from: dateFrom, to: dateTo }} 
+            onChange={(val: any) => {
+              setDateFrom(val?.from);
+              setDateTo(val?.to);
+            }} 
+            placeholder="Select dates" 
+            popDirection="down" 
+            className="h-9 w-full pr-8" 
+          />
+          {(dateFrom || dateTo) && (
+            <button type="button" onClick={(e) => { e.stopPropagation(); setDateFrom(undefined); setDateTo(undefined); }} className="absolute right-3 top-1/2 z-10 -translate-y-1/2 rounded-full bg-background p-0.5 text-muted-foreground hover:bg-accent hover:text-foreground" title="Clear dates">
+              <X size={14} />
+            </button>
+          )}
+        </div>
         <button
           type="button"
           onClick={exportCsv}
@@ -288,16 +324,27 @@ export function GroupAuditLogsPage() {
               <dt className="text-muted-foreground">IP address</dt><dd className="font-mono">{selected.ip_address || "—"}</dd>
               <dt className="text-muted-foreground">Device</dt><dd className="break-words text-xs">{selected.user_agent || "—"}</dd>
             </dl>
-            {(selected.old_value || selected.new_value) && (
-              <div className="mt-5 grid gap-3 sm:grid-cols-2">
-                {[{ t: "Before", v: selected.old_value }, { t: "After", v: selected.new_value }].map(({ t, v }) => (
-                  <div key={t}>
-                    <p className="mb-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">{t}</p>
-                    <pre className="max-h-64 overflow-auto whitespace-pre-wrap break-words rounded-lg border border-border bg-muted/40 p-3 text-xs">{v ? JSON.stringify(v, null, 2) : "—"}</pre>
-                  </div>
-                ))}
-              </div>
-            )}
+            {(selected.old_value || selected.new_value) && (() => {
+              const rows = changeRows(selected);
+              return rows.length > 0 && (
+                <div className="mt-5 overflow-hidden rounded-xl border border-border">
+                  <table className="w-full text-sm">
+                    <thead className="bg-muted/40 text-left text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                      <tr><th className="px-3 py-2">What</th>{rows.some((r) => r.before !== null) && <th className="px-3 py-2">Before</th>}<th className="px-3 py-2">{rows.some((r) => r.before !== null) ? "After" : "Value"}</th></tr>
+                    </thead>
+                    <tbody>
+                      {rows.map((r) => (
+                        <tr key={r.label} className="border-t border-border align-top">
+                          <td className="px-3 py-2 font-medium text-foreground">{r.label}</td>
+                          {rows.some((x) => x.before !== null) && <td className="px-3 py-2 break-words text-muted-foreground">{r.before ?? "—"}</td>}
+                          <td className="px-3 py-2 break-words text-foreground">{r.after ?? "—"}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              );
+            })()}
           </div>
         </div>
       )}
