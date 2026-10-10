@@ -1512,6 +1512,7 @@ function ChatPageInner() {
                   metadata: selectedUserForProfile.metadata,
                   forumUsername: selectedUserForProfile.forumUsername,
                   lastLoginAt: selectedUserForProfile.lastLoginAt,
+                  hobby: (selectedUserForProfile as any).hobby || null,
                 }}
                 onClose={() => setProfileUserId(null)} 
               />

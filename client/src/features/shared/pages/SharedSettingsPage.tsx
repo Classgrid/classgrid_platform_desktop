@@ -61,6 +61,7 @@ import { SettingsChangePasswordCard } from "../components/settings/SettingsChang
 import { SettingsDeleteAccountCard } from "../components/settings/SettingsDeleteAccountCard";
 import { SettingsRoleRequestCard } from "../components/settings/SettingsRoleRequestCard";
 import { SettingsIdentityCard } from "../components/settings/SettingsIdentityCard";
+import { SettingsPrivacyCard } from "../components/settings/SettingsPrivacyCard";
 
 export function SharedSettingsPage() {
   const isChatApp = typeof window !== 'undefined' && window.location.hostname.startsWith('chat.');
@@ -145,6 +146,7 @@ export function SharedSettingsPage() {
   return (
     <div className="flex flex-col gap-6 w-full max-w-4xl mx-auto p-4 sm:p-6 lg:p-8 pb-12">
       <SettingsAppearanceCard />
+      <SettingsPrivacyCard />
       {isChatApp && <SettingsIdentityCard />}
       
       {!isProfileLoading && profileData?.role !== "org_admin" && profileData?.role !== "super_admin" && profileData?.role !== "user" && !isChatApp && (

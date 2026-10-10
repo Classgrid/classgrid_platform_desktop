@@ -106,7 +106,8 @@ export function GroupCreateSidebar({
   let availableRoles = dynamicRolesData || [];
 
   if (currentUser?.role === 'super_admin') {
-    availableRoles = availableRoles.filter((r: string) => r !== 'student');
+    // Roles come back as { value, label } objects (older responses were plain strings)
+    availableRoles = availableRoles.filter((r: any) => (typeof r === 'string' ? r : r.value) !== 'student');
   }
 
   const filteredAndSortedUsers = useMemo(() => {
@@ -488,7 +489,12 @@ export function GroupCreateSidebar({
                  <span className="text-sm font-medium text-foreground">Auto-Grant Admin by Role</span>
                  <span className="text-xs text-muted-foreground mb-1">Anyone inside this chat group with these roles will automatically be given Group Admin rights.</span>
                  <div className="flex flex-wrap gap-2">
-                   {availableRoles.map((role: string) => {
+                   {availableRoles.map((roleObj: any) => {
+                     // Same handling as GroupSettingsModal: a role may be a { value, label } object or a plain string
+                     const role: string = typeof roleObj === 'string' ? roleObj : roleObj.value;
+                     const roleLabel: string = typeof roleObj === 'string'
+                       ? roleObj.replace('_', ' ').replace(/\b\w/g, (l: string) => l.toUpperCase())
+                       : (roleObj.label || String(roleObj.value || ''));
                      const currentRoles = groupPermissions.admin_roles || [];
                      const isSelected = currentRoles.includes(role);
                      return (
@@ -506,7 +512,7 @@ export function GroupCreateSidebar({
                              : 'bg-background text-foreground border-border hover:border-primary/50'
                          }`}
                        >
-                         {role.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                         {roleLabel}
                        </button>
                      );
                    })}

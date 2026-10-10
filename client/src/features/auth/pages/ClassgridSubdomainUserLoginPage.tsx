@@ -464,7 +464,7 @@ export function ClassgridSubdomainUserLoginPage({ preferredRole }: { preferredRo
         <section className="flex h-full flex-col bg-muted dark:bg-[#111111] px-6 overflow-y-auto py-8">
 
           {/* 9. Inner Login Box */}
-          <div className="flex w-full max-w-[500px] flex-col justify-center rounded-[24px] border border-border dark:border-white/[0.15] bg-background dark:bg-[#0f0f0f] px-10 py-8 shadow-xl shrink-0 m-auto">
+          <div className="flex w-full max-w-[500px] flex-col justify-center rounded-[24px] border border-border dark:border-white/[0.15] bg-background dark:bg-[#0f0f0f] px-10 py-8 shadow-xl shrink-0 mx-auto my-auto [@media(max-height:750px)]:my-0">
 
             {step === 1 ? (
               <form onSubmit={handleLogin} className="flex flex-col" aria-busy={isSubmitting}>

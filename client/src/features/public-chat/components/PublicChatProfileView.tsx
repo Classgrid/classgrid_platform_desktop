@@ -10,7 +10,7 @@ import { toast } from "sonner";
 import { apiClient } from "@/lib/apiClient";
 import { useQueryClient } from "@tanstack/react-query";
 
-export function PublicChatProfileView({ profileData }: { profileData: any }) {
+export function PublicChatProfileView({ profileData, isReadOnly }: { profileData: any, isReadOnly?: boolean }) {
   const queryClient = useQueryClient();
   const [formData, setFormData] = useState<Record<string, any>>({
     ...(profileData || {}),
@@ -212,10 +212,12 @@ export function PublicChatProfileView({ profileData }: { profileData: any }) {
             <label className="text-sm font-medium text-foreground">Bio</label>
             <textarea className="w-full px-3 py-2 rounded-md border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring disabled:cursor-not-allowed placeholder:text-muted-foreground/30 disabled:text-foreground disabled:bg-muted/10 resize-none" rows={3} value={formData["bio"] || formData.bio || ""} onChange={e => handleInputChange("bio", e.target.value)} disabled={!isEditing} placeholder="A short bio about yourself" />
           </div>
-          <div className="space-y-1.5 md:col-span-2">
-            <label className="text-sm font-medium text-foreground">Hobbies</label>
-            <input className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring disabled:cursor-not-allowed placeholder:text-muted-foreground/30 disabled:text-foreground disabled:bg-muted/10" value={formData["hobby"] || formData.hobby || ""} onChange={e => handleInputChange("hobby", e.target.value)} disabled={!isEditing} placeholder="e.g. Reading, Coding, Travel" />
-          </div>
+          {(!isReadOnly || !profileData?.privacySettings?.hideHobbies) && (
+            <div className="space-y-1.5 md:col-span-2">
+              <label className="text-sm font-medium text-foreground">Hobbies</label>
+              <input className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring disabled:cursor-not-allowed placeholder:text-muted-foreground/30 disabled:text-foreground disabled:bg-muted/10" value={formData["hobby"] || formData.hobby || ""} onChange={e => handleInputChange("hobby", e.target.value)} disabled={!isEditing} placeholder="e.g. Reading, Coding, Travel" />
+            </div>
+          )}
           <div className="space-y-1.5 md:col-span-2">
             <label className="text-sm font-medium text-foreground flex items-center gap-2">
               WhatsApp Number

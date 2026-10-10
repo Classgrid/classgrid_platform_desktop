@@ -576,6 +576,9 @@ export function ChatInput({ onSendMessage, isSending, replyTo, onCancelReply, on
     return true; 
   });
 
+  // Phones show one round button like WhatsApp: mic while the box is empty, send once there is something to send
+  const hasSendable = !!message.replace(/<[^>]*>?/gm, '').trim() || files.length > 0 || !!audioBlob;
+
   return (
     <div className="flex flex-col w-full shrink-0 bg-background border-t border-border relative">
       {/* Mentions Dropdown - Moved to root to prevent any CSS clipping */}
@@ -835,7 +838,7 @@ export function ChatInput({ onSendMessage, isSending, replyTo, onCancelReply, on
       )}
 
       {/* Input Area */}
-      <div className="px-4 py-3 flex items-end gap-2">
+      <div className="px-2 sm:px-4 py-2 sm:py-3 flex items-end gap-1.5 sm:gap-2">
         {disabledReason ? (
           <div className="flex-1 py-3 px-4 text-sm text-muted-foreground text-center bg-accent/30 border border-border rounded-2xl italic">
             {disabledReason}
@@ -845,7 +848,7 @@ export function ChatInput({ onSendMessage, isSending, replyTo, onCancelReply, on
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button
-                  className="p-2.5 rounded-full hover:bg-accent text-muted-foreground hover:text-foreground transition-colors shrink-0 mb-0.5 outline-none"
+                  className="p-2 sm:p-2.5 rounded-full hover:bg-accent text-muted-foreground hover:text-foreground transition-colors shrink-0 mb-0.5 outline-none"
                   title="Attach"
                 >
                   <Paperclip className="w-5 h-5" />
@@ -982,7 +985,7 @@ export function ChatInput({ onSendMessage, isSending, replyTo, onCancelReply, on
                 ref={editorRef}
                 contentEditable
                 data-placeholder="Type a message..."
-                className="w-full min-w-0 flex-1 max-h-[150px] min-h-[44px] overflow-y-auto custom-scrollbar py-3 px-3 outline-none focus:outline-none focus-visible:outline-none focus:ring-0 focus-visible:ring-0 text-[15px] text-foreground leading-relaxed break-words break-all [word-break:break-word] whitespace-pre-wrap bg-transparent resize-none border-none relative empty:before:content-[attr(data-placeholder)] empty:before:text-muted-foreground/70 empty:before:pointer-events-none [&_a]:text-blue-500 [&_a]:underline"
+                className="w-full min-w-0 flex-1 max-h-[150px] min-h-[44px] overflow-y-auto custom-scrollbar py-3 px-3 outline-none focus:outline-none focus-visible:outline-none focus:ring-0 focus-visible:ring-0 text-[16px] sm:text-[15px] text-foreground leading-relaxed break-words [word-break:break-word] whitespace-pre-wrap bg-transparent resize-none border-none relative empty:before:content-[attr(data-placeholder)] empty:before:text-muted-foreground/70 empty:before:pointer-events-none [&_a]:text-blue-500 [&_a]:underline"
                 onInput={(e) => {
                   const html = e.currentTarget.innerHTML;
                   const text = e.currentTarget.textContent || "";
@@ -1099,7 +1102,7 @@ export function ChatInput({ onSendMessage, isSending, replyTo, onCancelReply, on
             {isRecording ? (
               <button
                 onClick={stopRecording}
-                className="p-3 rounded-full bg-red-500 text-white hover:bg-red-600 transition-colors shrink-0 mb-0.5 flex items-center justify-center w-11 h-11 animate-pulse"
+                className="p-3 rounded-full bg-red-500 text-white hover:bg-red-600 transition-colors shrink-0 mb-0.5 flex items-center justify-center w-10 h-10 sm:w-11 sm:h-11 animate-pulse"
               >
                 <Square className="w-5 h-5 fill-current" />
               </button>
@@ -1107,7 +1110,7 @@ export function ChatInput({ onSendMessage, isSending, replyTo, onCancelReply, on
               <button
                 onClick={startRecording}
                 disabled={isSending || !!audioBlob}
-                className="p-3 rounded-full bg-accent text-foreground hover:bg-accent/80 transition-colors shrink-0 mb-0.5 flex items-center justify-center w-11 h-11 disabled:opacity-50"
+                className={`p-3 rounded-full bg-accent text-foreground hover:bg-accent/80 transition-colors shrink-0 mb-0.5 flex items-center justify-center w-10 h-10 sm:w-11 sm:h-11 disabled:opacity-50 ${hasSendable ? 'max-sm:hidden' : ''}`}
               >
                 <Mic className="w-5 h-5" />
               </button>
@@ -1117,7 +1120,7 @@ export function ChatInput({ onSendMessage, isSending, replyTo, onCancelReply, on
               <Popover open={isOptionsOpen} onOpenChange={handleOptionsOpenChange}>
                 <PopoverTrigger asChild>
                   <button
-                    className={`p-3 rounded-full transition-colors shrink-0 mb-0.5 flex items-center justify-center w-11 h-11 ${(scheduledDate || isSilent || priority !== 'normal' || expiresAt) ? 'bg-indigo-500 text-white hover:bg-indigo-600' : 'bg-accent text-foreground hover:bg-accent/80'}`}
+                    className={`p-3 rounded-full transition-colors shrink-0 mb-0.5 flex items-center justify-center w-10 h-10 sm:w-11 sm:h-11 ${(scheduledDate || isSilent || priority !== 'normal' || expiresAt) ? 'bg-indigo-500 text-white hover:bg-indigo-600' : 'bg-accent text-foreground hover:bg-accent/80'}`}
                     title="Message Options"
                   >
                     <SlidersHorizontal className="w-5 h-5" />
@@ -1204,7 +1207,7 @@ export function ChatInput({ onSendMessage, isSending, replyTo, onCancelReply, on
             <button
               onClick={handleSend}
               disabled={isSending || isSendingLocal || (!message.replace(/<[^>]*>?/gm, '').trim() && files.length === 0 && !audioBlob) || isRecording || message.length > 65000 || files.some(f => f.size > (f.type.startsWith('image/') ? 12 * 1024 * 1024 : 150 * 1024 * 1024))}
-              className={`p-3 rounded-full text-primary-foreground transition-colors shrink-0 disabled:opacity-50 disabled:cursor-not-allowed mb-0.5 flex items-center justify-center w-11 h-11 ${scheduledDate ? 'bg-indigo-500 hover:bg-indigo-600' : 'bg-primary hover:bg-primary/90'}`}
+              className={`p-3 rounded-full text-primary-foreground transition-colors shrink-0 disabled:opacity-50 disabled:cursor-not-allowed mb-0.5 flex items-center justify-center w-10 h-10 sm:w-11 sm:h-11 ${hasSendable ? '' : 'max-sm:hidden'} ${scheduledDate ? 'bg-indigo-500 hover:bg-indigo-600' : 'bg-primary hover:bg-primary/90'}`}
               title={(isSending || isSendingLocal) ? 'Sending...' : files.some(f => f.size > (f.type.startsWith('image/') ? 12 * 1024 * 1024 : 150 * 1024 * 1024)) ? 'File too large' : scheduledDate ? 'Schedule Message' : 'Send Message'}
             >
               {(isSending || isSendingLocal) ? <Spinner className="w-5 h-5" /> : scheduledDate ? <Clock className="w-5 h-5" /> : <Send className="w-5 h-5 ml-0.5" />}

@@ -45,7 +45,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTheme } from "next-themes";
-import { X, Save, Shield, Camera, Loader, Mail, Phone, 
+import { X, Save, Shield, Camera, Loader, Mail, Phone, Heart, 
   Lock, Smartphone, Globe, Calendar, Clock,
   Palette, Activity, BadgeCheck, ShieldAlert,
   Instagram, Facebook, Linkedin, Github, FileBox, Users, GraduationCap, Edit, ChevronRight
@@ -86,6 +86,7 @@ type ProfileData = {
   organization_logo?: string | null;
   metadata?: Record<string, any>;
   forumUsername?: string | null;
+  hobby?: string | null;
 };
 
 type EmailPrefs = {
@@ -200,6 +201,8 @@ export function SharedProfilePage({ publicUser, groupData, mode = "user", onClos
         organization_name: publicUser.organization_name,
         organization_logo: publicUser.organization_logo,
         metadata: publicUser.metadata || {},
+        // Empty when the person hid it (Settings → Privacy); the server doesn't send it then
+        hobby: publicUser.hobby || publicUser.metadata?.hobby || "",
       });
     } else if (profileData?.user) {
       setForm({
@@ -217,6 +220,7 @@ export function SharedProfilePage({ publicUser, groupData, mode = "user", onClos
         organization_name: profileData.user.organization_name || (profileData.user.organization_id && profileData.user.organization_id.name) || (profileData.user.organization && profileData.user.organization.name) || currentUser?.organization?.name || currentUser?.organization_name || "",
         organization_logo: (profileData.user.organization_id && profileData.user.organization_id.logo_url) || (profileData.user.organization && profileData.user.organization.logo_url) || currentUser?.organization?.logo_url || "",
         metadata: profileData.user.metadata || {},
+        hobby: profileData.user.hobby || profileData.user.metadata?.hobby || "",
       });
     }
   }, [profileData, publicUser, currentUser, isGroup, groupData]);
@@ -523,6 +527,9 @@ export function SharedProfilePage({ publicUser, groupData, mode = "user", onClos
                     {!isGroup && form.email && (
                       <span className="flex items-center gap-2 hover:text-foreground transition-colors"><Mail size={16} /> {form.email}</span>
                     )}
+                    {!isGroup && form.hobby && (
+                      <span className="flex items-center gap-2 hover:text-foreground transition-colors" title="Hobbies"><Heart size={16} /> {form.hobby}</span>
+                    )}
                     <span className="flex items-center gap-2.5">
                       {form.role === "super_admin" || form.role === "Super Admin" || (isGroup && (groupData?.group?.is_official || groupData?.group?.is_created_by_super_admin)) ? (
                         <div className="bg-white dark:bg-white/90 p-0.5 rounded shadow-sm border border-border/50 overflow-hidden flex items-center justify-center">
@@ -756,7 +763,7 @@ export function SharedProfilePage({ publicUser, groupData, mode = "user", onClos
             {!isReadOnly && !isGroup && (
               <div className="mt-8 mb-6">
                 {(form.role === "super_admin" || form.role === "Super Admin" || form.role === "user" || window.location.hostname.startsWith('chat.')) ? (
-                  <SuperAdminProfileView profileData={profileData?.user || {}} />
+                  <SuperAdminProfileView profileData={profileData?.user || {}} isReadOnly={isReadOnly} />
                 ) : (
                   <ContextualProfile 
                     targetRole={form.role || "student"} 
