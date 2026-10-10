@@ -2720,7 +2720,9 @@ Do NOT talk about internal architecture unless asked by a @classgrid.in employee
                             try {
                                 const json = JSON.parse(text);
                                 if (json.imageUrl) {
-                                    return `[IMAGE_GENERATION_COMPLETE: ${args.prompt} | ${json.imageUrl}]\n\nCRITICAL: You MUST immediately output this exact [IMAGE_GENERATION_COMPLETE] string to the user right now so their UI can render the image. DO NOT use Markdown image syntax like ![alt](url) to display it! Just output the raw string.`;
+                                    // The chat shows the image wherever this marker appears and still shows any text around it,
+                                    // so the reply can carry on after the image.
+                                    return `[IMAGE_GENERATION_COMPLETE: ${args.prompt} | ${json.imageUrl}]\n\nThe image is ready. In your reply, put the exact [IMAGE_GENERATION_COMPLETE: ...] line above on its own line where the image should appear (copy it unchanged; do NOT use Markdown image syntax like ![alt](url)). Then continue your answer normally: briefly describe the image, offer changes, and finish any other part of the user's request.`;
                                 }
                                 return `FAILED to generate image: ${json.error || json.message || text}`;
                             } catch (e) {

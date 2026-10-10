@@ -4537,21 +4537,24 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
 
                               {/* Old thought accordion removed — CombinedReasoningBlock above stepper handles all thought display now */}
                               {message.content.includes("[IMAGE_GENERATION") ? (() => {
-                                const isQueued = message.content.includes("[IMAGE_GENERATION_QUEUED");
-                                const isError = message.content.includes("[IMAGE_GENERATION_ERROR");
-                                const isComplete = message.content.includes("[IMAGE_GENERATION_COMPLETE");
+                                // One reply can mix text and images: the text before/after each image marker is shown too, so the AI can
+                                // keep writing after an image (it used to show only the image and hide everything else).
+                                const renderImageCard = (marker: string, partIndex: number) => {
+                                const isQueued = marker.includes("[IMAGE_GENERATION_QUEUED");
+                                const isError = marker.includes("[IMAGE_GENERATION_ERROR");
+                                const isComplete = marker.includes("[IMAGE_GENERATION_COMPLETE");
 
                                 let prompt = "Image generation";
                                 let url = "";
 
                                 if (isQueued || isError) {
-                                  prompt = message.content.match(/\[IMAGE_GENERATION(?:_QUEUED|_ERROR):\s*(.*?)\]/)?.[1] || prompt;
+                                  prompt = marker.match(/\[IMAGE_GENERATION(?:_QUEUED|_ERROR):\s*(.*?)\]/)?.[1] || prompt;
                                 } else if (isComplete) {
                                   // Try pipe separator first (new format), then fall back to colon (old format)
-                                  let match = message.content.match(/\[IMAGE_GENERATION_COMPLETE:\s*([\s\S]*?)\s*\|\s*(https?:\/\/.*?)\]/);
+                                  let match = marker.match(/\[IMAGE_GENERATION_COMPLETE:\s*([\s\S]*?)\s*\|\s*(https?:\/\/.*?)\]/);
                                   if (!match) {
                                     // Old format: split on last https:// occurrence
-                                    const oldMatch = message.content.match(/\[IMAGE_GENERATION_COMPLETE:\s*([\s\S]*?)\s*:\s*(https?:\/\/.*?)\]/);
+                                    const oldMatch = marker.match(/\[IMAGE_GENERATION_COMPLETE:\s*([\s\S]*?)\s*:\s*(https?:\/\/.*?)\]/);
                                     if (oldMatch) match = oldMatch;
                                   }
                                   if (match) {
@@ -4561,11 +4564,11 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                                 }
 
                                 // Track whether this specific image has loaded in the browser
-                                const imgKey = `img-loaded-${message.id}`;
+                                const imgKey = `img-loaded-${message.id}-${partIndex}`;
                                 const isImgLoaded = (window as any)[imgKey] === true;
 
                                 return (
-                                  <div className="mb-2 mt-1 w-full max-w-[320px]">
+                                  <div key={`img-${partIndex}`} className="mb-2 mt-1 w-full max-w-[320px]">
                                     <ImageGeneration
                                       status={isError ? "error" : (isComplete && isImgLoaded) ? "complete" : "generating"}
                                       size="fluid"
@@ -4593,7 +4596,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                                           )}
                                           {isImgLoaded && (
                                             <DocsImageViewer
-                                              images={[{ id: `gen-${message.id}`, src: url, alt: prompt }]}
+                                              images={[{ id: `gen-${message.id}-${partIndex}`, src: url, alt: prompt }]}
                                               renderThumbnails={(images, openImage) => (
                                                 <img
                                                   src={images[0].src}
@@ -4609,7 +4612,27 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                                     </ImageGeneration>
                                   </div>
                                 );
-                              })() : message.content.trim().startsWith("ai_quota_exceeded") ? (
+                                                              };
+                                const parts = message.content.split(/(\[IMAGE_GENERATION_(?:QUEUED|ERROR|COMPLETE):[\s\S]*?\])/);
+                                const lastTextIndex = parts.reduce((last, part, i) => (!part.startsWith("[IMAGE_GENERATION_") && part.trim() ? i : last), -1);
+                                return (
+                                  <>
+                                    {parts.map((part, i) => part.startsWith("[IMAGE_GENERATION_") ? renderImageCard(part, i) : part.trim() ? (
+                                      <AssistantMessageContent
+                                        key={`txt-${i}`}
+                                        content={part}
+                                        sources={i === lastTextIndex ? message.sources : undefined}
+                                        createdAt={message.createdAt}
+                                        isTyping={message.typing && i === parts.length - 1}
+                                        isHistorical={index < messages.length - 1}
+                                        currentStepIndex={-1}
+                                        onRetry={undefined}
+                                        onApprovalAction={handleApprovalAction}
+                                      />
+                                    ) : null)}
+                                  </>
+                                );
+                                })() : message.content.trim().startsWith("ai_quota_exceeded") ? (
                                 <div className="mt-2 w-full flex justify-start">
                                   <InsufficientCreditsCard
                                     refreshDate={new Date(message.content.split("|")[1] || Date.now())}
@@ -4654,7 +4677,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                               )}
                             </div>
                           )}
-                          {!isUser && !message.typing && message.content.length > 0 && !message.content.includes("```approval") && !message.content.startsWith("[IMAGE_GENERATION") && !message.content.trim().startsWith("ai_quota_exceeded") && message.content.trim() !== "ai_blocked" && (
+                          {!isUser && !message.typing && message.content.length > 0 && !message.content.includes("```approval") && !/^\s*\[IMAGE_GENERATION_[^\]]*\]\s*$/.test(message.content) && !message.content.trim().startsWith("ai_quota_exceeded") && message.content.trim() !== "ai_blocked" && (
                             <div className="pl-1 mt-3">
                               <MessageActions content={message.content} messageId={message.id} onReply={() => setReplyToMessage(message)} />
                             </div>
@@ -5996,7 +6019,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                   {/* Show what the agent can do: starter prompts + the user's connected apps / scheduled tasks */}
                   {!isTerminated && !readOnly && (
                     <div className="hidden sm:flex w-full flex-col items-center gap-3">
-                      <StarterCards onPick={(prompt) => setInput(prompt)} />
+                      <StarterCards onPick={(prompt) => askQuestionRef.current?.(prompt)} />
                       <CapabilityStrip />
                     </div>
                   )}

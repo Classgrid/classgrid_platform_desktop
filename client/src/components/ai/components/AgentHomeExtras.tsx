@@ -16,13 +16,13 @@ export function homeGreeting(name?: string | null) {
 }
 
 const STARTERS = [
-  { icon: BarChart3, label: "Analyse a file", prompt: "Analyse the file I'm attaching and give me the key insights with a chart." },
-  { icon: CalendarCheck, label: "Make an exam planner", prompt: "Make me a day-by-day exam study planner. My exams start on " },
-  { icon: BellRing, label: "Daily WhatsApp reminder", prompt: "Every day at 7 AM, send me a short summary of my tasks on WhatsApp." },
-  { icon: Globe, label: "Build me a website", prompt: "Build me a simple one-page website for " },
+  { icon: BarChart3, label: "Analyse a file", prompt: "What kinds of files can you analyse for me, and what can you do with them? Tell me how to upload one." },
+  { icon: CalendarCheck, label: "Exam planner", prompt: "Make me a 2-week exam study planner with daily topics, revision days and short breaks." },
+  { icon: BellRing, label: "WhatsApp reminder", prompt: "Help me set up a daily WhatsApp reminder. Ask me what time and what it should say." },
+  { icon: Globe, label: "Build a website", prompt: "Build me a simple, modern one-page personal portfolio website." },
 ];
 
-/** Clicking a card puts its prompt in the input so the user can finish or send it. */
+/** Clicking a card sends its prompt to the AI straight away. */
 export function StarterCards({ onPick }: { onPick: (prompt: string) => void }) {
   return (
     <div className="grid w-full max-w-[640px] grid-cols-2 gap-2 sm:grid-cols-4">
@@ -34,7 +34,7 @@ export function StarterCards({ onPick }: { onPick: (prompt: string) => void }) {
           className="flex items-center gap-2 rounded-xl border border-border bg-background px-3 py-2.5 text-left text-[13px] font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground cursor-pointer"
         >
           <Icon className="h-4 w-4 shrink-0" />
-          <span className="truncate">{label}</span>
+          <span className="leading-tight">{label}</span>
         </button>
       ))}
     </div>

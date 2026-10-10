@@ -228,8 +228,13 @@ export function WorkspacePanel({
     }
   }, [hasSandboxFiles]);
 
+  // Page shown in the preview when the site links to another of its own pages (null = the main page)
+  const [previewPage, setPreviewPage] = useState<string | null>(null);
+  const previewFrameRef = React.useRef<HTMLIFrameElement>(null);
+
   const previewSrcDoc = React.useMemo(() => {
-    let html = debouncedHtml;
+    const pageHtml = previewPage ? (debouncedFiles[previewPage] ?? debouncedFiles[`/${previewPage}`]) : undefined;
+    let html = pageHtml ?? debouncedHtml;
     const inlined = new Set<string>();
     const resolve = (ref: string) => {
       const path = ref.replace(/^\.?\//, "");
@@ -269,8 +274,48 @@ export function WorkspacePanel({
     if (debouncedJs && !inlined.has("script.js")) {
       html = html.replace(/<\/body>/i, () => `<script>\ntry {\n${debouncedJs}\n} catch(e) { console.error(e); }\n</script>\n</body>`);
     }
+    // Links inside the preview: the page runs from srcDoc, so a plain link would resolve against chat.classgrid.in
+    // and load our own app inside the preview. #anchors scroll in place, links to the project's own pages are
+    // handed to the panel (it swaps the page), real websites open in a new tab, forms never navigate.
+    const navScript = `<script>(function(){
+document.addEventListener('click',function(e){
+  var a=e.target&&e.target.closest?e.target.closest('a[href]'):null;
+  if(!a)return;
+  var href=a.getAttribute('href')||'';
+  if(/^(javascript:|mailto:|tel:)/i.test(href))return;
+  if(href.charAt(0)==='#'){
+    e.preventDefault();
+    var id=decodeURIComponent(href.slice(1));
+    var el=id?(document.getElementById(id)||document.querySelector('[name="'+id.replace(/"/g,'')+'"]')):null;
+    if(el)el.scrollIntoView({behavior:'smooth',block:'start'});else if(!id)window.scrollTo({top:0,behavior:'smooth'});
+    return;
+  }
+  e.preventDefault();
+  var low=href.toLowerCase();
+  if(low.indexOf('http://')===0||low.indexOf('https://')===0||low.indexOf('//')===0){window.open(href,'_blank','noopener');return;}
+  parent.postMessage({__cgPreviewNav:true,href:href},'*');
+},true);
+document.addEventListener('submit',function(e){e.preventDefault();},true);
+})();<\/script>`;
+    html = /<\/body>/i.test(html) ? html.replace(/<\/body>/i, () => `${navScript}
+</body>`) : `${html}
+${navScript}`;
     return html;
-  }, [debouncedHtml, debouncedCss, debouncedJs, debouncedFiles]);
+  }, [debouncedHtml, debouncedCss, debouncedJs, debouncedFiles, previewPage]);
+
+  // A link to another page of the project: show that page if the project has it, otherwise ignore the click
+  React.useEffect(() => {
+    const onMessage = (e: MessageEvent) => {
+      if (!e.data?.__cgPreviewNav || e.source !== previewFrameRef.current?.contentWindow) return;
+      const path = (String(e.data.href || "").split(/[?#]/)[0] ?? "").replace(/^\.?\//, "").replace(/^\/+/, "");
+      if (!path || path === "index.html") { setPreviewPage(null); return; }
+      const candidates = [path, `${path}.html`, `${path.replace(/\/$/, "")}/index.html`];
+      const found = candidates.find((c) => debouncedFiles[c] !== undefined || debouncedFiles[`/${c}`] !== undefined);
+      if (found) setPreviewPage(found);
+    };
+    window.addEventListener("message", onMessage);
+    return () => window.removeEventListener("message", onMessage);
+  }, [debouncedFiles]);
 
   if (!isOpen) return null;
 
@@ -491,8 +536,10 @@ export function WorkspacePanel({
               </div>
             ) : (
               <iframe
+                ref={previewFrameRef}
                 className="w-full h-full border-0"
-                sandbox="allow-scripts allow-same-origin allow-popups allow-forms"
+                // No allow-same-origin: the generated site must not be able to read Classgrid's login or storage
+                sandbox="allow-scripts allow-popups allow-popups-to-escape-sandbox allow-forms"
                 srcDoc={previewSrcDoc}
               />
             )}
