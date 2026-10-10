@@ -11,7 +11,7 @@
 
 import React, { useEffect, useMemo, useRef, useState, useCallback, memo, useContext } from "react";
 import { useParams } from "react-router-dom";
-import { SidebarContext, SidebarTrigger } from "@/components/marketing_ui/sidebar";
+import { SidebarTrigger } from "@/components/marketing_ui/sidebar";
 import hljs from "highlight.js";
 import "highlight.js/styles/github-dark.css";
 import { ExpandedInputModal } from './ExpandedInputModal';
@@ -1729,8 +1729,7 @@ export const INTEGRATIONS_LIST: any[] = [
 export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow", initialMessages, autoFocus = true, readOnly = false }: AskAiPanelProps) {
   const { data: user } = useCurrentUser();
   const session = user ? { user } : null;
-  const sidebarContext = useContext(SidebarContext);
-  const isSidebarCollapsed = sidebarContext?.state === "collapsed";
+  // No SidebarContext subscription here: this whole panel would re-render (every message) on each sidebar toggle.
   const prefersReducedMotion = useReducedMotion();
 
   // Ref to hold latest askQuestion to avoid stale closures in retries
@@ -4095,6 +4094,9 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                     animate={{ opacity: 1 }}
                     transition={prefersReducedMotion ? { duration: 0 } : { duration: 0.16 }}
                     className={cn("flex w-full mb-6", isUser ? "justify-end" : "justify-start")}
+                    // Long chats: the browser skips layout/paint for older messages while they are off-screen
+                    // (e.g. during the sidebar animation). The latest messages are left alone so streaming isn't affected.
+                    style={index < messages.length - 6 ? { contentVisibility: "auto", containIntrinsicSize: "auto 240px" } : undefined}
                   >
                     <div className={cn("flex flex-col gap-1.5 min-w-0", isUser ? "items-end max-w-[75%]" : "w-full")}>
 

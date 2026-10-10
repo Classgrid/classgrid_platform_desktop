@@ -237,9 +237,10 @@ export async function triggerMemoryAgent(sessionId) {
  * Retrieves all non-incognito sessions for a user.
  */
 export async function getSessions(userEmail) {
+    // Only what the chat list needs (sidebar + search palette); the big columns (memory summary etc.) stay in the DB.
     const { data, error } = await primarySupabaseClient
         .from('ai_chat_sessions')
-        .select('*')
+        .select('id, title, created_at, pinned')
         .eq('user_email', userEmail)
         .eq('is_incognito', false)
         .order('created_at', { ascending: false });

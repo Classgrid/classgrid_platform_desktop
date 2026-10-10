@@ -369,6 +369,12 @@ export function AgentNestedMenu({ searchQuery = "" }: { searchQuery?: string }) 
 
   const todaySessions = filteredUnpinnedSessions.filter(s => isToday(s.created_at));
   const previousSessions = filteredUnpinnedSessions.filter(s => !isToday(s.created_at));
+  // Long histories: render the latest chats first and the rest on request, so opening the sidebar stays fast.
+  const PREVIOUS_PAGE = 30;
+  const [showAllPrevious, setShowAllPrevious] = React.useState(false);
+  const filtering = !!(dateFilter && (dateFilter.from || dateFilter.to));
+  const visiblePreviousSessions = showAllPrevious || filtering ? previousSessions : previousSessions.slice(0, PREVIOUS_PAGE);
+  const hiddenPreviousCount = previousSessions.length - visiblePreviousSessions.length;
 
   const navigate = useNavigate();
   const location = useLocation();
@@ -507,7 +513,8 @@ export function AgentNestedMenu({ searchQuery = "" }: { searchQuery?: string }) 
 
   return (
     <>
-      {isCollapsed ? (
+      {/* Both layouts stay mounted and are only shown/hidden, so opening the sidebar never rebuilds the chat list */}
+      <div className={isCollapsed ? "contents" : "hidden"}>
       <SidebarGroup className="pt-1">
         <SidebarGroupContent>
           <SidebarMenu>
@@ -625,7 +632,7 @@ export function AgentNestedMenu({ searchQuery = "" }: { searchQuery?: string }) 
                   <div className="text-xs font-semibold text-slate-500 dark:text-slate-400 mb-2 px-2 mt-4">Previous</div>
                   <SidebarMenu>
                     {!loading && previousSessions.length === 0 && <div className="px-2 text-sm text-slate-400">No previous chats</div>}
-                    {previousSessions.map(renderSessionItem)}
+                    {visiblePreviousSessions.map(renderSessionItem)}
                   </SidebarMenu>
                 </PopoverContent>
               </Popover>
@@ -633,7 +640,8 @@ export function AgentNestedMenu({ searchQuery = "" }: { searchQuery?: string }) 
           </SidebarMenu>
         </SidebarGroupContent>
       </SidebarGroup>
-      ) : (
+      </div>
+      <div className={isCollapsed ? "hidden" : "contents"}>
       <SidebarGroup className="pt-1">
         <div className="px-2 pb-3 mb-3 border-b border-border/50">
           <SidebarMenu>
@@ -762,14 +770,23 @@ export function AgentNestedMenu({ searchQuery = "" }: { searchQuery?: string }) 
               <AccordionContent className="pb-0 pt-1 px-0">
                 <SidebarMenu>
                   {!loading && previousSessions.length === 0 && <div className="px-2 text-xs text-muted-foreground py-2">{dateFilter && (dateFilter.from || dateFilter.to) ? "No chats in this period" : "No previous chats"}</div>}
-                  {previousSessions.map(renderSessionItem)}
+                  {visiblePreviousSessions.map(renderSessionItem)}
+                  {hiddenPreviousCount > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => setShowAllPrevious(true)}
+                      className="w-full px-2 py-1.5 text-left text-xs font-medium text-muted-foreground hover:text-foreground rounded-md hover:bg-muted transition-colors cursor-pointer"
+                    >
+                      Show {hiddenPreviousCount} more
+                    </button>
+                  )}
                 </SidebarMenu>
               </AccordionContent>
             </AccordionItem>
           </Accordion>
         </SidebarGroupContent>
       </SidebarGroup>
-      )}
+      </div>
 
       {/* Share Modal - Exact ChatGPT Replica (Light & Dark Mode Support) */}
       {shareModalOpen && shareSessionId && typeof document !== "undefined" && createPortal(
