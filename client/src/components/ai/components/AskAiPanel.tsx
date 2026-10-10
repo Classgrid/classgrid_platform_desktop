@@ -2654,8 +2654,32 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
   }, []);
 
   // Sync chat when routeSessionId changes
+  const [routeLoadAttempt, setRouteLoadAttempt] = useState(0);
   useEffect(() => {
     if (!routeSessionId || routeSessionId === "schedule" || routeSessionId === "library") return;
+
+    // Each load gets its own abort controller: opening another chat (or leaving) cancels this one,
+    // so a late reply can never overwrite the chat that is open now.
+    const controller = new AbortController();
+    const endpointPrefix = typeof import.meta !== "undefined" && import.meta.env
+      ? (import.meta.env.VITE_API_URL || "https://api.classgrid.in")
+      : "";
+
+    // One request with a 15 s timeout (a stuck connection must not leave the skeleton up forever)
+    const getJson = async (url: string) => {
+      const timeout = new AbortController();
+      const timer = window.setTimeout(() => timeout.abort(), 15000);
+      const onCancel = () => timeout.abort();
+      controller.signal.addEventListener("abort", onCancel);
+      try {
+        const res = await fetch(url, { credentials: "include", signal: timeout.signal });
+        if (!res.ok) throw Object.assign(new Error(`HTTP ${res.status}`), { status: res.status });
+        return await res.json();
+      } finally {
+        window.clearTimeout(timer);
+        controller.signal.removeEventListener("abort", onCancel);
+      }
+    };
 
     const loadRouteSession = async () => {
       setMessages([]);
@@ -2663,19 +2687,24 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
       setIsLoadingChat(true);
       setIsPinned(false);
       try {
-        const endpointPrefix = typeof import.meta !== "undefined" && import.meta.env
-          ? (import.meta.env.VITE_API_URL || "https://api.classgrid.in")
-          : "";
-        const sessionRes = await fetch(`${endpointPrefix}/api/ai/sessions/${routeSessionId}`, { credentials: "include" });
-        if (sessionRes.ok) {
-          const sData = await sessionRes.json();
-          if (sData.session) setIsPinned(!!sData.session.pinned);
+        let data: any = null;
+        for (let attempt = 0; attempt < 2 && !data; attempt++) {
+          try {
+            // Session details and messages load at the same time
+            const [sData, mData] = await Promise.all([
+              getJson(`${endpointPrefix}/api/ai/sessions/${routeSessionId}`).catch(() => null),
+              getJson(`${endpointPrefix}/api/ai/sessions/${routeSessionId}/messages`),
+            ]);
+            if (controller.signal.aborted) return;
+            if (sData?.session) setIsPinned(!!sData.session.pinned);
+            data = mData;
+          } catch (err: any) {
+            if (controller.signal.aborted) return;
+            // Not found / not yours: retrying won't help
+            if (attempt === 1 || err?.status === 403 || err?.status === 404) throw err;
+          }
         }
-
-        const res = await fetch(`${endpointPrefix}/api/ai/sessions/${routeSessionId}/messages`, { credentials: "include" });
-        if (res.ok) {
-          const data = await res.json();
-          const loadedMessages = data.messages.map((m: any) => {
+        const loadedMessages = (data.messages || []).map((m: any) => {
             let content = m.content;
             let thought = undefined;
             let steps = undefined;
@@ -2716,15 +2745,19 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
             };
           });
           setMessages(loadedMessages);
-        }
-      } catch (err) {
+      } catch (err: any) {
+        if (controller.signal.aborted) return;
         console.error("Failed to load chat from route", err);
+        toast.error(err?.status === 403 || err?.status === 404 ? "This chat was not found." : "Couldn't load this chat.", {
+          action: err?.status === 403 || err?.status === 404 ? undefined : { label: "Retry", onClick: () => setRouteLoadAttempt((n) => n + 1) },
+        });
       } finally {
-        setIsLoadingChat(false);
+        if (!controller.signal.aborted) setIsLoadingChat(false);
       }
     };
     loadRouteSession();
-  }, [routeSessionId]);
+    return () => controller.abort();
+  }, [routeSessionId, routeLoadAttempt]);
 
   // Save chat history and session ID to local storage whenever they update
   useEffect(() => {

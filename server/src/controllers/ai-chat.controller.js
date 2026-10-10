@@ -4135,7 +4135,14 @@ export const getChatSession = async (req, res) => {
 export const getChatSessionMessages = async (req, res) => {
     try {
         const { id } = req.params;
-        const messages = await getSessionMessages(id);
+        // Same owner check as getChatSession: only the chat's owner can read its messages
+        const [session, messages] = await Promise.all([getSessionById(id), getSessionMessages(id)]);
+        if (!session) {
+            return res.status(404).json({ error: "Session not found" });
+        }
+        if (session.user_email !== req.user?.email) {
+            return res.status(403).json({ error: "Forbidden" });
+        }
         res.json({ messages });
     } catch (e) {
         console.error("Error getting session messages:", e);
