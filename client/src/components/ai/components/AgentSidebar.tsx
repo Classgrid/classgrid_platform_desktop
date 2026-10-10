@@ -73,8 +73,9 @@ export function AgentNestedMenu({ searchQuery = "" }: { searchQuery?: string }) 
     return () => window.removeEventListener("agent:active-session-changed", handleActiveSessionChanged);
   }, []);
 
-  const fetchSessions = () => {
-    setLoading(true);
+  // silent: refresh in the background without the grey loading bars (used after the first load)
+  const fetchSessions = (silent = false) => {
+    if (!silent) setLoading(true);
     const endpoint = typeof import.meta !== "undefined" && import.meta.env
       ? (import.meta.env.VITE_API_URL || "https://api.classgrid.in") + "/api/ai/sessions"
       : "/api/ai/sessions";
@@ -92,11 +93,23 @@ export function AgentNestedMenu({ searchQuery = "" }: { searchQuery?: string }) 
     fetchSessions();
 
     const handleRefresh = () => {
-      fetchSessions();
+      fetchSessions(true);
+    };
+    // A chat that was just created shows up in the list at once; the background refresh then fills in its real title.
+    const handleCreated = (e: any) => {
+      const id = e.detail?.id;
+      if (!id) return;
+      setSessions((prev) => prev.some((s) => s.id === id)
+        ? prev
+        : [{ id, title: String(e.detail?.title || "New chat").slice(0, 60), created_at: new Date().toISOString(), pinned: false }, ...prev]);
     };
 
     window.addEventListener("agent:refresh-sessions", handleRefresh);
-    return () => window.removeEventListener("agent:refresh-sessions", handleRefresh);
+    window.addEventListener("agent:session-created", handleCreated);
+    return () => {
+      window.removeEventListener("agent:refresh-sessions", handleRefresh);
+      window.removeEventListener("agent:session-created", handleCreated);
+    };
   }, []);
 
   const today = new Date();
@@ -138,7 +151,7 @@ export function AgentNestedMenu({ searchQuery = "" }: { searchQuery?: string }) 
         if (updates.pinned !== undefined) {
           toast.success(updates.pinned ? "Chat pinned successfully!" : "Chat unpinned.");
         }
-        fetchSessions();
+        fetchSessions(true);
       } else {
         const errData = await res.json();
         if (errData.error) {
@@ -164,7 +177,7 @@ export function AgentNestedMenu({ searchQuery = "" }: { searchQuery?: string }) 
         toast.success("Chat deleted");
         setDeleteSessionId(null);
         if (activeSessionId === id) window.dispatchEvent(new Event("agent:new-chat"));
-        fetchSessions();
+        fetchSessions(true);
       } else {
         toast.error("Failed to delete chat");
       }
@@ -688,8 +701,8 @@ export function AgentNestedMenu({ searchQuery = "" }: { searchQuery?: string }) 
           <Accordion defaultValue={["pinned", "today", "previous"]} multiple className="w-full">
             {pinnedSessions.length > 0 && (
               <AccordionItem value="pinned" className="border-none mb-2">
-                <AccordionTrigger className="px-2 py-1.5 hover:no-underline group/acc-trigger flex items-center h-auto min-h-0 border-transparent focus-visible:ring-0 cursor-pointer">
-                  <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Pinned</span>
+                <AccordionTrigger className="px-2 py-1.5 hover:no-underline group/acc-trigger [&_[data-slot=accordion-trigger-icon]]:opacity-0 hover:[&_[data-slot=accordion-trigger-icon]]:opacity-100 flex items-center h-auto min-h-0 border-transparent focus-visible:ring-0 cursor-pointer">
+                  <span className="text-xs font-medium text-muted-foreground/70">Pinned</span>
                 </AccordionTrigger>
                 <AccordionContent className="pb-0 pt-1 px-0">
                   <SidebarMenu>
@@ -699,16 +712,17 @@ export function AgentNestedMenu({ searchQuery = "" }: { searchQuery?: string }) 
               </AccordionItem>
             )}
 
+            {(loading || todaySessions.length > 0 || filtering) && (
             <AccordionItem value="today" className="border-none mb-2">
-              <AccordionTrigger className="px-2 py-1.5 hover:no-underline group/acc-trigger flex items-center h-auto min-h-0 border-transparent focus-visible:ring-0 cursor-pointer justify-between w-full">
-                <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider truncate mr-2">
+              <AccordionTrigger className="px-2 py-1.5 hover:no-underline group/acc-trigger [&_[data-slot=accordion-trigger-icon]]:opacity-0 hover:[&_[data-slot=accordion-trigger-icon]]:opacity-100 flex items-center h-auto min-h-0 border-transparent focus-visible:ring-0 cursor-pointer justify-between w-full">
+                <span className="text-xs font-medium text-muted-foreground/70 truncate mr-2">
                   {dateFilter && (dateFilter.from || dateFilter.to) ? 
                     (dateFilter.to && dateFilter.from && dateFilter.to.getTime() !== dateFilter.from.getTime() 
                       ? `${format(dateFilter.from, 'MMM d')} - ${format(dateFilter.to, 'MMM d')}` 
                       : format(dateFilter.from || dateFilter.to!, 'MMM d')) 
                     : "Today"}
                 </span>
-                <div onClick={(e) => e.stopPropagation()} className="pointer-events-auto shrink-0 flex items-center gap-1 justify-end">
+                <div onClick={(e) => e.stopPropagation()} className={`pointer-events-auto shrink-0 flex items-center gap-1 justify-end transition-opacity ${filtering ? "" : "opacity-0 group-hover/acc-trigger:opacity-100 focus-within:opacity-100"}`}>
                   {dateFilter && (dateFilter.from || dateFilter.to) && (
                     <button 
                       onClick={() => setDateFilter(undefined)}
@@ -740,11 +754,13 @@ export function AgentNestedMenu({ searchQuery = "" }: { searchQuery?: string }) 
                 </SidebarMenu>
               </AccordionContent>
             </AccordionItem>
+            )}
 
+            {(previousSessions.length > 0 || filtering) && (
             <AccordionItem value="previous" className="border-none">
-              <AccordionTrigger className="px-2 py-1.5 hover:no-underline group/acc-trigger flex items-center h-auto min-h-0 border-transparent focus-visible:ring-0 cursor-pointer justify-between w-full">
-                <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider truncate mr-2">Previous</span>
-                <div onClick={(e) => e.stopPropagation()} className="pointer-events-auto shrink-0 flex items-center gap-1 justify-end">
+              <AccordionTrigger className="px-2 py-1.5 hover:no-underline group/acc-trigger [&_[data-slot=accordion-trigger-icon]]:opacity-0 hover:[&_[data-slot=accordion-trigger-icon]]:opacity-100 flex items-center h-auto min-h-0 border-transparent focus-visible:ring-0 cursor-pointer justify-between w-full">
+                <span className="text-xs font-medium text-muted-foreground/70 truncate mr-2">Previous</span>
+                <div onClick={(e) => e.stopPropagation()} className={`pointer-events-auto shrink-0 flex items-center gap-1 justify-end transition-opacity ${filtering ? "" : "opacity-0 group-hover/acc-trigger:opacity-100 focus-within:opacity-100"}`}>
                   {dateFilter && (dateFilter.from || dateFilter.to) && (
                     <button
                       type="button"
@@ -783,6 +799,7 @@ export function AgentNestedMenu({ searchQuery = "" }: { searchQuery?: string }) 
                 </SidebarMenu>
               </AccordionContent>
             </AccordionItem>
+            )}
           </Accordion>
         </SidebarGroupContent>
       </SidebarGroup>

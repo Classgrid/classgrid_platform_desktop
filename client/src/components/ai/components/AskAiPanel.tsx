@@ -131,6 +131,7 @@ import {
 import { cn } from "../utils";
 import { CodeBlockClient } from "./CodeBlockClient";
 import { ModelPicker, useSelectedModel, MODEL_GROUPS, AUTO_MODEL_ID } from "./ModelPicker";
+import { homeGreeting, StarterCards, CapabilityStrip } from "./AgentHomeExtras";
 import { toast } from "sonner";
 import FilePreviewModal, { type FilePreviewSource } from "./FilePreviewModal";
 import { DocsImageViewer } from "./DocsImageViewer";
@@ -3584,6 +3585,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                 window.dispatchEvent(new Event("agent:refresh-sessions"));
               } else if (event.type === "session_info" && event.sessionId) {
                 setSessionId(event.sessionId);
+                window.dispatchEvent(new CustomEvent("agent:session-created", { detail: { id: event.sessionId, title: question } }));
                 window.dispatchEvent(new Event("agent:refresh-sessions"));
               } else if (event.type === "answer") {
                 finalPayload = event;
@@ -4012,10 +4014,10 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
               {/* Greeting */}
               <div className="text-center space-y-1.5">
                 <h2 className="text-xl font-semibold text-foreground tracking-tight">
-                  What do you want to know today?
+                  {homeGreeting(user?.name)}
                 </h2>
                 <p className="text-sm text-muted-foreground">
-                  Your AI Agent
+                  What should we work on today?
                 </p>
               </div>
             </div>
@@ -5522,10 +5524,10 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                   {/* Greeting */}
                   <div className="text-center space-y-1.5">
                     <h2 className="text-xl font-semibold text-foreground tracking-tight">
-                      What do you want to know today?
+                      {homeGreeting(user?.name)}
                     </h2>
                     <p className="text-sm text-muted-foreground">
-                      Your AI Agent
+                      What should we work on today?
                     </p>
                   </div>
 
@@ -5921,7 +5923,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                                   }
                                 }
                               }}
-                              placeholder="Ask a question..."
+                              placeholder="Ask anything, analyse a file, or schedule a task…"
                               autoComplete="off"
                               className={cn(
                                 "w-full resize-none bg-transparent pb-12 pl-4 pr-4 sm:pl-24 pt-4 rounded-2xl text-[16px] sm:text-sm focus:outline-none overflow-y-auto chat-scrollbar leading-relaxed transition-all duration-300",
@@ -5991,7 +5993,13 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                     )}
                   </div>
 
-
+                  {/* Show what the agent can do: starter prompts + the user's connected apps / scheduled tasks */}
+                  {!isTerminated && !readOnly && (
+                    <div className="hidden sm:flex w-full flex-col items-center gap-3">
+                      <StarterCards onPick={(prompt) => setInput(prompt)} />
+                      <CapabilityStrip />
+                    </div>
+                  )}
                 </div>
               </div>
             ) : (
