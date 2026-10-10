@@ -110,7 +110,7 @@ export function MobileTOCButton({ tocItems, activeSection }: ScrollSpyTOCProps) 
         <List className="h-4 w-4" />
       </button>
       {open && (
-        <div className="absolute right-0 top-full mt-1 w-[min(18rem,calc(100vw-1.5rem))] max-h-[60vh] overflow-y-auto overscroll-contain rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#111] shadow-xl z-[200] p-2 text-left">
+        <div className="fixed left-3 right-3 top-14 sm:absolute sm:left-auto sm:right-0 sm:top-full sm:mt-1 sm:w-72 max-h-[60vh] overflow-y-auto overscroll-contain rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#111] shadow-xl z-[200] p-2 text-left">
           {tocItems.map((item) => (
             <a
               key={`mobile-${item.id}`}

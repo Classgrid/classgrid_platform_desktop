@@ -4814,14 +4814,15 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
 
   const panelInput = readOnly ? null : (
     <div className={cn(
-      "px-4 py-4 relative",
+      variant === "full-page" ? "px-1 sm:px-4 py-4 relative" : "px-4 py-4 relative",
       "flex flex-col gap-2"
     )}>
 
       <div className={cn(
         "relative",
         variant === "full-page"
-          ? "absolute bottom-0 left-0 right-0 z-10 pointer-events-none"
+          // Phones: solid page colour behind the input so messages scrolling under it don't show at its sides
+          ? "absolute bottom-0 left-0 right-0 z-10 pointer-events-none max-sm:!bg-[#fafafa] max-sm:dark:!bg-black max-sm:pt-2"
           : "border-t border-border"
       )}>
         <AnimatePresence>
@@ -4926,7 +4927,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
               </AnimatePresence>
               <form onSubmit={handleSubmit} className="space-y-2">
                 <div className={cn(
-                  "group relative w-[80%] mx-auto shadow-sm rounded-2xl border border-border !bg-white dark:!bg-[#0f0f0f] focus-within:border-black/80 dark:focus-within:border-white/50 focus-within:ring-1 focus-within:ring-black/80 dark:focus-within:ring-white/50 transition-all duration-300"
+                  "group relative w-full sm:w-[80%] mx-auto shadow-sm rounded-2xl border border-border !bg-white dark:!bg-[#0f0f0f] focus-within:border-black/80 dark:focus-within:border-white/50 focus-within:ring-1 focus-within:ring-black/80 dark:focus-within:ring-white/50 transition-all duration-300"
                 )}>
                   {/* Hidden file input */}
                   <input
