@@ -491,7 +491,7 @@ export function GroupSettingsModal({ groupId, onClose, onLeaveGroup, onUserClick
                                     </span>
                                     {member.userRole && (
                                       <span className="text-[10px] text-muted-foreground block truncate">
-                                        {member.userRole === 'super_admin' ? 'Super Admin' : member.userRole === 'org_admin' ? 'Org Admin' : member.userRole.charAt(0).toUpperCase() + member.userRole.slice(1)}
+                                        {member.userRole === 'super_admin' ? 'Classgrid Staff' : member.userRole === 'org_admin' ? 'Org Admin' : member.userRole.charAt(0).toUpperCase() + member.userRole.slice(1)}
                                       </span>
                                     )}
                                   </div>
