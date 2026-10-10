@@ -196,9 +196,13 @@ export function initChatSchedulerCron() {
             if (members) {
               const memberIds = members.map(m => m.user_id).filter(id => id !== schedMsg.sender_id && /^[0-9a-fA-F]{24}$/.test(id));
               let userMutes = {};
+              const bellOff = new Set(); // turned off "All Notifications" or "Grid messages"
               if (memberIds.length > 0) {
-                const users = await User.find({ _id: { $in: memberIds } }).select('_id muted_chat_threads').lean();
-                users.forEach(u => { userMutes[u._id.toString()] = u.muted_chat_threads || []; });
+                const users = await User.find({ _id: { $in: memberIds } }).select('_id muted_chat_threads inAppNotifications').lean();
+                users.forEach(u => {
+                  userMutes[u._id.toString()] = u.muted_chat_threads || [];
+                  if (u.inAppNotifications?.global === false || u.inAppNotifications?.chat === false) bellOff.add(u._id.toString());
+                });
               }
               const notificationsToInsert = [];
               members.forEach((m) => {
@@ -219,7 +223,7 @@ export function initChatSchedulerCron() {
                   }
 
                   const mutes = userMutes[m.user_id] || [];
-                  if (!mutes.includes(schedMsg.thread_id)) {
+                  if (!mutes.includes(schedMsg.thread_id) && !bellOff.has(m.user_id)) {
                     notificationsToInsert.push({
                       recipient: m.user_id,
                       type: 'chat',

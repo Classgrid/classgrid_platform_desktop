@@ -66,7 +66,13 @@ export async function dispatchNotification({
     isCall = false // --- Day 17: VoIP Ringing Support ---
 }) {
     try {
-        const effectiveOrgId = orgId || (await User.findById(recipientId).select("organization_id").lean())?.organization_id;
+        const recipientDoc = await User.findById(recipientId).select("organization_id inAppNotifications").lean();
+        // Bell preferences: "All Notifications" off silences everything; "Grid messages" off silences Grid chat
+        const prefs = recipientDoc?.inAppNotifications || {};
+        if (!isCall && (prefs.global === false || (prefs.chat === false && (type === 'chat' || type === 'group_join')))) {
+            return null;
+        }
+        const effectiveOrgId = orgId || recipientDoc?.organization_id;
         if (!effectiveOrgId) {
             console.log('[NotificationService] Dispatch: No organization_id found, proceeding as a system notification.');
         }

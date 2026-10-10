@@ -46,6 +46,7 @@ import React, { useState } from "react";
 import * as Icons from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/lib/apiClient";
+import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/marketing_ui/button";
@@ -93,10 +94,14 @@ export function SidebarNotifications({ settingsPath = "/settings" }: SidebarNoti
   const [tab, setTab] = useState<"inbox" | "archive" | "settings">("inbox");
   
   // Listen for real-time chat updates to instantly refresh the bell
-  useUserChannel(currentUser?._id || null, (payload) => {
-    if (payload.action === 'new_group' || (payload.threadId && payload.message)) {
-      queryClient.invalidateQueries({ queryKey: ["notifications"] });
-    }
+  useUserChannel(currentUser?._id || null, {
+    onThreadUpdated: (payload: any) => {
+      if (payload?.action === 'new_group' || (payload?.threadId && payload?.message)) {
+        // The server saves the bell entry just after this ping, so refresh again shortly after
+        queryClient.invalidateQueries({ queryKey: ["notifications"] });
+        setTimeout(() => queryClient.invalidateQueries({ queryKey: ["notifications"] }), 1500);
+      }
+    },
   });
 
   const { data, isLoading } = useQuery({
@@ -119,7 +124,18 @@ export function SidebarNotifications({ settingsPath = "/settings" }: SidebarNoti
   const updatePreferencesMutation = useMutation({
     mutationFn: async (newPrefs: Record<string, boolean>) => 
       apiClient.put("/api/notifications/preferences", { preferences: newPrefs }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["notification-preferences"] })
+    // Flip the switch at once; roll back if saving fails
+    onMutate: async (newPrefs) => {
+      await queryClient.cancelQueries({ queryKey: ["notification-preferences"] });
+      const prev = queryClient.getQueryData<Record<string, boolean>>(["notification-preferences"]);
+      queryClient.setQueryData(["notification-preferences"], newPrefs);
+      return { prev };
+    },
+    onError: (_e, _v, ctx) => {
+      if (ctx?.prev) queryClient.setQueryData(["notification-preferences"], ctx.prev);
+      toast.error("Couldn't save notification setting");
+    },
+    onSettled: () => queryClient.invalidateQueries({ queryKey: ["notification-preferences"] })
   });
 
   const markReadMutation = useMutation({
@@ -189,12 +205,7 @@ export function SidebarNotifications({ settingsPath = "/settings" }: SidebarNoti
             <h4 className="font-semibold text-sm border-b border-border pb-2">Notification Preferences</h4>
             {[
               { id: "global", label: "All Notifications", desc: "Master switch for all in-app alerts" },
-              { id: "chat", label: "Chat Messages", desc: "New messages and DMs" },
-              { id: "classroom", label: "Classroom Activity", desc: "Posts, comments, and materials" },
-              { id: "meetings", label: "Live Meetings", desc: "Zoom and Google Meet alerts" },
-              { id: "assignments", label: "Assignments & Quizzes", desc: "New tasks and grades" },
-              { id: "attendance", label: "Attendance Updates", desc: "Daily attendance logs" },
-              { id: "fees", label: "Fee Reminders", desc: "Payment dues and receipts" },
+              { id: "chat", label: "Grid messages", desc: "New messages in DMs and groups" },
             ].map((setting) => (
               <div key={setting.id} className="flex items-center justify-between gap-4">
                 <div className="flex-1 space-y-0.5">
@@ -206,12 +217,12 @@ export function SidebarNotifications({ settingsPath = "/settings" }: SidebarNoti
                   </div>
                 </div>
                 <Switch 
-                  checked={preferences ? preferences[setting.id] : true}
+                  checked={preferences ? preferences[setting.id] !== false : true}
                   onCheckedChange={(checked) => {
                     const newPrefs = { ...(preferences || {}), [setting.id]: checked };
                     updatePreferencesMutation.mutate(newPrefs);
                   }}
-                  disabled={updatePreferencesMutation.isPending || (!preferences?.global && setting.id !== "global")}
+                  disabled={preferences?.global === false && setting.id !== "global"}
                 />
               </div>
             ))}

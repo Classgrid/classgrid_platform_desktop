@@ -1535,9 +1535,13 @@ router.post('/:id/messages', isAuthenticated, upload.array('files', 80), async (
         // Fetch user preferences to check mutes
         const memberIds = members.map(m => m.user_id).filter(id => id !== userId && /^[0-9a-fA-F]{24}$/.test(id));
         let userMutes = {};
+        const bellOff = new Set(); // people who turned off "All Notifications" or "Grid messages"
         if (memberIds.length > 0) {
-          const users = await User.find({ _id: { $in: memberIds } }).select('_id muted_chat_threads').lean();
-          users.forEach(u => { userMutes[u._id.toString()] = u.muted_chat_threads || []; });
+          const users = await User.find({ _id: { $in: memberIds } }).select('_id muted_chat_threads inAppNotifications').lean();
+          users.forEach(u => {
+            userMutes[u._id.toString()] = u.muted_chat_threads || [];
+            if (u.inAppNotifications?.global === false || u.inAppNotifications?.chat === false) bellOff.add(u._id.toString());
+          });
         }
 
         const notificationsToInsert = [];
@@ -1562,7 +1566,7 @@ router.post('/:id/messages', isAuthenticated, upload.array('files', 80), async (
 
             // If not muted and not silent, add an in-app notification
             const mutes = userMutes[m.user_id] || [];
-            if (!mutes.includes(threadId) && !(isSilent === 'true' || isSilent === true)) {
+            if (!mutes.includes(threadId) && !bellOff.has(m.user_id) && !(isSilent === 'true' || isSilent === true)) {
               notificationsToInsert.push({
                 recipient: m.user_id,
                 type: 'chat',
