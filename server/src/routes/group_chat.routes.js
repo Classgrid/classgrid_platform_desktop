@@ -57,6 +57,7 @@ import { uploadBufferToR2, deleteFromR2, getPresignedUploadUrl } from "../config
 const router = express.Router();
 const sb = primarySupabaseClient;
 import { logGroupAudit, forgetGroup } from '../services/chat-group-audit.service.js';
+import { notifyChatEvent } from '../services/chat-notify.service.js';
 
 const upload = multer({
   storage: multer.memoryStorage(),
@@ -258,6 +259,12 @@ router.post('/', isAuthenticated, async (req, res) => {
         groupId: group.id
       })
     )).catch(err => console.error('Group broadcast error:', err));
+
+    // Bell: "X added you to <group>" for everyone the creator added
+    allIds.filter(id => id !== userId).forEach(id => notifyChatEvent({
+      actorId: userId, recipientId: id, threadId: thread.id,
+      title: `${req.user.name || 'Someone'} added you to ${group.name || 'a group'}`,
+    }));
 
     if (!is_private && threadOrgId) {
        broadcastToChannel(`org:${threadOrgId}`, 'explore_groups_update', { groupId: group.id }).catch(() => {});
@@ -852,6 +859,12 @@ router.put('/:id/admins/:userId', isAuthenticated, async (req, res) => {
 
     broadcastToChannel(`thread:${thread.id}`, 'thread_updated', { id: thread.id, groupId: req.params.id });
 
+    notifyChatEvent({
+      actorId: myId, recipientId: targetId, threadId: thread.id,
+      title: role === 'admin' ? `You're now an admin of ${group.name || 'a group'}` : `You're no longer an admin of ${group.name || 'a group'}`,
+      message: `Changed by ${req.user.name || 'an admin'}`,
+    });
+
     {
       const target = await User.findById(targetId).select('name').lean().catch(() => null);
       logGroupAudit(req, { groupId: req.params.id, action: role === 'admin' ? 'member_promoted' : 'member_demoted', targetType: 'user', targetId, targetName: target?.name, newValue: { role } });
@@ -929,6 +942,11 @@ router.post('/:id/members', isAuthenticated, async (req, res) => {
       message: JSON.stringify({ type: 'system', text: `${targetUser.name} joined the group` })
     }]).select().single();
 
+    notifyChatEvent({
+      actorId: myId, recipientId: userId, threadId: thread.id,
+      title: `${req.user.name || 'Someone'} added you to ${group.name || 'a group'}`,
+    });
+
     // Broadcast to the added user so they see the group
     broadcastToChannel(`user:${userId}`, 'thread_updated', { id: thread.id, threadId: thread.id, action: 'new_group', groupId: group.id });
     // Broadcast to the group so others update their member list
@@ -979,6 +997,11 @@ router.delete('/:id/members/:userId', isAuthenticated, async (req, res) => {
     }]).select().single();
 
     broadcastToChannel(`user:${targetId}`, 'thread_deleted', { threadId: thread.id, action: 'removed_from_group' });
+    notifyChatEvent({
+      actorId: myId, recipientId: targetId,
+      title: `You were removed from ${group.name || 'a group'}`,
+      message: `Removed by ${req.user.name || 'an admin'}`,
+    });
     broadcastToChannel(`thread:${thread.id}`, 'thread_updated', { id: thread.id, groupId: group.id, action: 'member_removed' });
 
     if (sysMsg) {

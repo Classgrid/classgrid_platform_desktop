@@ -49,6 +49,7 @@ import { isAuthenticated } from '../middleware/auth.middleware.js';
 import User from '../models/User.js';
 import { logGroupAudit } from '../services/chat-group-audit.service.js';
 import { blockStateBetween, dmBlockState } from '../services/chat-block.service.js';
+import { notifyChatEvent, shouldNotifyReaction } from '../services/chat-notify.service.js';
 import Organization from '../models/Organization.js';
 import { primarySupabaseClient } from '../config/supabaseClient.js';
 import { broadcastToChannel } from '../services/realtimeBroadcast.js';
@@ -1536,10 +1537,13 @@ router.post('/:id/messages', isAuthenticated, upload.array('files', 80), async (
         const memberIds = members.map(m => m.user_id).filter(id => id !== userId && /^[0-9a-fA-F]{24}$/.test(id));
         let userMutes = {};
         const bellOff = new Set(); // people who turned off "All Notifications" or "Grid messages"
+        const blockedPair = new Set(); // members on either side of a block with the sender (no @mention alert)
         if (memberIds.length > 0) {
-          const users = await User.find({ _id: { $in: memberIds } }).select('_id muted_chat_threads inAppNotifications').lean();
+          const users = await User.find({ _id: { $in: memberIds } }).select('_id muted_chat_threads inAppNotifications blocked_users').lean();
+          const senderBlocked = new Set(((await User.findById(userId).select('blocked_users').lean())?.blocked_users || []).map(String));
           users.forEach(u => {
             userMutes[u._id.toString()] = u.muted_chat_threads || [];
+            if ((u.blocked_users || []).map(String).includes(userId) || senderBlocked.has(u._id.toString())) blockedPair.add(u._id.toString());
             if (u.inAppNotifications?.global === false || u.inAppNotifications?.chat === false) bellOff.add(u._id.toString());
           });
         }
@@ -1566,11 +1570,13 @@ router.post('/:id/messages', isAuthenticated, upload.array('files', 80), async (
 
             // If not muted and not silent, add an in-app notification
             const mutes = userMutes[m.user_id] || [];
-            if (!mutes.includes(threadId) && !bellOff.has(m.user_id) && !(isSilent === 'true' || isSilent === true)) {
+            // An @mention reaches you even in a muted chat (like WhatsApp), unless there's a block between you
+            const isMentioned = thread.type === 'group' && !blockedPair.has(m.user_id) && (parsedMentionedUsers || []).includes(m.user_id);
+            if ((!mutes.includes(threadId) || isMentioned) && !bellOff.has(m.user_id) && !(isSilent === 'true' || isSilent === true)) {
               notificationsToInsert.push({
                 recipient: m.user_id,
                 type: 'chat',
-                title: thread.type === 'group' ? `New message in ${groupForThread?.name || 'Group'}` : `New message from ${req.user.name || 'User'}`,
+                title: isMentioned ? `${req.user.name || 'Someone'} mentioned you in ${groupForThread?.name || 'a group'}` : thread.type === 'group' ? `New message in ${groupForThread?.name || 'Group'}` : `New message from ${req.user.name || 'User'}`,
                 message: lastMsgText || 'New message',
                 link: `/platform/chat?threadId=${threadId}`,
                 relatedId: threadId,
@@ -2059,6 +2065,18 @@ router.post('/:id/messages/:msgId/reactions', isAuthenticated, async (req, res) 
         user_name: userName,
         emoji,
       });
+      // Bell for the message's author (own messages only, throttled per reactor+message)
+      if (shouldNotifyReaction(userId, msgId)) {
+        sb.from('chat_messages').select('sender_id, message').eq('id', msgId).maybeSingle().then(({ data: target }) => {
+          if (!target?.sender_id || target.sender_id === userId) return;
+          const preview = String(target.message || '').replace(/\s+/g, ' ').slice(0, 60);
+          notifyChatEvent({
+            actorId: userId, recipientId: target.sender_id, threadId,
+            title: `${userName} reacted ${emoji} to your message`,
+            message: preview || 'Your message',
+          });
+        }).catch(() => {});
+      }
     }
 
     // Fetch updated reactions for this message
@@ -2528,6 +2546,21 @@ router.post('/:id/polls', isAuthenticated, async (req, res) => {
       attachments: [],
       reactions: {},
     });
+    // Bell: "New poll in <group>" for the other members
+    (async () => {
+      const [{ data: th }, { data: pollMembers }] = await Promise.all([
+        sb.from('chat_threads').select('type, group_id').eq('id', threadId).maybeSingle(),
+        sb.from('chat_thread_members').select('user_id').eq('thread_id', threadId),
+      ]);
+      let where = req.user.name || 'a chat';
+      if (th?.type === 'group' && th.group_id) {
+        const { data: g } = await sb.from('chat_groups').select('name').eq('id', th.group_id).maybeSingle();
+        where = g?.name || 'a group';
+      }
+      for (const m of pollMembers || []) {
+        notifyChatEvent({ actorId: userId, recipientId: m.user_id, threadId, title: `New poll in ${where}`, message: question });
+      }
+    })().catch(() => {});
     broadcastToChannel(`thread:${threadId}`, 'new_poll', {
       poll: {
         ...poll,
