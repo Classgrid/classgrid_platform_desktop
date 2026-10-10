@@ -1,0 +1,29 @@
+// WhatsApp-style blocking helpers for Grid DMs. The block list lives on the Mongo User (blocked_users).
+import User from "../models/User.js";
+import { primarySupabaseClient } from "../config/supabaseClient.js";
+
+const sb = primarySupabaseClient;
+const isObjectId = (id) => /^[0-9a-fA-F]{24}$/.test(String(id || ""));
+
+/** Block state between two users: iBlocked = a blocked b, blockedMe = b blocked a. */
+export async function blockStateBetween(a, b) {
+    if (!isObjectId(a) || !isObjectId(b)) return { iBlocked: false, blockedMe: false };
+    const [aDoc, bDoc] = await Promise.all([
+        User.findById(a).select("blocked_users").lean(),
+        User.findById(b).select("blocked_users").lean(),
+    ]);
+    return {
+        iBlocked: (aDoc?.blocked_users || []).map(String).includes(String(b)),
+        blockedMe: (bDoc?.blocked_users || []).map(String).includes(String(a)),
+    };
+}
+
+/** For a DM thread, returns { otherId, iBlocked, blockedMe }; null when the thread isn't a DM. */
+export async function dmBlockState(threadId, userId) {
+    const { data: thread } = await sb.from("chat_threads").select("type").eq("id", threadId).maybeSingle();
+    if (thread?.type !== "dm") return null;
+    const { data: members } = await sb.from("chat_thread_members").select("user_id").eq("thread_id", threadId);
+    const otherId = (members || []).map((m) => m.user_id).find((id) => id !== userId);
+    if (!otherId) return null;
+    return { otherId, ...(await blockStateBetween(userId, otherId)) };
+}

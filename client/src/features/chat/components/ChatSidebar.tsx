@@ -43,7 +43,7 @@
  */
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { Search, Plus, Users, MessageSquare, MessageSquarePlus, MoreVertical, Star, CheckSquare, CheckCheck, X, Trash2, BellOff, Check, Image as ImageIcon, Video, FileText, Mic, BarChart2, Paperclip, BadgeCheck, XCircle } from "lucide-react";
+import { Search, Plus, Users, MessageSquare, MessageSquarePlus, MoreVertical, Star, CheckSquare, CheckCheck, X, Trash2, BellOff, Check, Image as ImageIcon, Video, FileText, Mic, BarChart2, Paperclip, BadgeCheck, XCircle, Ban } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import type { ChatThread } from "../services/chatApi";
 
@@ -72,6 +72,8 @@ interface ChatSidebarProps {
   onBulkDelete?: (threadIds: string[]) => void;
   onBulkMute?: (threadIds: string[]) => void;
   onBulkClear?: (threadIds: string[]) => void;
+  onOpenStarredMessages?: () => void;
+  onOpenBlockedContacts?: () => void;
 }
 
 function getInitials(name: string) {
@@ -133,6 +135,7 @@ export function ChatSidebar({
   onBulkDelete,
   onBulkMute,
   onBulkClear,
+  onOpenBlockedContacts,
 }: ChatSidebarProps) {
   const [search, setSearch] = useState("");
   const [isSelectionMode, setIsSelectionMode] = useState(false);
@@ -283,6 +286,12 @@ export function ChatSidebar({
                         <CheckSquare className="w-4 h-4 mr-3" />
                         <span>Select chats</span>
                       </DropdownMenuItem>
+                      {onOpenBlockedContacts && (
+                        <DropdownMenuItem className="cursor-pointer py-2" onClick={onOpenBlockedContacts}>
+                          <Ban className="w-4 h-4 mr-3" />
+                          <span>Blocked contacts</span>
+                        </DropdownMenuItem>
+                      )}
                       <DropdownMenuItem onClick={onMarkAllRead} className="cursor-pointer py-2 text-primary">
                         <CheckCheck className="w-4 h-4 mr-3" />
                         <span>Mark all as read</span>

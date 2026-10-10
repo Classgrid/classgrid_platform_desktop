@@ -44,7 +44,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { MoreVertical, Users, ArrowLeft, User, Search, BellOff, Bell, CheckSquare, Trash2, ShieldAlert, XCircle, Trash, UserPlus, LogOut, Clock, BadgeCheck, Star, X } from "lucide-react";
+import { MoreVertical, Users, ArrowLeft, User, Search, BellOff, Bell, CheckSquare, Trash2, ShieldAlert, XCircle, Trash, UserPlus, LogOut, Clock, BadgeCheck, Star, X, Ban } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { fetchGroupInfo } from "../services/chatApi";
 import type { ChatThread, OrgUser } from "../services/chatApi";
@@ -76,6 +76,7 @@ interface ChatHeaderProps {
   onLeaveGroup?: () => void;
   onAddMember?: () => void;
   isMuted?: boolean;
+  onMuteThread?: () => void;
   onOpenStarredMessages?: () => void;
   onOpenScheduledMessages?: () => void;
   onToggleReplies?: () => void;
@@ -83,6 +84,9 @@ interface ChatHeaderProps {
   onPinThread?: () => void;
   onArchiveThread?: () => void;
   isSearchOpen?: boolean;
+  /** DM only: whether I have blocked the other person, and the toggle. */
+  isBlocked?: boolean;
+  onToggleBlock?: () => void;
 }
 
 function getInitials(name: string) {
@@ -104,7 +108,7 @@ function getAvatarColor(name: string) {
   return avatarColors[Math.abs(hash) % avatarColors.length];
 }
 
-export function ChatHeader({ thread, onBack, onShowInfo, onAvatarClick, onlineUsers, typingUsers, orgUsers, onClearChat, onDeleteChat, onLeaveGroup, onAddMember, onOpenDisappearingModal, onEnterSelectionMode, isMuted, onMuteThread, onOpenStarredMessages, onOpenScheduledMessages, onToggleReplies, onOpenSearch, onPinThread, onArchiveThread, isSearchOpen, searchQuery, onSearchChange }: ChatHeaderProps) {
+export function ChatHeader({ thread, onBack, onShowInfo, onAvatarClick, onlineUsers, typingUsers, orgUsers, onClearChat, onDeleteChat, onLeaveGroup, onAddMember, onOpenDisappearingModal, onEnterSelectionMode, isMuted, onMuteThread, onOpenStarredMessages, onOpenScheduledMessages, onToggleReplies, onOpenSearch, onPinThread, onArchiveThread, isSearchOpen, searchQuery, onSearchChange, isBlocked, onToggleBlock }: ChatHeaderProps) {
   const hasAvatar = thread.avatar && typeof thread.avatar === "string" && thread.avatar.startsWith("http");
 
   const { data: groupInfo } = useQuery({
@@ -337,10 +341,18 @@ export function ChatHeader({ thread, onBack, onShowInfo, onAvatarClick, onlineUs
                 )}
               </>
             ) : (
-              <DropdownMenuItem className="cursor-pointer py-2 text-danger focus:text-danger focus:bg-danger/10" onClick={onDeleteChat}>
-                <Trash className="w-4 h-4 mr-2" />
-                <span>Delete chat</span>
-              </DropdownMenuItem>
+              <>
+                {onToggleBlock && (
+                  <DropdownMenuItem className="cursor-pointer py-2 text-danger focus:text-danger focus:bg-danger/10" onClick={onToggleBlock}>
+                    <Ban className="w-4 h-4 mr-2" />
+                    <span>{isBlocked ? "Unblock" : "Block"}</span>
+                  </DropdownMenuItem>
+                )}
+                <DropdownMenuItem className="cursor-pointer py-2 text-danger focus:text-danger focus:bg-danger/10" onClick={onDeleteChat}>
+                  <Trash className="w-4 h-4 mr-2" />
+                  <span>Delete chat</span>
+                </DropdownMenuItem>
+              </>
             )}
           </DropdownMenuContent>
         </DropdownMenu>

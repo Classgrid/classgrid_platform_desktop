@@ -63,6 +63,49 @@ const upload = multer({
 // ─────────────────────────────────────────────
 // GET list of users in the same organization
 // ─────────────────────────────────────────────
+// ──────────────────────────────────────────────
+// Blocking (Grid DMs, WhatsApp-style). Everything is pushed live over the socket ("user:block_updated")
+// so both people's screens change instantly.
+// GET /blocks → { blocked: [{ id, name, email, profilePicture }], blockedMe: [userId] }
+// POST /blocks/:userId → block · DELETE /blocks/:userId → unblock
+// ──────────────────────────────────────────────
+router.get('/blocks', isAuthenticated, async (req, res) => {
+  try {
+    const myId = req.user._id.toString();
+    const me = await User.findById(myId).select('blocked_users').lean();
+    const ids = (me?.blocked_users || []).filter(id => mongoose.Types.ObjectId.isValid(id));
+    const [blocked, blockedMeDocs] = await Promise.all([
+      ids.length ? User.find({ _id: { $in: ids } }).select('name email profilePicture').lean() : [],
+      User.find({ blocked_users: myId }).select('_id').lean(),
+    ]);
+    res.json({
+      blocked: blocked.map(u => ({ id: u._id.toString(), name: u.name || '', email: u.email || '', profilePicture: u.profilePicture || null })),
+      blockedMe: blockedMeDocs.map(u => u._id.toString()),
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+async function setBlock(req, res, block) {
+  try {
+    const myId = req.user._id.toString();
+    const otherId = String(req.params.userId || '');
+    if (!mongoose.Types.ObjectId.isValid(otherId) || otherId === myId) return res.status(400).json({ error: 'Invalid user' });
+    const other = await User.findById(otherId).select('_id').lean();
+    if (!other) return res.status(404).json({ error: 'User not found' });
+    await User.updateOne({ _id: myId }, block ? { $addToSet: { blocked_users: otherId } } : { $pull: { blocked_users: otherId } });
+    // Live: my own tabs refresh the blocked list; the other person's app hides/shows my presence at once
+    broadcastToChannel(`user:${myId}`, 'block_updated', { userId: otherId, blocked: block, by: 'me' });
+    broadcastToChannel(`user:${otherId}`, 'block_updated', { userId: myId, blocked: block, by: 'them' });
+    res.json({ ok: true, userId: otherId, blocked: block });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+}
+router.post('/blocks/:userId', isAuthenticated, (req, res) => setBlock(req, res, true));
+router.delete('/blocks/:userId', isAuthenticated, (req, res) => setBlock(req, res, false));
+
 router.get('/users', isAuthenticated, async (req, res) => {
   const user = req.user;
   try {
@@ -94,7 +137,7 @@ router.get('/users', isAuthenticated, async (req, res) => {
       return res.json({ users: [] });
     }
 
-    const members = await User.find(query, 'name role email profilePicture profileBanner phoneNumber bio prn hobby _id organization_id metadata lastLoginAt privacySettings')
+    const members = await User.find(query, 'name role email profilePicture profileBanner phoneNumber bio prn hobby _id organization_id metadata lastLoginAt privacySettings blocked_users')
       .populate('organization_id', 'name logo_url')
       .lean();
       
@@ -115,7 +158,9 @@ router.get('/users', isAuthenticated, async (req, res) => {
       const isSelf = m._id.toString() === viewerId;
       const hideEmail = !isSelf && !!m.privacySettings?.hideEmail;
       const hideHobbies = !isSelf && !!m.privacySettings?.hideHobbies;
-      let metadata = m.metadata || {};
+      // This person blocked me: show only their name (no photo, banner, bio, hobby or last seen), like WhatsApp
+      const blockedMe = !isSelf && (m.blocked_users || []).includes(viewerId);
+      let metadata = blockedMe ? {} : (m.metadata || {});
       if (hideHobbies && metadata && typeof metadata === 'object') {
         metadata = { ...metadata };
         delete metadata.hobby;
@@ -124,19 +169,19 @@ router.get('/users', isAuthenticated, async (req, res) => {
       return {
       _id: m._id.toString(),
       name: m.name,
-      email: hideEmail ? null : (m.email || null),
+      email: hideEmail || blockedMe ? null : (m.email || null),
       role: m.role,
-      profilePicture: m.profilePicture || null,
-      profileBanner: m.profileBanner || null,
-      phoneNumber: m.phoneNumber || null,
-      bio: m.bio || null,
+      profilePicture: blockedMe ? null : (m.profilePicture || null),
+      profileBanner: blockedMe ? null : (m.profileBanner || null),
+      phoneNumber: blockedMe ? null : (m.phoneNumber || null),
+      bio: blockedMe ? null : (m.bio || null),
       prn: m.prn || null,
       forumUsername: forumMap[m.email] || null,
       metadata,
       organization_name: m.organization_id?.name || null,
       organization_logo: m.organization_id?.logo_url || null,
-      lastLoginAt: m.lastLoginAt || null,
-      hobby: hideHobbies ? null : (m.hobby || m.metadata?.hobby || null),
+      lastLoginAt: blockedMe ? null : (m.lastLoginAt || null),
+      hobby: hideHobbies || blockedMe ? null : (m.hobby || m.metadata?.hobby || null),
       };
     });
     res.json({ users: formatted });

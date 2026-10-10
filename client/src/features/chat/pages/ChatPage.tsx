@@ -42,7 +42,7 @@
  * â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
  */
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { MessageSquare, Users, Sparkles, Lock, Zap, Paperclip } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -81,6 +81,8 @@ import {
 } from "../services/chatApi";
 import { useUserChannel, useThreadChannel, useOrgChannel } from "../hooks/useRealtimeChat";
 import { useOnlineUsers } from "../context/PresenceContext";
+import { useChatBlocks } from "../hooks/useChatBlocks";
+import { BlockedContactsView } from "../components/BlockedContactsView";
 
 import { ChatSidebar } from "../components/ChatSidebar";
 import { ChatHeader } from "../components/ChatHeader";
@@ -169,6 +171,20 @@ function ChatPageInner() {
     type: data.type
   }));
   const onlineUsers = useOnlineUsers();
+
+  // -- Blocking (live over the user's WebSocket channel) --
+  const [showBlocked, setShowBlocked] = useState(false);
+  const { blocked, blockedIds, hiddenIds, block, unblock } = useChatBlocks(currentUserId, (e) => {
+    // Someone blocked/unblocked me: reload so their profile details are masked/unmasked at once
+    if (e.by === "them") { loadOrgUsers(); loadThreads(); }
+  });
+  // Nobody on either side of a block sees the other online
+  const visibleOnlineUsers = useMemo(
+    () => (hiddenIds.size ? new Set([...onlineUsers].filter((id) => !hiddenIds.has(id))) : onlineUsers),
+    [onlineUsers, hiddenIds]
+  );
+  const activeDmPartnerId = activeThread?.type === "dm" ? activeThread.otherUserId || null : null;
+  const isActiveDmBlocked = !!activeDmPartnerId && blockedIds.has(activeDmPartnerId);
 
   // -- Load Initial Data --
   useEffect(() => {
@@ -837,6 +853,7 @@ function ChatPageInner() {
       if (activeThread && payload.thread_id !== activeThread.id) {
         return;
       }
+      if (payload.sender_id && blockedIds.has(payload.sender_id)) return;
       setMessages((prev) => {
         // If we already have this message (e.g. from optimistic UI), don't duplicate it.
         if (prev.some((msg) => msg.id === payload.id)) {
@@ -885,7 +902,7 @@ function ChatPageInner() {
       );
     },
     onReadReceipt: ({ userId, lastReadAt }) => {
-      if (userId !== currentUserId) {
+      if (userId !== currentUserId && !hiddenIds.has(userId)) {
         setMessages((prev) =>
           prev.map((m) => {
             if (m.sender_id === currentUserId && new Date(m.created_at) <= new Date(lastReadAt)) {
@@ -897,7 +914,7 @@ function ChatPageInner() {
       }
     },
     onTyping: (data) => {
-      if (data.userId === currentUserId) return;
+      if (data.userId === currentUserId || hiddenIds.has(data.userId)) return;
       setTypingUsers((prev) => {
         const next = { ...prev };
         if (!data.isTyping) {
@@ -1040,7 +1057,7 @@ function ChatPageInner() {
       {/* Sidebar - hidden on mobile if thread is active */}
       <div 
         className={`${
-          activeThread ? "hidden md:flex" : "flex"
+          activeThread || showBlocked ? "hidden md:flex" : "flex"
         } w-full md:w-[350px] lg:w-[400px] h-full flex-col min-h-0 border-r border-border bg-card shrink-0 relative overflow-hidden`}
       >
         <ChatSidebar
@@ -1055,7 +1072,8 @@ function ChatPageInner() {
           onBulkClear={handleBulkClear}
           onOpenStarredMessages={() => setChatSideView('starred')}
           isLoading={threadsLoading}
-          onlineUsers={onlineUsers}
+          onlineUsers={visibleOnlineUsers}
+          onOpenBlockedContacts={() => setShowBlocked(true)}
           activeFilter={activeFilter}
           onFilterChange={setActiveFilter}
         />
@@ -1091,12 +1109,28 @@ function ChatPageInner() {
       </div>
 
       {/* Main Conversation Panel */}
-      <div className={`${!activeThread ? "hidden lg:flex" : "flex"} flex-1 flex-col min-w-0 min-h-0 h-full overflow-hidden bg-background relative`}>
+      <div className={`${!activeThread && !showBlocked ? "hidden lg:flex" : "flex"} flex-1 flex-col min-w-0 min-h-0 h-full overflow-hidden bg-background relative`}>
+        {showBlocked && (
+          <BlockedContactsView blocked={blocked} onUnblock={unblock} onClose={() => setShowBlocked(false)} />
+        )}
         {activeThread ? (
           <>
             <ChatHeader
               thread={activeThread}
-              onlineUsers={onlineUsers}
+              onlineUsers={visibleOnlineUsers}
+              isBlocked={isActiveDmBlocked}
+              onToggleBlock={activeDmPartnerId ? () => {
+                const name = activeThread.name || "this contact";
+                if (isActiveDmBlocked) { unblock(activeDmPartnerId, name); return; }
+                setConfirmDialog({
+                  isOpen: true,
+                  title: `Block ${name}?`,
+                  description: "They won't see when you're online or your profile updates, and messages they send won't reach you.",
+                  warningMessage: "They won't be told that you blocked them. You can unblock anytime from Blocked contacts.",
+                  actionLabel: "Block",
+                  onConfirm: () => block({ id: activeDmPartnerId, name: activeThread.name || "", email: "", profilePicture: activeThread.avatar || null }),
+                });
+              } : undefined}
               typingUsers={activeTypingUsers}
               orgUsers={orgUsers}
               searchQuery={chatSearchQuery}
@@ -1317,6 +1351,16 @@ function ChatPageInner() {
                   }
                 }}
               />
+            ) : isActiveDmBlocked ? (
+              <div className="p-4 bg-background border-t border-border flex items-center justify-center gap-1.5 text-sm text-muted-foreground">
+                You blocked this contact.
+                <button
+                  onClick={() => activeDmPartnerId && unblock(activeDmPartnerId, activeThread?.name)}
+                  className="font-medium text-foreground underline underline-offset-2 hover:opacity-80"
+                >
+                  Unblock
+                </button>
+              </div>
             ) : isInputDisabled ? (
               <div className="p-4 bg-background border-t border-border flex items-center justify-center text-sm text-muted-foreground">
                 Only {activeThread?.sendMessagesPolicy === 'admin_faculty' ? 'admins and faculty' : 'admins'} can send messages
@@ -1327,7 +1371,11 @@ function ChatPageInner() {
                 isSending={isSending}
                 replyTo={replyTo}
                 onCancelReply={() => setReplyTo(null)}
-                onTyping={(isTyping, type) => sendTyping && sendTyping(isTyping, type)}
+                onTyping={(isTyping, type) => {
+                  // No typing indicator to anyone on either side of a block
+                  if (activeDmPartnerId && hiddenIds.has(activeDmPartnerId)) return;
+                  sendTyping && sendTyping(isTyping, type);
+                }}
                 onOpenPollModal={() => setIsPollModalOpen(true)}
                 canSchedule={true}
                 currentUserId={currentUserId}

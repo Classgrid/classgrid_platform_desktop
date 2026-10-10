@@ -48,6 +48,7 @@ import { broadcastToChannel } from '../services/realtimeBroadcast.js';
 import Notification from '../models/Notification.js';
 import User from '../models/User.js';
 import redis from '../config/redis.js';
+import { dmBlockState } from '../services/chat-block.service.js';
 
 // Safe Redis unread increment helpers
 async function incrUnreadSafe(userId, threadId) {
@@ -97,6 +98,18 @@ export function initChatSchedulerCron() {
             continue;
           }
 
+          // Blocking: a DM to someone the sender blocked fails; a DM to someone who blocked the sender is
+          // stored for the sender only and never delivered.
+          let blockedRecipientId = null;
+          if (thread.type === 'dm') {
+            const block = await dmBlockState(schedMsg.thread_id, schedMsg.sender_id).catch(() => null);
+            if (block?.iBlocked) {
+              await sb.from('chat_scheduled_messages').update({ status: 'failed' }).eq('id', schedMsg.id);
+              continue;
+            }
+            if (block?.blockedMe) blockedRecipientId = block.otherId;
+          }
+
           // Check if group requires approval
           let msgStatus = 'approved';
           let groupName = 'Group';
@@ -131,6 +144,9 @@ export function initChatSchedulerCron() {
           }).select('id').single();
 
           if (insertErr) throw insertErr;
+          if (blockedRecipientId) {
+            await User.updateOne({ _id: blockedRecipientId }, { $addToSet: { hidden_chat_messages: insertedMsg.id } });
+          }
 
           // Insert attachments if any
           const uploadedAttachments = schedMsg.attachments || [];
@@ -170,7 +186,7 @@ export function initChatSchedulerCron() {
           if (!lastMsgText && actualAttachments.length > 0) {
             lastMsgText = `[FILE] ${actualAttachments.length} files`;
           }
-          await sb.from('chat_threads').update({ last_message: lastMsgText, last_message_at: new Date().toISOString() }).eq('id', schedMsg.thread_id);
+          if (!blockedRecipientId) await sb.from('chat_threads').update({ last_message: lastMsgText, last_message_at: new Date().toISOString() }).eq('id', schedMsg.thread_id);
 
           // Broadcast to connected clients
           broadcastToChannel(`thread:${schedMsg.thread_id}`, 'new_message', broadcastPayload);
@@ -186,6 +202,7 @@ export function initChatSchedulerCron() {
               }
               const notificationsToInsert = [];
               members.forEach((m) => {
+                if (blockedRecipientId && m.user_id === blockedRecipientId) return;
                 // ALWAYS broadcast thread update so sender's sidebar refreshes immediately
                 broadcastToChannel(`user:${m.user_id}`, 'thread_updated', {
                   threadId: schedMsg.thread_id, messageId: insertedMsg.id, message: broadcastPayload

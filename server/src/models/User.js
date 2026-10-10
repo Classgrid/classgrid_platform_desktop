@@ -416,6 +416,13 @@ const userSchema = new mongoose.Schema(
       default: []
     },
 
+    // Blocked users in Grid chat (user ids I blocked): they can't see my online status or profile,
+    // and their messages to me are never delivered (WhatsApp-style)
+    blocked_users: {
+      type: [String],
+      default: []
+    },
+
     // ðŸ—‘ï¸ Cleared Chat Threads (Thread ID -> Cleared At Timestamp)
     cleared_chat_threads: {
       type: Map,
@@ -735,6 +742,7 @@ userSchema.index({ organization_id: 1 });
 userSchema.index({ resetPasswordToken: 1 }, { sparse: true }); // fast reset-token lookups
 userSchema.index({ activationToken: 1 }, { sparse: true }); // fast activation-token lookups
 userSchema.index({ activationCodeHash: 1 }, { sparse: true });
+userSchema.index({ blocked_users: 1 }, { sparse: true }); // "who blocked me" lookups for Grid blocking
 // PRN unique per organization (same PRN cannot exist twice in one org)
 // partialFilterExpression ensures null PRNs don't conflict
 userSchema.index(

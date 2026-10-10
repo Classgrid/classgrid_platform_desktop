@@ -48,6 +48,7 @@ import { randomUUID } from 'crypto';
 import { isAuthenticated } from '../middleware/auth.middleware.js';
 import User from '../models/User.js';
 import { logGroupAudit } from '../services/chat-group-audit.service.js';
+import { blockStateBetween, dmBlockState } from '../services/chat-block.service.js';
 import Organization from '../models/Organization.js';
 import { primarySupabaseClient } from '../config/supabaseClient.js';
 import { broadcastToChannel } from '../services/realtimeBroadcast.js';
@@ -617,8 +618,16 @@ router.get('/', isAuthenticated, async (req, res) => {
     const otherUserIds = otherMembers.map(m => m.user_id).filter(id => /^[0-9a-fA-F]{24}$/.test(id));
     let userMap = {};
     if (otherUserIds.length > 0) {
-      const users = await User.find({ _id: { $in: otherUserIds } }).select('name profilePicture role email phoneNumber bio prn').lean();
-      users.forEach(u => { userMap[u._id.toString()] = u; });
+      const users = await User.find({ _id: { $in: otherUserIds } }).select('name profilePicture role email phoneNumber bio prn blocked_users').lean();
+      const viewerId = req.user._id.toString();
+      users.forEach(u => {
+        // This person blocked me: only their name, no photo / bio / contact details (WhatsApp-style)
+        if ((u.blocked_users || []).includes(viewerId)) {
+          u.profilePicture = null; u.bio = null; u.phoneNumber = null; u.email = null;
+        }
+        delete u.blocked_users;
+        userMap[u._id.toString()] = u;
+      });
     }
 
     // Calculate unread counts per thread — Redis first, SQL fallback
@@ -1068,6 +1077,10 @@ router.post('/dm/:userId', isAuthenticated, async (req, res) => {
       }
     }
 
+    // Existing DMs above still open (so a blocker can unblock from the chat); new ones are refused.
+    const dmBlock = await blockStateBetween(myId, otherId);
+    if (dmBlock.iBlocked) return res.status(403).json({ error: 'You blocked this contact. Unblock to send messages.', code: 'you_blocked' });
+
     // Create new DM thread
     const { data: newThread, error: createErr } = await sb
       .from('chat_threads')
@@ -1093,7 +1106,7 @@ router.post('/dm/:userId', isAuthenticated, async (req, res) => {
 
     // Broadcast to both users so the new DM instantly appears in their sidebars
     broadcastToChannel(`user:${myId}`, 'thread_updated', { threadId: newThread.id, action: 'new_group' });
-    broadcastToChannel(`user:${otherId}`, 'thread_updated', { threadId: newThread.id, action: 'new_group' });
+    if (!dmBlock.blockedMe) broadcastToChannel(`user:${otherId}`, 'thread_updated', { threadId: newThread.id, action: 'new_group' });
 
     res.status(201).json({ thread: newThread, isreturnDocument: 'after' });
   } catch (err) {
@@ -1114,11 +1127,12 @@ router.get('/:id/messages', isAuthenticated, async (req, res) => {
     // Run membership, messages, and user cleared_at query IN PARALLEL
     const [membershipResult, userResult] = await Promise.all([
       validateThreadMembership(userId, threadId),
-      User.findById(userId).select('cleared_chat_threads hidden_chat_messages').lean()
+      User.findById(userId).select('cleared_chat_threads hidden_chat_messages blocked_users').lean()
     ]);
 
     const membership = membershipResult;
     if (!membership) return res.status(403).json({ error: 'Not a member of this thread' });
+    const myBlocked = new Set((userResult?.blocked_users || []).map(String));
 
     const isAdmin = membership.role === 'admin' || req.user.role === 'super_admin' || req.user.role === 'org_admin';
 
@@ -1195,7 +1209,14 @@ router.get('/:id/messages', isAuthenticated, async (req, res) => {
     // Find the latest read timestamp among OTHER users (for DMs)
     let latestOtherReadAt = null;
     if (reads && reads.length > 0) {
-      const otherReads = reads.filter(r => r.user_id !== userId && r.last_read_at);
+      let otherReads = reads.filter(r => r.user_id !== userId && r.last_read_at);
+      // Blocking hides read receipts both ways: no blue ticks from someone who blocked me or whom I blocked.
+      if (otherReads.length > 0) {
+        const ids = otherReads.map(r => r.user_id).filter(id => /^[0-9a-fA-F]{24}$/.test(id));
+        const blockedMeDocs = ids.length ? await User.find({ _id: { $in: ids }, blocked_users: userId }).select('_id').lean() : [];
+        const blockedMe = new Set(blockedMeDocs.map(d => String(d._id)));
+        otherReads = otherReads.filter(r => !blockedMe.has(String(r.user_id)) && !myBlocked.has(String(r.user_id)));
+      }
       if (otherReads.length > 0) {
         // use the most recent read timestamp among peers
         latestOtherReadAt = otherReads.reduce((max, r) => r.last_read_at > max ? r.last_read_at : max, otherReads[0].last_read_at);
@@ -1269,6 +1290,24 @@ router.post('/:id/messages', isAuthenticated, upload.array('files', 80), async (
     const isSuperAdmin = req.user.role === 'super_admin';
     if (!isSuperAdmin && thread.org_id && thread.org_id !== req.user.organization_id?.toString()) {
       return res.status(403).json({ error: 'Organization mismatch' });
+    }
+
+    // Blocking (DMs only): I blocked them → I can't send; they blocked me → saved and shown to me as sent,
+    // but never delivered to them (no inbox update, unread count, notification or message in their chat)
+    let blockedRecipientId = null;
+    if (thread.type === 'dm') {
+      const { data: dmMembers } = await sb.from('chat_thread_members').select('user_id').eq('thread_id', threadId);
+      const otherId = (dmMembers || []).map(m => m.user_id).find(id => id !== userId);
+      if (otherId && /^[0-9a-fA-F]{24}$/.test(otherId)) {
+        const [meDoc, otherDoc] = await Promise.all([
+          User.findById(userId).select('blocked_users').lean(),
+          User.findById(otherId).select('blocked_users').lean(),
+        ]);
+        if ((meDoc?.blocked_users || []).includes(otherId)) {
+          return res.status(403).json({ error: 'You blocked this contact. Unblock to send messages.', code: 'you_blocked' });
+        }
+        if ((otherDoc?.blocked_users || []).includes(userId)) blockedRecipientId = otherId;
+      }
     }
 
     // Check group policies
@@ -1453,11 +1492,16 @@ router.post('/:id/messages', isAuthenticated, upload.array('files', 80), async (
     }
     const msgId = insertedMsg.id;
 
+    // Blocked by the recipient: hide it from them for good (their message list skips hidden messages)
+    if (blockedRecipientId) {
+      await User.updateOne({ _id: blockedRecipientId }, { $addToSet: { hidden_chat_messages: msgId } }).catch(() => {});
+    }
+
     // Calculate last message text for sidebar snippet
     const lastMsgText = buildLastMessagePreview(msgText, files, false, false);
 
-    // Update thread metadata manually
-    sb.from('chat_threads')
+    // Update thread metadata manually (not when blocked: the shared inbox preview would show it to them)
+    if (!blockedRecipientId) sb.from('chat_threads')
       .update({
         last_message: lastMsgText,
         last_message_at: now
@@ -1499,6 +1543,8 @@ router.post('/:id/messages', isAuthenticated, upload.array('files', 80), async (
         const notificationsToInsert = [];
 
         members.forEach((m) => {
+          // Blocked by this member: no sidebar update, unread count or notification for them
+          if (blockedRecipientId && m.user_id === blockedRecipientId) return;
           // Broadcast to ALL members including sender so their sidebar also updates instantly
           broadcastToChannel(`user:${m.user_id}`, 'thread_updated', {
             threadId,
@@ -1552,7 +1598,7 @@ router.post('/:id/messages', isAuthenticated, upload.array('files', 80), async (
     }
 
     // ── Files: update last_message + upload (slower path) ──
-    sb.from('chat_threads')
+    if (!blockedRecipientId) sb.from('chat_threads')
       .update({ last_message: lastMsgText })
       .eq('id', threadId)
       .then(() => {})
@@ -1693,11 +1739,15 @@ router.post('/:id/read', isAuthenticated, async (req, res) => {
     // Reset Redis unread counter for this user+thread (fire-and-forget)
     resetUnread(userId, threadId);
 
-    // Broadcast read receipt (fire-and-forget — don't let Supabase Realtime failures crash this endpoint)
-    broadcastToChannel(`thread:${threadId}`, 'read_receipt', {
-      userId,
-      lastReadAt: new Date().toISOString(),
-    });
+    // Broadcast read receipt (fire-and-forget — don't let Supabase Realtime failures crash this endpoint).
+    // No read receipts between blocked DM partners.
+    const block = await dmBlockState(threadId, userId).catch(() => null);
+    if (!block || (!block.iBlocked && !block.blockedMe)) {
+      broadcastToChannel(`thread:${threadId}`, 'read_receipt', {
+        userId,
+        lastReadAt: new Date().toISOString(),
+      });
+    }
 
     res.json({ ok: true });
   } catch (err) {
@@ -2755,9 +2805,22 @@ router.post('/forward', isAuthenticated, async (req, res) => {
       .eq('user_id', userId)
       .in('thread_id', targetThreadIds);
 
-    const validThreadIds = memberships?.map(m => m.thread_id) || [];
+    let validThreadIds = memberships?.map(m => m.thread_id) || [];
     if (validThreadIds.length === 0) {
       return res.status(403).json({ error: 'Not a member of any of the target threads' });
+    }
+
+    // Blocking: skip DMs with people I blocked; DMs with people who blocked me are sent but never delivered.
+    const silentThreads = new Map(); // threadId -> recipient who blocked me
+    const blockStates = await Promise.all(validThreadIds.map(tid => dmBlockState(tid, userId).catch(() => null)));
+    validThreadIds = validThreadIds.filter((tid, i) => {
+      const st = blockStates[i];
+      if (st?.iBlocked) return false;
+      if (st?.blockedMe) silentThreads.set(tid, st.otherId);
+      return true;
+    });
+    if (validThreadIds.length === 0) {
+      return res.status(403).json({ error: 'You blocked this contact. Unblock to send messages.', code: 'you_blocked' });
     }
 
     // 3. Prepare new messages and attachments
@@ -2834,7 +2897,13 @@ router.post('/forward', isAuthenticated, async (req, res) => {
     const lastMsgAtts = originalAttachments?.filter(a => a.message_id === lastOriginalMsg.id) || [];
     const forwardPreview = buildLastMessagePreview(lastOriginalMsg.message, lastMsgAtts, false, false);
 
-    const updatePromises = validThreadIds.map(tid =>
+    // Hide undelivered copies from recipients who blocked me
+    for (const [tid, recipientId] of silentThreads) {
+      const ids = (insertedMessages || []).filter(m => m.thread_id === tid).map(m => m.id);
+      if (ids.length) await User.updateOne({ _id: recipientId }, { $addToSet: { hidden_chat_messages: { $each: ids } } });
+    }
+
+    const updatePromises = validThreadIds.filter(tid => !silentThreads.has(tid)).map(tid =>
       sb.from('chat_threads')
         .update({
           last_message: forwardPreview,

@@ -190,6 +190,23 @@ export async function fetchOrgUsers(): Promise<OrgUser[]> {
   return res.data.users;
 }
 
+// ── Blocking (WhatsApp-style) ──
+export interface BlockedContact { id: string; name: string; email: string; profilePicture: string | null; }
+export interface ChatBlocks { blocked: BlockedContact[]; blockedMe: string[]; }
+
+export async function fetchBlocks(): Promise<ChatBlocks> {
+  const res = await apiClient.get<ChatBlocks>("/api/org-chat/blocks");
+  return res.data;
+}
+
+export async function blockUser(userId: string) {
+  await apiClient.post(`/api/org-chat/blocks/${userId}`);
+}
+
+export async function unblockUser(userId: string) {
+  await apiClient.delete(`/api/org-chat/blocks/${userId}`);
+}
+
 export async function findOrCreateDM(userId: string) {
   const res = await apiClient.post<{ thread: any; isNew: boolean }>(`/api/threads/dm/${userId}`);
   return res.data;
