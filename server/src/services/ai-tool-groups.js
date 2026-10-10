@@ -158,9 +158,12 @@ const IMAGE_MIME = /^image\//i;
  * @param stickyGroupIds groups used in the last turns of this chat
  * @param role       database role of the user
  * @param hasOrg     the user belongs to an organization
+ * @param email      the user's email; staff-only (internal) tools also need an @classgrid.in address
  */
-export function planToolsForMessage({ allTools, text = "", attachments = [], stickyGroupIds = [], role, hasOrg }) {
-    const staff = isStaffRole(role);
+export function planToolsForMessage({ allTools, text = "", attachments = [], stickyGroupIds = [], role, hasOrg, email }) {
+    // Internal tools (server logs, terminal, support tickets, Classgrid Talk, leads, all organizations) need BOTH
+    // a staff role and an @classgrid.in email, so a staff role alone never unlocks them.
+    const staff = isStaffRole(role) && String(email || "").trim().toLowerCase().endsWith("@classgrid.in");
     const present = new Set(allTools.map(toolName));
 
     // Groups this user may load at all.
