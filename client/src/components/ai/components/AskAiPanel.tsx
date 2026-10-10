@@ -130,7 +130,7 @@ import {
 } from "./ui/accordion";
 import { cn } from "../utils";
 import { CodeBlockClient } from "./CodeBlockClient";
-import { ModelPicker, useSelectedModel } from "./ModelPicker";
+import { ModelPicker, useSelectedModel, MODEL_GROUPS, AUTO_MODEL_ID } from "./ModelPicker";
 import { toast } from "sonner";
 import FilePreviewModal, { type FilePreviewSource } from "./FilePreviewModal";
 import { DocsImageViewer } from "./DocsImageViewer";
@@ -4609,6 +4609,12 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                                 <div className="mt-2 w-full flex justify-start">
                                   <InsufficientCreditsCard
                                     refreshDate={new Date(message.content.split("|")[1] || Date.now())}
+                                    // "ai_quota_exceeded|<reset>|<model>": an expensive model's price was the reason
+                                    modelName={MODEL_GROUPS.flatMap(g => g.models).find(m => m.id === message.content.trim().split("|")[2])?.name}
+                                    onSwitchToAuto={() => {
+                                      setSelectedModel(AUTO_MODEL_ID);
+                                      setMessages(prev => prev.filter(m => m.id !== message.id));
+                                    }}
                                     onDismiss={() => setMessages(prev => prev.filter(m => m.id !== message.id))}
                                     onUpgrade={() => {
                                       setAiHubInitialTab("upgrade");

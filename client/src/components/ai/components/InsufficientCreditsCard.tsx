@@ -7,12 +7,17 @@ export interface InsufficientCreditsCardProps {
   onDismiss: () => void;
   onUpgrade: () => void;
   refreshDate: Date;
+  /** Set when an expensive model (e.g. Claude Opus) is the reason; offers switching to Auto. */
+  modelName?: string;
+  onSwitchToAuto?: () => void;
 }
 
 export function InsufficientCreditsCard({
   onDismiss,
   onUpgrade,
-  refreshDate
+  refreshDate,
+  modelName,
+  onSwitchToAuto
 }: InsufficientCreditsCardProps) {
   const formattedDate = new Intl.DateTimeFormat('en-US', {
     month: 'numeric',
@@ -30,14 +35,23 @@ export function InsufficientCreditsCard({
       <div className="mb-3 flex items-center gap-2">
         <XCircle className="h-4 w-4 text-muted-foreground" />
         <h3 className="text-base font-semibold text-card-foreground">
-          Insufficient AI Credits
+          {modelName ? `Not enough credits for ${modelName}` : "Insufficient AI Credits"}
         </h3>
       </div>
 
       {/* Body Text */}
       <p className="mb-5 text-[15px] leading-relaxed text-muted-foreground">
-        You need at least 3,000 AI Credits to send messages. To continue using the AI now,
-        purchase more AI Credits. Your plan's baseline quota will refresh on {formattedDate}.
+        {modelName ? (
+          <>
+            This model costs more than you have left this week. Switch to <span className="font-medium text-card-foreground">Auto</span> to keep
+            chatting, or purchase AI Credits. Your weekly quota refreshes on {formattedDate}.
+          </>
+        ) : (
+          <>
+            You've used up your AI Credits for now. To continue using the AI, purchase more AI Credits.
+            Your plan's baseline quota will refresh on {formattedDate}.
+          </>
+        )}
       </p>
 
       {/* Buttons */}
@@ -48,6 +62,12 @@ export function InsufficientCreditsCard({
         >
           Dismiss
         </Button>
+
+        {modelName && onSwitchToAuto && (
+          <Button variant="outline" onClick={onSwitchToAuto}>
+            Switch to Auto
+          </Button>
+        )}
 
         <Button
           variant="outline"

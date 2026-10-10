@@ -3631,8 +3631,12 @@ If a tool fails, never show the error message; say only: "Something went wrong o
             if (!check.allowed) {
                 const blocked = await quotaBlocked(check);
                 console.warn(`[AI-TOKEN] Blocked before the model call: estimate=${estimatedCost} (prompt ~${estimatedPromptTokens}) reason="${check.reason}"`);
-                // Same error text the client gets from the 429 response of part 1.
-                res.write(`data: ${JSON.stringify({ type: "error", error: blocked.error === "ai_quota_exceeded" ? `${blocked.error}|${blocked.resetDate}` : blocked.error, message: blocked.message })}\n\n`);
+                // Same error text the client gets from the 429 response of part 1. When a Claude model's price is what
+                // pushed the estimate over, its id is added ("ai_quota_exceeded|<reset>|<model>") so the card can offer Auto.
+                const quotaError = blocked.error === "ai_quota_exceeded"
+                    ? `${blocked.error}|${blocked.resetDate}${isClaudeRequest ? `|${body.selectedModel}` : ""}`
+                    : blocked.error;
+                res.write(`data: ${JSON.stringify({ type: "error", error: quotaError, message: blocked.message })}\n\n`);
                 return;
             }
             tokenSource = check.source;
