@@ -465,6 +465,11 @@ const userSchema = new mongoose.Schema(
       attendanceReportMode: { type: String, enum: ['daily', 'weekly', 'off'], default: 'off' },
     },
 
+    privacySettings: {
+      hideEmail: { type: Boolean, default: false },
+      hideHobbies: { type: Boolean, default: false },
+    },
+
     // ðŸ§ª Demo / Role Sandbox flags
     is_demo: {
       type: Boolean,

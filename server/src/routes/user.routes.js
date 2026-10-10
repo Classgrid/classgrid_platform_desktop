@@ -755,7 +755,7 @@ router.post("/upload-aws-url", isAuthenticated, async (req, res) => {
 // =======================
 router.get("/email-preferences", isAuthenticated, async (req, res) => {
   try {
-    const user = await User.findById(req.user._id).select("emailNotifications").lean();
+    const user = await User.findById(req.user._id).select("emailNotifications privacySettings").lean();
     if (!user) return res.status(404).json({ message: "User not found" });
 
     // Return with safe defaults for users who predate this feature
@@ -771,6 +771,7 @@ router.get("/email-preferences", isAuthenticated, async (req, res) => {
 
     res.json({
       emailNotifications: { ...defaults, ...(user.emailNotifications || {}) },
+      privacySettings: { hideEmail: false, hideHobbies: false, ...(user.privacySettings || {}) },
     });
   } catch (error) {
     console.error("GET EMAIL PREFS ERROR:", error.message);
@@ -799,6 +800,15 @@ router.put("/email-preferences", isAuthenticated, async (req, res) => {
       updates["emailNotifications.digestMode"] = req.body.digestMode;
     }
 
+    if (req.body.privacySettings) {
+      if (typeof req.body.privacySettings.hideEmail === "boolean") {
+        updates["privacySettings.hideEmail"] = req.body.privacySettings.hideEmail;
+      }
+      if (typeof req.body.privacySettings.hideHobbies === "boolean") {
+        updates["privacySettings.hideHobbies"] = req.body.privacySettings.hideHobbies;
+      }
+    }
+
     if (Object.keys(updates).length === 0) {
       return res.status(400).json({ message: "No valid preferences provided" });
     }
@@ -807,13 +817,14 @@ router.put("/email-preferences", isAuthenticated, async (req, res) => {
       req.user._id,
       { $set: updates },
       { returnDocument: "after" }
-    ).select("emailNotifications");
+    ).select("emailNotifications privacySettings");
 
     if (!user) return res.status(404).json({ message: "User not found" });
 
     res.json({
-      message: "Email preferences updated",
+      message: "Preferences updated",
       emailNotifications: user.emailNotifications,
+      privacySettings: user.privacySettings,
     });
   } catch (error) {
     console.error("UPDATE EMAIL PREFS ERROR:", error.message);

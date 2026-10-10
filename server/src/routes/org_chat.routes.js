@@ -87,7 +87,7 @@ router.get('/users', isAuthenticated, async (req, res) => {
       return res.json({ users: [] });
     }
 
-    const members = await User.find(query, 'name role email profilePicture profileBanner phoneNumber bio prn _id organization_id metadata lastLoginAt')
+    const members = await User.find(query, 'name role email profilePicture profileBanner phoneNumber bio prn hobby _id organization_id metadata lastLoginAt privacySettings')
       .populate('organization_id', 'name logo_url')
       .lean();
       
@@ -102,10 +102,22 @@ router.get('/users', isAuthenticated, async (req, res) => {
       });
     }
 
-    const formatted = members.map(m => ({
+    const viewerId = req.user?._id?.toString();
+    const formatted = members.map(m => {
+      // Privacy (Settings → Privacy): a hidden email or hobbies is never sent to other people, only to the owner
+      const isSelf = m._id.toString() === viewerId;
+      const hideEmail = !isSelf && !!m.privacySettings?.hideEmail;
+      const hideHobbies = !isSelf && !!m.privacySettings?.hideHobbies;
+      let metadata = m.metadata || {};
+      if (hideHobbies && metadata && typeof metadata === 'object') {
+        metadata = { ...metadata };
+        delete metadata.hobby;
+        delete metadata.hobbies;
+      }
+      return {
       _id: m._id.toString(),
       name: m.name,
-      email: m.email || null,
+      email: hideEmail ? null : (m.email || null),
       role: m.role,
       profilePicture: m.profilePicture || null,
       profileBanner: m.profileBanner || null,
@@ -113,11 +125,13 @@ router.get('/users', isAuthenticated, async (req, res) => {
       bio: m.bio || null,
       prn: m.prn || null,
       forumUsername: forumMap[m.email] || null,
-      metadata: m.metadata || {},
+      metadata,
       organization_name: m.organization_id?.name || null,
       organization_logo: m.organization_id?.logo_url || null,
       lastLoginAt: m.lastLoginAt || null,
-    }));
+      hobby: hideHobbies ? null : (m.hobby || m.metadata?.hobby || null),
+      };
+    });
     res.json({ users: formatted });
   } catch (err) {
     console.error('Org users fetch error:', err);
