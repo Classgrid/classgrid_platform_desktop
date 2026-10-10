@@ -45,6 +45,7 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { MessageSquare, Users, Sparkles, Lock, Zap, Paperclip } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
+import { useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 import { useCurrentUser } from "@/features/auth/queries/useCurrentUser";
 import {
@@ -171,6 +172,18 @@ function ChatPageInner() {
     type: data.type
   }));
   const onlineUsers = useOnlineUsers();
+
+  // -- Deep link: ?threadId=... (e.g. from a bell notification) opens that chat once threads are loaded --
+  const [searchParams, setSearchParams] = useSearchParams();
+  const linkedThreadId = searchParams.get("threadId");
+  useEffect(() => {
+    if (!linkedThreadId || threads.length === 0) return;
+    const target = threads.find((t) => t.id === linkedThreadId);
+    if (target) setActiveThread(target);
+    const next = new URLSearchParams(searchParams);
+    next.delete("threadId");
+    setSearchParams(next, { replace: true });
+  }, [linkedThreadId, threads]);
 
   // -- Blocking (live over the user's WebSocket channel) --
   const [showBlocked, setShowBlocked] = useState(false);

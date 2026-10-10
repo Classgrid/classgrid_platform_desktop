@@ -180,7 +180,8 @@ export const initSocket = (server) => {
         });
 
         socket.on("join_user_channel", (userId) => {
-            if (!userId) return;
+            // Only your own private channel (it carries your messages, notifications and block events)
+            if (!userId || String(userId) !== String(socket.userId)) return;
             const roomName = `user:${userId}`;
             socket.join(roomName);
         });

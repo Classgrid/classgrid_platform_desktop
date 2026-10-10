@@ -48,7 +48,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/lib/apiClient";
 import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/marketing_ui/button";
 import {
   Popover,
@@ -57,7 +57,7 @@ import {
 } from "@/components/marketing_ui/popover";
 import { Switch } from "@/components/marketing_ui/switch";
 import { useCurrentUser } from "@/features/auth/queries/useCurrentUser";
-import { useUserChannel } from "@/features/chat/hooks/useRealtimeChat";
+import { useUserChannel, useRealtimeChannel } from "@/features/chat/hooks/useRealtimeChat";
 
 function urlBase64ToUint8Array(base64String: string) {
   const padding = '='.repeat((4 - base64String.length % 4) % 4);
@@ -91,6 +91,7 @@ type SidebarNotificationsProps = {
 export function SidebarNotifications({ settingsPath = "/settings" }: SidebarNotificationsProps) {
   const { data: currentUser } = useCurrentUser();
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const [tab, setTab] = useState<"inbox" | "archive" | "settings">("inbox");
   
   // Listen for real-time chat updates to instantly refresh the bell
@@ -101,6 +102,18 @@ export function SidebarNotifications({ settingsPath = "/settings" }: SidebarNoti
         queryClient.invalidateQueries({ queryKey: ["notifications"] });
         setTimeout(() => queryClient.invalidateQueries({ queryKey: ["notifications"] }), 1500);
       }
+    },
+  });
+
+  // Live bell: new notifications arrive and archive moves sync across all my tabs/devices
+  useRealtimeChannel(currentUser?._id ? `user:${currentUser._id}` : null, {
+    notification_new: () => queryClient.invalidateQueries({ queryKey: ["notifications"] }),
+    notifications_read: (p: { id?: string; all?: boolean }) => {
+      queryClient.setQueryData<{ notifications: NotificationItem[]; unreadCount: number }>(["notifications"], (prev) => {
+        if (!prev) return prev;
+        const notifications = prev.notifications.map((n) => (p?.all || n._id === p?.id ? { ...n, isRead: true } : n));
+        return { notifications, unreadCount: notifications.filter((n) => !n.isRead).length };
+      });
     },
   });
 
@@ -249,6 +262,12 @@ export function SidebarNotifications({ settingsPath = "/settings" }: SidebarNoti
                     onClick={() => {
                       if (!n.isRead) markReadMutation.mutate(n._id);
                       if (n.link) {
+                        // chat.classgrid.in: chat notifications open the chat right here, in the same tab
+                        if (window.location.hostname.startsWith("chat.") && (n.type === "chat" || n.type === "group_join" || /^\/(platform\/)?chat(\/|\?|$)/.test(n.link))) {
+                          const q = n.link.includes("?") ? n.link.slice(n.link.indexOf("?")) : "";
+                          navigate(`/agent/chat${q}`);
+                          return;
+                        }
                         let finalLink = n.link;
                         if (finalLink.includes('/platform/chat')) {
                           let chatPath = '/chat';

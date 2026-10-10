@@ -58,7 +58,7 @@ const notificationSchema = new mongoose.Schema({
     },
     type: {
         type: String,
-        enum: ["request_approved", "request_rejected", "new_content", "content_update", "system", "chat", "attendance", "attendance_ended", "assignment", "quiz", "meeting_reminder", "result", "fee_reminder", "fee_assigned", "fee_payment", "quick_leave", "alert", "join_request", "library", "feedback_assigned", "viva_scheduled", "support_update"],
+        enum: ["request_approved", "request_rejected", "new_content", "content_update", "system", "chat", "attendance", "attendance_ended", "assignment", "quiz", "meeting_reminder", "result", "fee_reminder", "fee_assigned", "fee_payment", "quick_leave", "alert", "join_request", "library", "feedback_assigned", "viva_scheduled", "support_update", "group_join"],
         required: true,
     },
     title: {
@@ -94,5 +94,17 @@ const notificationSchema = new mongoose.Schema({
         expires: 432000 // 🗑️ Auto-delete after 5 days (5 * 24 * 60 * 60 seconds)
     },
 });
+
+// Live bell: tell the recipient's open tabs/devices over their Socket.IO user channel that a new
+// notification arrived (covers every Notification.create / insertMany in the codebase).
+function pushLive(docs) {
+    const recipients = [...new Set((docs || []).map((d) => d?.recipient?.toString()).filter(Boolean))];
+    if (!recipients.length) return;
+    import("../services/realtimeBroadcast.js")
+        .then(({ broadcastToChannel }) => recipients.forEach((id) => broadcastToChannel(`user:${id}`, "notification_new", {})))
+        .catch(() => {});
+}
+notificationSchema.post("save", function (doc) { pushLive([doc]); });
+notificationSchema.post("insertMany", function (docs) { pushLive(docs); });
 
 export default mongoose.model("Notification", notificationSchema);

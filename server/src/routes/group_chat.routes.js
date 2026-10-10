@@ -1391,7 +1391,7 @@ router.post('/:id/join-request', isAuthenticated, async (req, res) => {
                 recipientId: admin.user_id,
                 type: 'group_join',
                 title: 'New Join Request',
-                body: `${req.user.name || 'A user'} wants to join "${group.name}".`,
+                message: `${req.user.name || 'A user'} wants to join "${group.name}".`,
                 link: `/chat`, // Usually clicking notification takes them to chat where they can review
              }).catch(console.error); // Catch error so it doesn't block request
           }

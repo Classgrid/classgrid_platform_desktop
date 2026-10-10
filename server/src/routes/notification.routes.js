@@ -47,6 +47,7 @@ import { getChatSb } from "../config/supabaseClient.js";
 import { isAuthenticated } from "../middleware/auth.middleware.js";
 import connectDB from "../../config/db.js";
 import Notification from "../models/Notification.js";
+import { broadcastToChannel } from "../services/realtimeBroadcast.js";
 
 const router = express.Router();
 
@@ -131,13 +132,16 @@ router.get("/", isAuthenticated, async (req, res) => {
 router.put("/:id/read", isAuthenticated, async (req, res) => {
     try {
         const notifId = req.params.id;
+        const myId = req.user._id.toString();
+        // Live: move it to Archive on all my open tabs/devices
+        const announce = () => broadcastToChannel(`user:${myId}`, "notifications_read", { id: notifId });
 
-        // Try MongoDB first (ObjectId format = 24 hex chars)
+        // Try MongoDB first (ObjectId format = 24 hex chars). Only the recipient can mark it read.
         if (/^[0-9a-fA-F]{24}$/.test(notifId)) {
             try {
                 await connectDB();
-                const updated = await Notification.findByIdAndUpdate(notifId, { isRead: true });
-                if (updated) return res.json({ message: "Marked read" });
+                const updated = await Notification.findOneAndUpdate({ _id: notifId, recipient: req.user._id }, { isRead: true });
+                if (updated) { announce(); return res.json({ message: "Marked read" }); }
             } catch (e) { /* fallthrough to Supabase */ }
         }
 
@@ -145,9 +149,11 @@ router.put("/:id/read", isAuthenticated, async (req, res) => {
         const { error } = await sb
             .from('notifications')
             .update({ is_read: true })
-            .eq('id', notifId);
+            .eq('id', notifId)
+            .eq('recipient_id', myId);
 
         if (error) throw error;
+        announce();
         res.json({ message: "Marked read" });
     } catch (err) {
         console.error("Mark read error:", err);
@@ -176,6 +182,7 @@ router.put("/read-all", isAuthenticated, async (req, res) => {
             console.error("[Notifications] Mongo mark-all-read error:", e.message);
         }
 
+        broadcastToChannel(`user:${req.user._id.toString()}`, "notifications_read", { all: true });
         res.json({ message: "All marked read" });
     } catch (err) {
         console.error("Mark all read error:", err);
