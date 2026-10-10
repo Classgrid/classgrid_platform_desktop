@@ -175,7 +175,12 @@ export function GlobalUsersPage() {
       render: (_: any, u: any) => (
         <div className="flex items-center gap-3 py-1">
           {u.profilePicture ? (
-            <img src={u.profilePicture} alt={u.name} className="h-8 w-8 rounded-full object-cover border border-border flex-shrink-0" />
+            <>
+              <img src={u.profilePicture} alt={u.name} className="h-8 w-8 rounded-full object-cover border border-border flex-shrink-0" onError={(e) => { e.currentTarget.style.display = 'none'; e.currentTarget.nextElementSibling?.classList.remove('hidden'); e.currentTarget.nextElementSibling?.classList.add('flex'); }} />
+              <div className="hidden h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary font-medium text-xs">
+                {u.name?.substring(0, 2).toUpperCase() || "??"}
+              </div>
+            </>
           ) : (
             <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary font-medium text-xs">
               {u.name?.substring(0, 2).toUpperCase() || "??"}
@@ -221,7 +226,10 @@ export function GlobalUsersPage() {
       render: (_: any, u: any) => (
         <div className="flex items-center gap-2 max-w-[200px]">
           {u.organizationLogo ? (
-            <img src={u.organizationLogo} alt="org" className="h-5 w-5 rounded object-cover flex-shrink-0" />
+            <>
+              <img src={u.organizationLogo} alt="org" className="h-5 w-5 rounded object-cover flex-shrink-0" onError={(e) => { e.currentTarget.style.display = 'none'; e.currentTarget.nextElementSibling?.classList.remove('hidden'); e.currentTarget.nextElementSibling?.classList.add('flex'); }} />
+              <div className="hidden h-5 w-5 rounded bg-muted/50 border border-border flex-shrink-0" />
+            </>
           ) : (
              <div className="h-5 w-5 rounded bg-muted/50 border border-border flex-shrink-0" />
           )}

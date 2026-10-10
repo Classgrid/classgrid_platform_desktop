@@ -131,10 +131,16 @@ router.get('/users', isAuthenticated, async (req, res) => {
         ]
       };
     } else if (user.organization_id) {
-      // RULE 3: Regular students & teachers ONLY see their own org (No super admins)
-      query = { organization_id: user.organization_id };
+      // RULE 3: Regular students & teachers see their own org + Platform Support (super_admin)
+      query = {
+        $or: [
+          { organization_id: user.organization_id },
+          { role: 'super_admin' }
+        ]
+      };
     } else {
-      return res.json({ users: [] });
+      // Even users without an org should be able to see super admins
+      query = { role: 'super_admin' };
     }
 
     const members = await User.find(query, 'name role email profilePicture profileBanner phoneNumber bio prn hobby _id organization_id metadata lastLoginAt privacySettings blocked_users')
