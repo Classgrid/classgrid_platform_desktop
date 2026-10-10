@@ -1,11 +1,13 @@
 import React, { useEffect, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { RefreshCw, UserPlus, MessageSquare, Activity, Users, Clock, AlertTriangle } from "lucide-react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { getSocket } from "@/lib/socketClient";
+import { UserPlus, MessageSquare, Activity, Users, Clock, AlertTriangle } from "lucide-react";
 import {
   ResponsiveContainer, AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, PieChart, Pie, Cell, LabelList,
 } from "recharts";
 import { apiClient } from "@/lib/apiClient";
 import { Skeleton } from "@/components/marketing_ui/skeleton";
+import { DataTable } from "@/components/marketing_ui/data-table";
 
 // Chat Analytics (super admin only): chat.classgrid.in sign-ups, messages, groups and join requests.
 // Data: GET /api/group-chat/analytics (cached 60 s on the server). Colours are the validated categorical
@@ -20,6 +22,7 @@ type Analytics = {
   pendingJoinRequests: number;
   daily: { day: string; messages: number | null; newUsers: number }[];
   topGroups: { groupId: string; name: string; messages: number }[] | null;
+  recentUsers?: { id: string; name: string; email: string; createdAt: string; photo: string | null }[];
   needsMigration: boolean;
   cached?: boolean;
 };
@@ -91,14 +94,36 @@ function ChartTooltip({ active, payload, label, unit, labelFormat }: any) {
 export function SuperadminChatAnalyticsPage() {
   const dark = useIsDark();
   const c = dark ? PALETTE.dark : PALETTE.light;
-  const [fresh, setFresh] = useState(0);
+  const queryClient = useQueryClient();
+  const [live, setLive] = useState(false);
 
-  const { data, isLoading, isError, error, isFetching, refetch } = useQuery({
-    queryKey: ["chat-analytics", fresh],
-    queryFn: async () => (await apiClient.get("/api/group-chat/analytics", { params: fresh ? { fresh: 1 } : {} })).data as Analytics,
+  // First load over HTTP; after that the server pushes fresh numbers over the socket every 20 s
+  const { data, isLoading, isError, error, refetch } = useQuery({
+    queryKey: ["chat-analytics"],
+    queryFn: async () => (await apiClient.get("/api/group-chat/analytics")).data as Analytics,
     staleTime: 60 * 1000,
-    refetchInterval: 60 * 1000,
+    refetchInterval: live ? false : 60 * 1000, // fallback only while the live connection is down
   });
+
+  useEffect(() => {
+    const socket = getSocket();
+    if (!socket) return;
+    const join = () => socket.emit("join_superadmin_analytics");
+    const onUpdate = (next: Analytics) => { queryClient.setQueryData(["chat-analytics"], next); setLive(true); };
+    const onDown = () => setLive(false);
+    socket.on("chat_analytics:update", onUpdate);
+    socket.on("chat_analytics:error", onDown);
+    socket.on("disconnect", onDown);
+    socket.on("connect", join); // re-join after a reconnect
+    if (socket.connected) join();
+    return () => {
+      socket.emit("leave_superadmin_analytics");
+      socket.off("chat_analytics:update", onUpdate);
+      socket.off("chat_analytics:error", onDown);
+      socket.off("disconnect", onDown);
+      socket.off("connect", join);
+    };
+  }, [queryClient]);
 
   if (isError) {
     const status = (error as any)?.response?.status;
@@ -124,9 +149,10 @@ export function SuperadminChatAnalyticsPage() {
         <p className="text-sm text-muted-foreground">
           chat.classgrid.in activity{data ? ` · updated ${new Date(data.generatedAt).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}` : ""}
         </p>
-        <button onClick={() => setFresh((n) => n + 1)} disabled={isFetching} className="inline-flex h-9 items-center gap-2 rounded-md border border-border px-3 text-sm font-medium hover:bg-accent disabled:opacity-50">
-          <RefreshCw className={`h-4 w-4 ${isFetching ? "animate-spin" : ""}`} /> Refresh
-        </button>
+        <span className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 text-[13px] font-medium ${live ? "border-emerald-500/30 text-emerald-700 dark:text-emerald-400" : "border-border text-muted-foreground"}`}>
+          <span className={`h-2 w-2 rounded-full ${live ? "bg-emerald-500 animate-pulse" : "bg-muted-foreground/50"}`} />
+          {live ? "Live" : "Connecting…"}
+        </span>
       </div>
 
       {data?.needsMigration && (
@@ -252,6 +278,45 @@ export function SuperadminChatAnalyticsPage() {
           </ChartCard>
         </div>
       </div>
+
+      {/* Newest chat.classgrid.in accounts */}
+      <ChartCard title="Recent sign-ups" subtitle="Newest accounts on chat.classgrid.in">
+        <div className={`overflow-x-auto ${data?.recentUsers?.length ? "rounded-md border" : ""}`}>
+          <DataTable
+            className={data?.recentUsers?.length ? "min-w-[640px] rounded-none border-0" : ""}
+            isLoading={isLoading}
+            skeletonLines={5}
+            emptyMessage="No sign-ups yet."
+            rows={data?.recentUsers || []}
+            columns={[
+              {
+                key: "name", header: "Name", width: "w-[34%]",
+                render: (v: string, row: any) => (
+                  <div className="flex min-w-0 items-center gap-2.5">
+                    {row.photo
+                      ? <img src={row.photo} alt="" className="h-7 w-7 shrink-0 rounded-full object-cover" referrerPolicy="no-referrer" />
+                      : <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-muted text-[12px] font-semibold uppercase text-foreground">{(v || row.email || "?").charAt(0)}</span>}
+                    <span className="truncate text-[13px] font-medium text-foreground">{v || "—"}</span>
+                  </div>
+                ),
+              },
+              { key: "email", header: "Email", width: "w-[38%]", render: (v: string) => <span className="block truncate text-[13px] text-muted-foreground" title={v}>{v || "—"}</span> },
+              {
+                key: "createdAt", header: "Joined", width: "w-[28%]",
+                render: (v: string) => {
+                  const d = new Date(v);
+                  return (
+                    <div className="leading-tight">
+                      <div className="text-[13px] font-medium text-foreground">{d.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}</div>
+                      <div className="text-[12px] text-muted-foreground">{d.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}</div>
+                    </div>
+                  );
+                },
+              },
+            ]}
+          />
+        </div>
+      </ChartCard>
 
       {/* Table view of the daily numbers */}
       {data && (

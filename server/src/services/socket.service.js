@@ -54,6 +54,25 @@ import { dispatchNotification } from "./notification.service.js";
 import User from "../models/User.js";
 import accessLogger from "../config/logger.js";
 
+// Live Chat Analytics: push fresh numbers to the "superadmin:analytics" room every 20 s,
+// only while at least one super admin has the page open (the loop stops when the room is empty).
+const ANALYTICS_ROOM = "superadmin:analytics";
+const ANALYTICS_PUSH_MS = 20 * 1000;
+let analyticsTimer = null;
+function startAnalyticsPush() {
+    if (analyticsTimer || !io) return;
+    analyticsTimer = setInterval(async () => {
+        const watchers = io.sockets.adapter.rooms.get(ANALYTICS_ROOM)?.size || 0;
+        if (watchers === 0) { clearInterval(analyticsTimer); analyticsTimer = null; return; }
+        try {
+            const { getChatAnalytics } = await import("./chat-analytics.service.js");
+            io.to(ANALYTICS_ROOM).emit("chat_analytics:update", await getChatAnalytics({ maxAgeMs: ANALYTICS_PUSH_MS - 1000 }));
+        } catch (err) {
+            console.warn("[ChatAnalytics] live push failed:", err.message);
+        }
+    }, ANALYTICS_PUSH_MS);
+}
+
 const JWT_SECRET = process.env.JWT_SECRET || "dev_secret";
 const REDIS_URL = process.env.REDIS_URL; // No default localhost fallback to avoid forcing Redis
 
@@ -192,6 +211,21 @@ export const initSocket = (server) => {
             socket.join("superadmin:support");
             console.log(`Super admin socket ${socket.userId} joined superadmin:support`);
         });
+
+        // Live Chat Analytics (superadmin portal → Analytics): only real super admins may join
+        socket.on("join_superadmin_analytics", async () => {
+            try {
+                const u = await User.findById(socket.userId).select("role").lean();
+                if (u?.role !== "super_admin") return socket.emit("chat_analytics:error", { error: "forbidden" });
+                socket.join(ANALYTICS_ROOM);
+                const { getChatAnalytics } = await import("./chat-analytics.service.js");
+                socket.emit("chat_analytics:update", await getChatAnalytics({ maxAgeMs: ANALYTICS_PUSH_MS }));
+                startAnalyticsPush();
+            } catch (err) {
+                socket.emit("chat_analytics:error", { error: err.message });
+            }
+        });
+        socket.on("leave_superadmin_analytics", () => socket.leave(ANALYTICS_ROOM));
 
         socket.on("join_superadmin_storage", () => {
             socket.join("superadmin:storage");
