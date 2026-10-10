@@ -94,22 +94,30 @@ export function SidebarFooterUser({ role, user }: SidebarFooterUserProps) {
           </div>
         ) : (
           <>
-            <div className="flex items-center gap-2 overflow-hidden flex-1">
-              <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center shrink-0 overflow-hidden">
-                {avatarSrc ? (
-                  <img src={avatarSrc} alt={user.name} className="w-full h-full object-cover" />
-                ) : (
-                  <span className="text-emerald-700 font-bold text-xs">
-                    {user.name?.charAt(0).toUpperCase()}
+            {/* Clicking the avatar or name opens the account menu (no separate three-dot button) */}
+            <SidebarUserMenu
+              user={user}
+              customTrigger={
+                <button
+                  type="button"
+                  className="flex items-center gap-2 overflow-hidden flex-1 min-w-0 rounded-lg px-1 py-1 -mx-1 text-left hover:bg-accent transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring cursor-pointer"
+                >
+                  <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center shrink-0 overflow-hidden">
+                    {avatarSrc ? (
+                      <img src={avatarSrc} alt={user.name} className="w-full h-full object-cover" />
+                    ) : (
+                      <span className="text-emerald-700 font-bold text-xs">
+                        {user.name?.charAt(0).toUpperCase()}
+                      </span>
+                    )}
+                  </div>
+                  <span className="truncate text-sm font-medium">
+                    {user.name}
                   </span>
-                )}
-              </div>
-              <span className="truncate text-sm font-medium">
-                {user.name}
-              </span>
-            </div>
+                </button>
+              }
+            />
             <div className="flex items-center gap-0.5 shrink-0">
-              <SidebarUserMenu user={user} />
               {showNotifications && <SidebarNotifications settingsPath={settingsPath} />}
             </div>
           </>
