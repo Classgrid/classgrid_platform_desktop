@@ -8,6 +8,7 @@
  */
 
 
+import { useEffect, useRef, useState } from "react";
 import { cn } from "../utils";
 import { List } from "lucide-react";
 
@@ -76,6 +77,55 @@ export function ScrollSpyTOC({ tocItems, activeSection }: ScrollSpyTOCProps) {
         </div> 
         */}
       </div>
+    </div>
+  );
+}
+
+/**
+ * The same list of the user's questions as a header button, for screens where the side TOC is hidden
+ * (below xl, including phones). Tap to open, tap a question to jump to it.
+ */
+export function MobileTOCButton({ tocItems, activeSection }: ScrollSpyTOCProps) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const close = (e: PointerEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("pointerdown", close);
+    return () => document.removeEventListener("pointerdown", close);
+  }, [open]);
+
+  if (tocItems.length === 0) return null;
+  return (
+    <div ref={ref} className="relative xl:hidden">
+      <button
+        type="button"
+        aria-label="Your questions in this chat"
+        onClick={() => setOpen((o) => !o)}
+        className="flex h-8 w-8 items-center justify-center rounded-md hover:bg-black/5 dark:hover:bg-white/10 transition-colors cursor-pointer"
+      >
+        <List className="h-4 w-4" />
+      </button>
+      {open && (
+        <div className="absolute right-0 top-full mt-1 w-[min(18rem,calc(100vw-1.5rem))] max-h-[60vh] overflow-y-auto overscroll-contain rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#111] shadow-xl z-[200] p-2 text-left">
+          {tocItems.map((item) => (
+            <a
+              key={`mobile-${item.id}`}
+              href={`#${item.id}`}
+              onClick={() => setOpen(false)}
+              className={cn(
+                "block px-2.5 py-2 text-[14px] rounded-lg truncate hover:bg-slate-100 dark:hover:bg-white/5",
+                activeSection === item.id ? "text-emerald-500 font-medium" : "text-muted-foreground"
+              )}
+            >
+              {item.label}
+            </a>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

@@ -142,7 +142,7 @@ import { ClockBlock } from "./ClockBlock";
 import { WeatherCard, MarketCard, MapCard, CountdownCard } from "./LiveCards";
 import { FollowUps, ActionCards, ReportCard, Timetable, AttendanceCalendar, StudyPlanner } from "./StudyBlocks";
 import { WidgetBlock } from "./WidgetBlock";
-import { ScrollSpyTOC } from "./TOC";
+import { ScrollSpyTOC, MobileTOCButton } from "./TOC";
 import AIThinkingBlock from "./AIThinkingBlock";
 import ReactMarkdown from "react-markdown";
 import remarkMath from "remark-math";
@@ -2957,7 +2957,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
   }, [open]);
 
   useEffect(() => {
-    if (!open || !isMobile) return;
+    if (!open || !isMobile || variant === "full-page") return;
 
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
@@ -5272,7 +5272,8 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                     placeholder={attachedFiles.length > 0 ? "Add a message or send files..." : "Ask a question..."}
                     autoComplete="off"
                     className={cn(
-                      "w-full resize-none bg-transparent pb-12 pl-4 pr-4 sm:pl-24 sm:pr-60 text-[16px] sm:text-sm focus:outline-none overflow-y-auto chat-scrollbar leading-relaxed transition-all duration-300",
+                      "w-full resize-none bg-transparent pb-12 pl-4 pr-4 sm:pl-24 text-[16px] sm:text-sm focus:outline-none overflow-y-auto chat-scrollbar leading-relaxed transition-all duration-300",
+                      showFilesPanel ? "sm:pr-32" : "sm:pr-60",
                       (isRecording || isTranscribing) ? "text-transparent placeholder:text-transparent" : "text-foreground",
                       isExpandedBox ? "min-h-[60vh] max-h-[60vh]" : "min-h-[56px] max-h-[180px]",
                       (pageContext?.path?.startsWith("/docs") || attachedFiles.length > 0) ? "pt-3" : "pt-4 rounded-2xl"
@@ -5377,11 +5378,13 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
         <div className="w-full h-[100dvh] !bg-[#fafafa] dark:!bg-[#000000] flex flex-row overflow-hidden">
           <div className="flex-1 min-w-0 min-h-0 relative flex flex-col h-full overflow-hidden">
             {/* Sidebar toggle and Top Right Header Actions */}
-            <div className="shrink-0 flex items-center justify-between px-6 pt-3 h-14">
+            <div className="shrink-0 flex items-center justify-between px-3 sm:px-6 pt-3 h-14">
               <SidebarTrigger />
 
               {messages.length > 0 && sessionId && sessionId !== "schedule" && sessionId !== "library" && (
                 <div className="flex items-center gap-1 text-muted-foreground">
+                  {/* Questions list (the side list is hidden on smaller screens and phones) */}
+                  <MobileTOCButton tocItems={tocItems} activeSection={activeSection} />
                   {/* Direct Share Button */}
                   <button
                     onClick={handleDirectShare}
@@ -5460,17 +5463,18 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                     </div>
                   </div>
                 </div>
-                <div className="shrink-0 !bg-[#fafafa] dark:!bg-[#000000] pt-2 pb-6 px-4 md:px-8 max-w-4xl w-full mx-auto">
+                <div className="shrink-0 !bg-[#fafafa] dark:!bg-[#000000] pt-2 pb-3 sm:pb-6 px-3 sm:px-4 md:px-8 max-w-4xl w-full mx-auto">
                   {panelInput}
                 </div>
               </>
             ) : emptyState ? (
               /* â”€â”€ PostHog-style: everything in one centered block â”€â”€ */
-              <div className="flex-1 flex flex-col items-center justify-center px-4 md:px-8">
-                <div className="max-w-[68rem] w-full flex flex-col items-center gap-6">
+              <div className="flex-1 min-h-0 flex flex-col items-center justify-center px-4 md:px-8 pb-3 sm:pb-0">
+                {/* Phones: greeting in the middle, input pinned to the bottom (like ChatGPT); desktop: one centered block */}
+                <div className="max-w-[68rem] w-full flex flex-col items-center gap-6 flex-1 sm:flex-none">
 
                   {/* Logo */}
-                  <img src="/logo.png" alt="Classgrid" className="h-12 w-12 object-contain" />
+                  <img src="/logo.png" alt="Classgrid" className="h-12 w-12 object-contain mt-auto sm:mt-0" />
 
                   {/* Greeting */}
                   <div className="text-center space-y-1.5">
@@ -5483,7 +5487,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                   </div>
 
                   {/* Inline input form â€” not using panelInput */}
-                  <div className="w-full max-w-[640px]">
+                  <div className="w-full max-w-[640px] mt-auto sm:mt-0">
                     {isTerminated ? (
                       <div className="rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-center text-sm font-medium text-red-500">
                         <p>This conversation has been terminated.</p>
@@ -5877,7 +5881,8 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                               placeholder="Ask a question..."
                               autoComplete="off"
                               className={cn(
-                                "w-full resize-none bg-transparent pb-12 pl-4 pr-4 sm:pl-24 sm:pr-60 pt-4 rounded-2xl text-[16px] sm:text-sm focus:outline-none overflow-y-auto chat-scrollbar leading-relaxed transition-all duration-300",
+                                "w-full resize-none bg-transparent pb-12 pl-4 pr-4 sm:pl-24 pt-4 rounded-2xl text-[16px] sm:text-sm focus:outline-none overflow-y-auto chat-scrollbar leading-relaxed transition-all duration-300",
+                                showFilesPanel ? "sm:pr-32" : "sm:pr-60",
                                 (isRecording || isTranscribing) ? "text-transparent placeholder:text-transparent" : "text-foreground",
                                 isExpandedBox ? "min-h-[60vh] max-h-[60vh]" : "min-h-[56px] max-h-[180px]"
                               )}
@@ -5955,7 +5960,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                 >
                   {panelChat}
                 </div>
-                <div className="shrink-0 !bg-[#fafafa] dark:!bg-[#000000] pt-2 pb-6 px-4 md:px-8 max-w-4xl w-full mx-auto">
+                <div className="shrink-0 !bg-[#fafafa] dark:!bg-[#000000] pt-2 pb-3 sm:pb-6 px-3 sm:px-4 md:px-8 max-w-4xl w-full mx-auto">
                   {panelInput}
                 </div>
               </>
@@ -6035,7 +6040,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
           MOBILE: Fixed bottom-sheet (unchanged from production)
           â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */}
       <AnimatePresence>
-        {open && isMobile ? (
+        {open && isMobile && variant !== "full-page" ? (
           <motion.button
             key="ask-ai-overlay"
             type="button"
@@ -6050,7 +6055,8 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
         ) : null}
       </AnimatePresence>
 
-      {isMobile && (
+      {/* The full-page chat has its own phone layout; this sheet is only for the small Ask AI panel */}
+      {isMobile && variant !== "full-page" && (
         <motion.aside
           aria-hidden={!open}
           className={cn(
