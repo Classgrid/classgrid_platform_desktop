@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Download, X, ChevronLeft, ChevronRight, ShieldCheck } from "lucide-react";
+import { Download, X, ChevronLeft, ChevronRight } from "lucide-react";
 import { apiClient } from "@/lib/apiClient";
 import { DataTable } from "@/components/marketing_ui/data-table";
 import { ResponsiveSelect } from "@/components/marketing_ui/responsive-select";
@@ -203,21 +203,6 @@ export function GroupAuditLogsPage() {
 
   return (
     <div className="mx-auto w-full max-w-[1400px] p-4 sm:p-6 lg:p-8">
-      <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 className="flex items-center gap-2 text-2xl font-semibold tracking-tight text-foreground"><ShieldCheck className="h-6 w-6" /> Audit Logs</h1>
-          <p className="mt-1 text-sm text-muted-foreground">Everything that happens in your groups: who did it, when, and from where.</p>
-        </div>
-        <button
-          type="button"
-          onClick={exportCsv}
-          disabled={exporting || total === 0}
-          className="inline-flex h-9 items-center gap-2 rounded-md border border-border px-3 text-sm font-medium hover:bg-accent disabled:opacity-50"
-        >
-          <Download className="h-4 w-4" /> {exporting ? "Exporting…" : "Export CSV"}
-        </button>
-      </div>
-
       <SuperadminFilterBar searchQuery={searchInput} onSearchChange={setSearchInput} searchPlaceholder="Search name, group, action…">
         <div className="w-[180px]">
           <ResponsiveSelect className="flex h-9 w-full items-center rounded-md border border-border bg-transparent px-3 py-1 text-sm shadow-sm transition-colors hover:bg-accent/50" value={groupId} onChange={(e: any) => setGroupId(e.target.value)}>
@@ -244,6 +229,14 @@ export function GroupAuditLogsPage() {
             )}
           </div>
         ))}
+        <button
+          type="button"
+          onClick={exportCsv}
+          disabled={exporting || total === 0}
+          className="inline-flex h-9 shrink-0 items-center gap-2 rounded-md border border-border px-3 text-sm font-medium hover:bg-accent disabled:opacity-50"
+        >
+          <Download className="h-4 w-4" /> {exporting ? "Exporting…" : "Export CSV"}
+        </button>
       </SuperadminFilterBar>
 
       {isError ? (
@@ -253,9 +246,9 @@ export function GroupAuditLogsPage() {
           <button onClick={() => refetch()} className="mt-3 rounded-md border border-border px-3 py-1.5 text-sm hover:bg-accent">Retry</button>
         </div>
       ) : (
-        <div className="overflow-x-auto">
+        <div className={`overflow-x-auto ${data?.logs?.length ? "rounded-md border bg-card" : ""}`}>
           <DataTable
-            className="min-w-[1100px]"
+            className={data?.logs?.length ? "min-w-[1100px] rounded-none border-0" : ""}
             columns={columns}
             rows={data?.logs || []}
             isLoading={isLoading}
