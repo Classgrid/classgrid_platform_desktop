@@ -1012,7 +1012,8 @@ const preprocessLaTeX = (content: string) => {
 // Some models draft whole code blocks (e.g. widget cards) in their thinking. The thinking panel shows one
 // "Drafting code…" line for each such stretch instead of a wall of raw code.
 const DRAFTING_LINE = "✏️ Drafting code…";
-const TAG_OR_CSS_RE = /^\s*(?:<\/?[a-z][\w-]*[\s>/]|[.#]?[\w-]+(?:\s*[\w.#:-]+)*\s*\{[^}]*:)/i;
+// Single, non-nested repeats only: a nested one like ([\w-]+(\s*[\w-]+)*) backtracks forever on plain sentences and froze the page
+const TAG_OR_CSS_RE = /^\s*(?:<\/?[a-z][\w-]*[\s>/]|[.#]?[\w-][\w\s.#:,>+~*="'()[\]-]*\{[^}]*:)/i;
 const JS_START_RE = /^\s*(?:const|let|var|function|document\.|return|if\s*\(|for\s*\(|\w+\.\w+\s*=)/;
 const CLOSERS_RE = /^\s*[})\];,]+\s*$/;
 function hideCodeInThought(text: string): string {
