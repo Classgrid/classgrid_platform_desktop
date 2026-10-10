@@ -1,7 +1,7 @@
 // CLASSGRID USES CLOUDFLARE USAGE TO CALCULATE TOKENS, NOT GPT-TOKENIZER (WHICH IS ONLY A FALLBACK)
 /*
  * =========================================================================================
- * 🚨 CRITICAL AI & SYSTEM RULE 🚨
+ * ðŸš¨ CRITICAL AI & SYSTEM RULE ðŸš¨
  * NO FRONTEND GITHUB ACTIONS: NEVER create yaml files that build/deploy the frontend to EC2.
  * The frontend is hosted 100% on Vercel. EC2 is only for the backend.
  * =========================================================================================
@@ -17,32 +17,33 @@
  */
 
 /*
- * ─────────────────────────────────────────────────────────
- * 🚨 CRITICAL AI AND SYSTEM RULES 🚨
+ * â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+ * ðŸš¨ CRITICAL AI AND SYSTEM RULES ðŸš¨
  * 1. NEVER DELETE ANY ENVIRONMENT VARIABLES.
  * 2. LOCALHOST TESTING IS STRICTLY BANNED. NO AI WILL EVER TRY TO WORK LOCALLY.
  * 3. THIS REPO IS PRODUCTION-FIRST. DO NOT TOUCH OR REMOVE KEYS.
- * ─────────────────────────────────────────────────────────
+ * â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
  */
 
 /*
- * ─────────────────────────────────────────────────────────
- * 🚨 NAMING CONVENTION RULE 🚨
+ * â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+ * ðŸš¨ NAMING CONVENTION RULE ðŸš¨
  * 1. "CLASSGRID PLATFORM" is strictly the REPO NAME.
  * 2. "CLASSGRID ERP" is the actual PRODUCT NAME.
  * 3. NEVER use "Classgrid Platform" anywhere in the frontend UI or user-facing text.
- * ─────────────────────────────────────────────────────────
+ * â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
  */
 
 /*
- * ─────────────────────────────────────────────────────────
- * 🚨 HOSTING & ARCHITECTURE RULE 🚨
+ * â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+ * ðŸš¨ HOSTING & ARCHITECTURE RULE ðŸš¨
  * 1. BACKEND IS HOSTED ON AWS EC2 AT API.CLASSGRID.IN
  * 2. FRONTEND IS HOSTED ON VERCEL
- * ─────────────────────────────────────────────────────────
+ * â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
  */
 
 import { useState, useEffect, useCallback, useRef } from "react";
+import { MessageSquare, Users, Sparkles, Lock, Zap, Paperclip } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { useCurrentUser } from "@/features/auth/queries/useCurrentUser";
@@ -202,7 +203,7 @@ function ChatPageInner() {
 
     if (failedIds.length > 0) {
       if (type === 'everyone') {
-        // Rollback optimistic update for failed messages — restore them
+        // Rollback optimistic update for failed messages â€” restore them
         setMessages(prev => prev.map(m => {
           if (failedIds.includes(m.id)) {
             return { ...m, is_deleted: false, message: m.message }; 
@@ -1350,14 +1351,54 @@ function ChatPageInner() {
             </div>
           </>
         ) : (
-          <div className="hidden lg:flex flex-1 flex-col items-center justify-center text-center p-8">
-            <div className="w-24 h-24 bg-accent rounded-full flex items-center justify-center mb-6">
-              <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-muted-foreground"><path d="m3 21 1.9-5.7a8.5 8.5 0 1 1 3.8 3.8z"/></svg>
+          <div className="hidden lg:flex flex-1 flex-col items-center justify-center text-center p-8 bg-background relative overflow-hidden">
+            <style>{`
+              @keyframes cg-float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+              @keyframes cg-grid-in { from { opacity: 0; } to { opacity: 1; } }
+            `}</style>
+            {/* Dot grid (a nod to "grid"), fading out from the centre */}
+            <div
+              aria-hidden
+              className="absolute inset-0 pointer-events-none text-black/[0.22] dark:text-white/[0.3] motion-safe:animate-[cg-grid-in_1.2s_ease-out]"
+              style={{
+                backgroundImage: "radial-gradient(currentColor 1.5px, transparent 1.5px)",
+                backgroundSize: "24px 24px",
+                maskImage: "radial-gradient(ellipse at center, black 25%, transparent 72%)",
+                WebkitMaskImage: "radial-gradient(ellipse at center, black 25%, transparent 72%)",
+              }}
+            />
+
+            <div className="relative flex flex-col items-center">
+              {/* Classgrid grid logo in black (white in dark mode) on a softly floating tile */}
+              <div className="motion-safe:animate-[cg-float_6s_ease-in-out_infinite]">
+                <div className="flex h-24 w-24 items-center justify-center rounded-3xl border border-black/10 bg-background shadow-[0_12px_40px_-12px_rgba(0,0,0,0.25)] dark:border-white/15 dark:shadow-[0_12px_40px_-12px_rgba(0,0,0,0.9)]">
+                  <img src="/logo.png" alt="Classgrid" className="h-14 w-14 object-contain brightness-0 dark:invert" draggable={false} />
+                </div>
+              </div>
+
+              <h2 className="mt-8 text-[26px] font-semibold tracking-tight text-foreground">
+                Pick up where you left off
+              </h2>
+              <p className="mt-3 max-w-[400px] text-[15px] leading-relaxed text-muted-foreground">
+                Choose a conversation on the left, or start a new one. Everything stays in sync on every device.
+              </p>
+
+              <div className="mt-8 flex flex-wrap items-center justify-center gap-2.5">
+                {[
+                  { icon: Zap, label: "Instant" },
+                  { icon: Paperclip, label: "Files & media" },
+                  { icon: Users, label: "Groups" },
+                ].map(({ icon: Icon, label }) => (
+                  <span
+                    key={label}
+                    className="inline-flex items-center gap-1.5 rounded-full border border-black/10 bg-background px-3.5 py-1.5 text-[13px] font-medium text-foreground dark:border-white/15"
+                  >
+                    <Icon className="h-3.5 w-3.5" strokeWidth={2} />
+                    {label}
+                  </span>
+                ))}
+              </div>
             </div>
-            <h2 className="text-2xl font-bold text-foreground">Classgrid Chat</h2>
-            <p className="text-muted-foreground mt-2 max-w-md">
-              Send and receive messages without keeping your phone online. Use Classgrid on up to 4 linked devices and 1 phone at the same time.
-            </p>
           </div>
         )}
       </div>
