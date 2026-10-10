@@ -638,7 +638,7 @@ export const getMcpTools = () => [
   },
   {
     name: 'create_schedule',
-    description: 'Schedule an email AND WhatsApp reminder/task for a specific date and time, once or repeating (daily, weekly or chosen weekdays until an end date: use ONE repeating schedule for routines, never many one-time ones). Use this when the user mentions a future event, exam, task, or deadline they want to be reminded about. You MUST schedule BOTH an email AND a WhatsApp message every time. CRITICAL RULES: 1. The content MUST be different! Email must be highly professional and formatted in HTML. WhatsApp must be very short, friendly, and plain text (use emojis). 2. The title MUST be a very short 2-4 word summary (e.g. "Fee Reminder", "Gmail Review"). Do NOT make the title a long sentence. Put all the highly specific details and context into the description and summary instead. You MUST also provide a summary and action_info for the schedule card display.',
+    description: 'Schedule an email AND WhatsApp reminder/task for a specific date and time, once or repeating (daily, weekly or chosen weekdays until an end date: use ONE repeating schedule for routines, never many one-time ones). Use this when the user mentions a future event, exam, task, or deadline they want to be reminded about. The email is always sent; WhatsApp is OPTIONAL (users have a weekly WhatsApp limit): add whatsapp_phone_number and whatsapp_message only when the user asks for WhatsApp or for an important one-time reminder, and use email only for repeating schedules (daily/weekly/custom) unless the user asks for WhatsApp. If the WhatsApp limit is reached the schedule is still created as email only. CRITICAL RULES: 1. When both are sent the content MUST be different! Email must be highly professional and formatted in HTML. WhatsApp must be very short, friendly, and plain text (use emojis). 2. The title MUST be a very short 2-4 word summary (e.g. "Fee Reminder", "Gmail Review"). Do NOT make the title a long sentence. Put all the highly specific details and context into the description and summary instead. You MUST also provide a summary and action_info for the schedule card display.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -654,10 +654,10 @@ export const getMcpTools = () => [
         repeat_timezone: { type: 'string', description: 'IANA time zone the repeat days are counted in (default "Asia/Kolkata").' },
         email_subject: { type: 'string', description: 'Subject line for the email that will be sent' },
         email_body: { type: 'string', description: 'Full beautiful HTML email body with inline CSS to send at scheduled time' },
-        whatsapp_phone_number: { type: 'string', description: 'The recipient phone number with country code for WhatsApp (e.g. 919876543210)' },
-        whatsapp_message: { type: 'string', description: 'The text message to send on WhatsApp' }
+        whatsapp_phone_number: { type: 'string', description: 'Optional. The recipient phone number with country code for WhatsApp (e.g. 919876543210). Leave out for an email-only schedule.' },
+        whatsapp_message: { type: 'string', description: 'Optional. The short text message to send on WhatsApp. Leave out for an email-only schedule.' }
       },
-      required: ['title', 'scheduled_at', 'summary', 'action_info', 'email_subject', 'email_body', 'whatsapp_phone_number', 'whatsapp_message']
+      required: ['title', 'scheduled_at', 'summary', 'action_info', 'email_subject', 'email_body']
     }
   },
   {
@@ -1892,23 +1892,34 @@ export const handleToolCall = async (name, args, context = {}) => {
           return { content: [{ type: 'text', text: `Failed: ${rep.error}. Nothing was scheduled.` }] };
         }
 
-        if (args.whatsapp_phone_number || args.whatsapp_message) {
+        // WhatsApp is optional. When it can't be sent (not signed in, or over the weekly limit) the schedule is
+        // still created, as email only, and the AI is told why so it can tell the user.
+        let whatsappNote = '';
+        const dropWhatsapp = (why) => {
+          whatsappNote = ` WhatsApp was NOT added: ${why} The reminder will still arrive by email. Tell the user this in one short line.`;
+          delete args.whatsapp_phone_number;
+          delete args.whatsapp_message;
+        };
+        if (args.whatsapp_phone_number && args.whatsapp_message) {
           if (!user) {
-            return { content: [{ type: 'text', text: `Failed: Sign in to schedule WhatsApp messages.` }] };
-          }
-          const { checkWhatsappLimit, normalizeWhatsappNumber } = await import('../services/ai-feature-limits.js');
-          const { allowed, limit, used } = await checkWhatsappLimit(user, { includeUpcomingRepeats: rep.repeat !== 'once' });
-          if (!allowed) {
-             return { content: [{ type: 'text', text: `Failed: This user has used ${used} of ${limit} WhatsApp messages allowed in the last 7 days (the limit is set by Classgrid admins). Nothing was scheduled. Tell the user exactly this; do not guess other reasons.` }] };
-          }
-          // A repeat must fit its first week of WhatsApp messages into what is left of the weekly limit
-          if (rep.repeat !== 'once') {
-            const weekRuns = runsWithin(rep, rep.first, 7 * 24 * 60 * 60 * 1000);
-            if (used + weekRuns > limit) {
-              return { content: [{ type: 'text', text: `Failed: This repeat would send ${weekRuns} WhatsApp messages in its first 7 days, but the user has only ${Math.max(0, limit - used)} of ${limit} weekly WhatsApp messages left (the limit is set by Classgrid admins). Nothing was scheduled. Tell the user exactly this and offer fewer days or email only.` }] };
+            dropWhatsapp('the user is not signed in.');
+          } else {
+            const { checkWhatsappLimit, normalizeWhatsappNumber } = await import('../services/ai-feature-limits.js');
+            const { allowed, limit, used } = await checkWhatsappLimit(user, { includeUpcomingRepeats: rep.repeat !== 'once' });
+            const weekRuns = rep.repeat !== 'once' ? runsWithin(rep, rep.first, 7 * 24 * 60 * 60 * 1000) : 1;
+            if (!allowed) {
+              dropWhatsapp(`the user has used ${used} of ${limit} WhatsApp messages allowed in the last 7 days (limit set by Classgrid admins).`);
+            } else if (rep.repeat !== 'once' && used + weekRuns > limit) {
+              // A repeat must fit its first week of WhatsApp messages into what is left of the weekly limit
+              dropWhatsapp(`this repeat would send ${weekRuns} WhatsApp messages in its first 7 days but only ${Math.max(0, limit - used)} of ${limit} weekly WhatsApp messages are left (limit set by Classgrid admins).`);
+            } else {
+              args.whatsapp_phone_number = normalizeWhatsappNumber(args.whatsapp_phone_number);
             }
           }
-          if (args.whatsapp_phone_number) args.whatsapp_phone_number = normalizeWhatsappNumber(args.whatsapp_phone_number);
+        } else {
+          // Half of WhatsApp (number without message or the other way round) can't be sent
+          delete args.whatsapp_phone_number;
+          delete args.whatsapp_message;
         }
 
         const schedule = await AiSchedule.create({
@@ -1936,7 +1947,7 @@ export const handleToolCall = async (name, args, context = {}) => {
         const when = schedule.repeat === 'once'
           ? `for ${schedule.scheduled_at.toISOString()}`
           : `to repeat ${describeRepeat(schedule)}, first run ${schedule.scheduled_at.toISOString()}`;
-        return { content: [{ type: 'text', text: `Successfully scheduled task "${args.title}" ${when}. The user will receive it at that time. IMPORTANT: The schedule_id is ${schedule._id}. Save this ID if you need to update or delete it later (deleting it stops the whole repeat).` }] };
+        return { content: [{ type: 'text', text: `Successfully scheduled task "${args.title}" ${when}. The user will receive it at that time. IMPORTANT: The schedule_id is ${schedule._id}. Save this ID if you need to update or delete it later (deleting it stops the whole repeat).${whatsappNote}` }] };
       } catch (e) {
         return { content: [{ type: 'text', text: `Error creating schedule: ${e.message}` }] };
       }
