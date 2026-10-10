@@ -6020,7 +6020,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                   {!isTerminated && !readOnly && (
                     <div className="hidden sm:flex w-full flex-col items-center gap-3">
                       <StarterCards onPick={(prompt) => askQuestionRef.current?.(prompt)} />
-                      <CapabilityStrip />
+                      <CapabilityStrip integrations={INTEGRATIONS_LIST} />
                     </div>
                   )}
                 </div>

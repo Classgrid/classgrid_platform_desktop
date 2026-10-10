@@ -44,8 +44,10 @@ export function StarterCards({ onPick }: { onPick: (prompt: string) => void }) {
 const prettyApp = (id: string) =>
   String(id).replace(/[_-]+/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 
-/** "Notion, YouTube connected · 2 scheduled tasks", shown only when there is something to show. */
-export function CapabilityStrip() {
+type IntegrationInfo = { id: string; name: string; imgUrl?: string; invertInDarkMode?: boolean; invertInLightMode?: boolean };
+
+/** Connected apps (with their real logos from the AI Hub list) and scheduled tasks; hidden when there is neither. */
+export function CapabilityStrip({ integrations = [] }: { integrations?: IntegrationInfo[] }) {
   const { data: apps = [] } = useQuery({
     queryKey: ["agent-home-connected"],
     queryFn: async () => {
@@ -63,14 +65,35 @@ export function CapabilityStrip() {
     staleTime: 5 * 60 * 1000,
   });
 
-  const names = [...new Set(apps.map(prettyApp))];
-  if (names.length === 0 && scheduled === 0) return null;
-  const appText = names.length > 3 ? `${names.slice(0, 3).join(", ")} +${names.length - 3}` : names.join(", ");
+  // Same ids as the AI Hub (it matches this status list against INTEGRATIONS_LIST); unknown ids still show by name
+  const connected = [...new Set(apps)].map((id) => {
+    const info = integrations.find((i) => i.id === id || i.id === `mcp-${id}`);
+    return { id, name: info?.name || prettyApp(id), info };
+  });
+  if (connected.length === 0 && scheduled === 0) return null;
+  const label = connected.length === 1 ? `${connected[0]!.name} connected` : `${connected.length} apps connected`;
 
   return (
     <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
-      {names.length > 0 && (
-        <span className="inline-flex items-center gap-1.5"><Plug className="h-3.5 w-3.5" />{appText} connected</span>
+      {connected.length > 0 && (
+        <span className="inline-flex items-center gap-2">
+          <span className="flex items-center -space-x-1">
+            {connected.slice(0, 5).map(({ id, name, info }) =>
+              info?.imgUrl ? (
+                <img
+                  key={id}
+                  src={info.imgUrl}
+                  alt={name}
+                  title={name}
+                  className={`h-4 w-4 rounded-sm object-contain bg-background ring-2 ring-background ${info.invertInDarkMode ? "dark:invert" : ""} ${info.invertInLightMode ? "invert dark:invert-0" : ""}`}
+                />
+              ) : (
+                <Plug key={id} className="h-3.5 w-3.5" aria-label={name} />
+              )
+            )}
+          </span>
+          {label}
+        </span>
       )}
       {scheduled > 0 && (
         <span className="inline-flex items-center gap-1.5"><Clock className="h-3.5 w-3.5" />{scheduled} scheduled {scheduled === 1 ? "task" : "tasks"}</span>
