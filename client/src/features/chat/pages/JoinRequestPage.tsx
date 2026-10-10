@@ -56,7 +56,7 @@ import { useCurrentUser } from "@/features/auth/queries/useCurrentUser";
 export function JoinRequestPage() {
   const queryClient = useQueryClient();
   const { data: user } = useCurrentUser();
-  const [activeTab, setActiveTab] = useState<'incoming' | 'outgoing'>('incoming');
+  const [activeTab, setActiveTab] = useState<'incoming' | 'outgoing' | 'history'>('incoming');
 
   const { data, isLoading, isError, refetch, isFetching } = useQuery({
     queryKey: ["join-requests", "unified"],
@@ -137,7 +137,9 @@ export function JoinRequestPage() {
   // Force student to see outgoing if somehow they end up on incoming
   const currentTab = isStudent ? 'outgoing' : activeTab;
 
-  const incomingRequests = data?.incoming || [];
+  const allIncoming = data?.incoming || [];
+  const incomingRequests = allIncoming.filter((req: any) => req.status === 'pending');
+  const historyRequests = allIncoming.filter((req: any) => req.status !== 'pending');
   const outgoingRequests = data?.outgoing || [];
 
   return (
@@ -152,7 +154,7 @@ export function JoinRequestPage() {
             <button
               onClick={() => setActiveTab('incoming')}
               className={`pb-3 text-sm font-medium transition-colors border-b-2 relative ${
-                currentTab === 'incoming' ? 'text-primary border-primary' : 'text-muted-foreground border-transparent hover:text-foreground hover:border-border'
+                activeTab === 'incoming' ? 'text-primary border-primary' : 'text-muted-foreground border-transparent hover:text-foreground hover:border-border'
               }`}
             >
               Incoming Requests
@@ -165,10 +167,18 @@ export function JoinRequestPage() {
             <button
               onClick={() => setActiveTab('outgoing')}
               className={`pb-3 text-sm font-medium transition-colors border-b-2 ${
-                currentTab === 'outgoing' ? 'text-primary border-primary' : 'text-muted-foreground border-transparent hover:text-foreground hover:border-border'
+                activeTab === 'outgoing' ? 'text-primary border-primary' : 'text-muted-foreground border-transparent hover:text-foreground hover:border-border'
               }`}
             >
               My Requests
+            </button>
+            <button
+              onClick={() => setActiveTab('history')}
+              className={`pb-3 text-sm font-medium transition-colors border-b-2 ${
+                activeTab === 'history' ? 'text-primary border-primary' : 'text-muted-foreground border-transparent hover:text-foreground hover:border-border'
+              }`}
+            >
+              History
             </button>
           </div>
         )}
@@ -180,7 +190,7 @@ export function JoinRequestPage() {
         )}
 
         {/* Content */}
-        {currentTab === 'incoming' && (
+        {activeTab === 'incoming' && (
           <div className="space-y-4">
             {incomingRequests.length === 0 ? (
               <div className="text-center py-20 bg-muted/20 rounded-xl border border-border border-dashed">
@@ -201,6 +211,9 @@ export function JoinRequestPage() {
                       <h3 className="font-semibold text-sm flex items-center gap-2">
                         {req.user_name}
                       </h3>
+                      {req.user_email && (
+                        <p className="text-xs text-muted-foreground mt-0.5">{req.user_email}</p>
+                      )}
                       <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
                         <Clock className="w-3 h-3" /> Requested to join <strong className="text-foreground">{req.group?.name}</strong> on {new Date(req.created_at).toLocaleDateString()}
                       </p>
@@ -229,7 +242,7 @@ export function JoinRequestPage() {
           </div>
         )}
 
-        {currentTab === 'outgoing' && (
+        {activeTab === 'outgoing' && (
           <div className="space-y-4">
             {outgoingRequests.length === 0 ? (
               <div className="text-center py-20 bg-muted/20 rounded-xl border border-border border-dashed">
@@ -238,7 +251,7 @@ export function JoinRequestPage() {
                 <p className="text-muted-foreground text-sm mt-1">You haven't requested to join any groups recently.</p>
               </div>
             ) : (
-              outgoingRequests.map((req) => (
+              outgoingRequests.map((req: any) => (
                 <div key={req.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 bg-card border border-border rounded-xl shadow-sm gap-4">
                   <div className="flex items-center gap-4">
                     <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center shrink-0 border border-primary/20 overflow-hidden">
@@ -257,6 +270,50 @@ export function JoinRequestPage() {
                   <div className="flex items-center self-start sm:self-center">
                     <span className={`text-xs font-bold px-3 py-1.5 rounded-full uppercase tracking-wider ${
                       req.status === 'pending' ? 'bg-warning/10 text-warning' :
+                      req.status === 'approved' ? 'bg-emerald-500/10 text-emerald-500' :
+                      'bg-destructive/10 text-destructive'
+                    }`}>
+                      {req.status}
+                    </span>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        )}
+
+        {activeTab === 'history' && (
+          <div className="space-y-4">
+            {historyRequests.length === 0 ? (
+              <div className="text-center py-20 bg-muted/20 rounded-xl border border-border border-dashed">
+                <Shield className="w-12 h-12 text-muted-foreground/30 mx-auto mb-4" />
+                <h3 className="text-lg font-medium">No history</h3>
+                <p className="text-muted-foreground text-sm mt-1">You haven't approved or rejected any requests yet.</p>
+              </div>
+            ) : (
+              historyRequests.map((req: any) => (
+                <div key={req.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 bg-card border border-border rounded-xl shadow-sm gap-4 opacity-75">
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+                    <img 
+                      src={req.user_avatar || DEFAULT_USER_AVATAR} 
+                      alt={req.user_name} 
+                      className="w-12 h-12 rounded-full object-cover bg-primary/10 border border-border shrink-0 grayscale"
+                    />
+                    <div>
+                      <h3 className="font-semibold text-sm flex items-center gap-2">
+                        {req.user_name}
+                      </h3>
+                      {req.user_email && (
+                        <p className="text-xs text-muted-foreground mt-0.5">{req.user_email}</p>
+                      )}
+                      <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
+                        <Clock className="w-3 h-3" /> Requested to join <strong className="text-foreground">{req.group?.name}</strong> on {new Date(req.created_at).toLocaleDateString()}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center self-start sm:self-center">
+                    <span className={`text-xs font-bold px-3 py-1.5 rounded-full uppercase tracking-wider ${
                       req.status === 'approved' ? 'bg-emerald-500/10 text-emerald-500' :
                       'bg-destructive/10 text-destructive'
                     }`}>

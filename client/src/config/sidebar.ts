@@ -741,7 +741,8 @@ export const dashboardConfigs: DashboardConfig[] = [
           { label: "Agent", to: "/agent", icon: Play },
           { label: "Grids", to: "/agent/chat", icon: ClassgridLogoIcon },
           { label: "Requests", to: "/requests", icon: Users },
-          { label: "Audit Logs", to: "/audit", icon: Shield }
+          { label: "Audit Logs", to: "/audit", icon: Shield },
+            { label: "Analytics", to: "/analytics", icon: FileBarChart }
         ]
       }
     ],
