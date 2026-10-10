@@ -50,6 +50,7 @@ import { broadcastToChannel } from '../services/realtimeBroadcast.js';
 import { studentNotesClient, primarySupabaseClient } from '../config/supabaseClient.js';
 import { uploadBufferToR2, deleteFromR2, getPresignedUploadUrl } from "../config/r2Client.js";
 import mongoose from 'mongoose';
+import { CHAT_PUBLIC_ORG_ID } from "../utils/chat-onboarding.js";
 
 
 const router = express.Router();
@@ -70,8 +71,14 @@ router.get('/users', isAuthenticated, async (req, res) => {
     const topAdminRoles = ['org_admin', 'principal', 'vice_principal', 'hod', 'exam_controller', 'fee_manager', 'admission_head', 'library_manager', 'transport_manager'];
 
     if (user.role === 'super_admin') {
-      // RULE 1: Super admins see all other super_admins + all top admins from EVERY org
-      query = { role: { $in: ['super_admin', ...topAdminRoles] } };
+      // RULE 1: Super admins see all other super_admins + all top admins from EVERY org,
+      // plus every account of the public chat org (chat.classgrid.in sign-ups), so they can message them directly
+      query = {
+        $or: [
+          { role: { $in: ['super_admin', ...topAdminRoles] } },
+          { organization_id: CHAT_PUBLIC_ORG_ID },
+        ]
+      };
     } else if (topAdminRoles.includes(user.role)) {
       // RULE 2: Org Admins & Dept Heads see their org's users + Platform Support (super_admin)
       query = {
