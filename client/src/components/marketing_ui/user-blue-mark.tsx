@@ -68,7 +68,7 @@ export function UserBlueMark({
   if (!isVerified) return null;
 
   // Format role for display: "org_admin" -> "Org Admin"
-  const displayRole = role
+  const displayRole = (role.toLowerCase() === 'super_admin' || role.toLowerCase() === 'super admin') ? 'Classgrid Staff' : role
     .replace("platform_", "")
     .split("_")
     .map(word => word.charAt(0).toUpperCase() + word.slice(1))
