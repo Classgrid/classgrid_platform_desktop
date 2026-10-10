@@ -56,6 +56,7 @@ import { uploadBufferToR2, deleteFromR2, getPresignedUploadUrl } from "../config
 
 const router = express.Router();
 const sb = primarySupabaseClient;
+import { logGroupAudit, forgetGroup } from '../services/chat-group-audit.service.js';
 
 const upload = multer({
   storage: multer.memoryStorage(),
@@ -262,6 +263,8 @@ router.post('/', isAuthenticated, async (req, res) => {
        broadcastToChannel(`org:${threadOrgId}`, 'explore_groups_update', { groupId: group.id }).catch(() => {});
     }
 
+    logGroupAudit(req, { groupId: group.id, action: 'group_created', targetType: 'group', targetId: group.id, targetName: group.name, groupName: group.name, newValue: { name: group.name, description: group.description || null, is_private: group.is_private ?? null, group_type: group.group_type || null } });
+
     res.status(201).json({ group, thread });
   } catch (err) {
     console.error('Group create error:', err);
@@ -358,14 +361,25 @@ router.get('/join-requests/unified', isAuthenticated, async (req, res) => {
           const groupIds = threads ? threads.map(t => t.group_id) : [];
           
           if (groupIds.length > 0) {
-             const { data: inReqs, error: inErr } = await sb.from('chat_group_join_requests')
-               .select('*, group:chat_groups(name, avatar_url)')
-               .in('group_id', groupIds)
-               .eq('status', 'pending')
-               .order('created_at', { ascending: false });
+             const { data: inReqs, error: inErr } = await sb.from("chat_group_join_requests")
+               .select("*, group:chat_groups(name, avatar_url)")
+               .in("group_id", groupIds)
+               .order("created_at", { ascending: false });
                
              if (inErr) throw inErr;
-             incoming = inReqs || [];
+             
+             // Fetch real names/emails from MongoDB
+             const uIds = (inReqs || []).map(r => r.user_id);
+             const mUsers = await User.find({ _id: { $in: uIds } }).select("name email profilePicture").lean();
+             const mUserMap = {};
+             mUsers.forEach(u => { mUserMap[u._id.toString()] = u; });
+
+             incoming = (inReqs || []).map(r => ({
+               ...r,
+               user_name: mUserMap[r.user_id]?.name || r.user_name || "Unknown",
+               user_email: mUserMap[r.user_id]?.email || "",
+               user_avatar: mUserMap[r.user_id]?.profilePicture || r.user_avatar || null
+             }));
           }
        }
     }
@@ -398,10 +412,10 @@ router.get('/join-requests/unified', isAuthenticated, async (req, res) => {
 
     // Incoming Role Requests (only if org_admin)
     if (req.user.role === 'org_admin' && orgId) {
-        const pendingRoleRequests = await RoleRequest.find({ organization_id: orgId, status: 'pending' }).lean();
+        const pendingRoleRequests = await RoleRequest.find({ organization_id: orgId }).lean();
         if (pendingRoleRequests.length > 0) {
             const requesterIds = pendingRoleRequests.map(r => r.user_id);
-            const requesters = await User.find({ _id: { $in: requesterIds } }).select('name profilePicture').lean();
+            const requesters = await User.find({ _id: { $in: requesterIds } }).select("name email profilePicture").lean();
             const userMap = {};
             requesters.forEach(u => { userMap[u._id.toString()] = u; });
             
@@ -411,7 +425,8 @@ router.get('/join-requests/unified', isAuthenticated, async (req, res) => {
                 group_id: r.organization_id.toString(),
                 status: r.status,
                 created_at: r.createdAt,
-                user_name: userMap[r.user_id.toString()]?.name || r.email || 'Unknown User',
+                user_name: userMap[r.user_id.toString()]?.name || r.email || "Unknown User",
+                user_email: userMap[r.user_id.toString()]?.email || r.email || "",
                 user_avatar: userMap[r.user_id.toString()]?.profilePicture || null,
                 group: {
                     name: `Role: ${r.role}`,
@@ -435,6 +450,73 @@ router.get('/join-requests/unified', isAuthenticated, async (req, res) => {
 // ──────────────────────────────────────────────
 // GET /groups/:id — Group info + members
 // ──────────────────────────────────────────────
+// ──────────────────────────────────────────────
+// GET /group-chat/audit-logs — group audit log with filters and paging (Audit Logs page)
+//   ?page=1&pageSize=50&search=&action=&groupId=&actorId=&from=ISO&to=ISO&format=csv
+// Who sees what: super admin → everything; org admins → their org's groups; anyone else → groups they are an admin of.
+// (Defined before '/:id' so "audit-logs" is not read as a group id.)
+// ──────────────────────────────────────────────
+const AUDIT_ORG_ADMIN_ROLES = ['org_admin', 'hod', 'principal', 'vice_principal', 'exam_controller', 'fee_manager', 'admission_head'];
+router.get('/audit-logs', isAuthenticated, async (req, res) => {
+  try {
+    const me = req.user;
+    const myId = me._id.toString();
+    const csv = req.query.format === 'csv';
+    const pageSize = csv ? 5000 : Math.min(100, Math.max(1, parseInt(req.query.pageSize, 10) || 50));
+    const page = Math.max(1, parseInt(req.query.page, 10) || 1);
+
+    // Groups this person may see logs for
+    let allowedGroupIds = null; // null = all
+    let orgFilter = null;
+    if (me.role === 'super_admin') {
+      // everything
+    } else if (AUDIT_ORG_ADMIN_ROLES.includes(me.role) && me.organization_id) {
+      orgFilter = me.organization_id.toString();
+    } else {
+      const { data: adminRows } = await sb.from('chat_thread_members').select('thread_id').eq('user_id', myId).eq('role', 'admin');
+      const threadIds = (adminRows || []).map(r => r.thread_id);
+      if (threadIds.length === 0) return csv ? res.type('text/csv').send('') : res.json({ logs: [], total: 0, page, pageSize, groups: [] });
+      const { data: threads } = await sb.from('chat_threads').select('group_id').in('id', threadIds).not('group_id', 'is', null);
+      allowedGroupIds = [...new Set((threads || []).map(t => t.group_id))];
+      if (allowedGroupIds.length === 0) return csv ? res.type('text/csv').send('') : res.json({ logs: [], total: 0, page, pageSize, groups: [] });
+    }
+
+    let query = sb.from('chat_group_audit_logs').select('*', { count: csv ? undefined : 'exact' });
+    if (allowedGroupIds) query = query.in('group_id', allowedGroupIds);
+    if (orgFilter) query = query.eq('org_id', orgFilter);
+    if (req.query.groupId) query = query.eq('group_id', String(req.query.groupId));
+    if (req.query.action) query = query.in('action', String(req.query.action).split(',').filter(Boolean).slice(0, 30));
+    if (req.query.actorId) query = query.eq('actor_id', String(req.query.actorId));
+    if (req.query.from) query = query.gte('created_at', new Date(String(req.query.from)).toISOString());
+    if (req.query.to) query = query.lte('created_at', new Date(String(req.query.to)).toISOString());
+    const search = String(req.query.search || '').trim().replace(/[%,()]/g, ' ').slice(0, 80);
+    if (search) query = query.or(`actor_name.ilike.%${search}%,target_name.ilike.%${search}%,group_name.ilike.%${search}%,action.ilike.%${search}%`);
+
+    query = query.order('created_at', { ascending: false }).range((page - 1) * pageSize, page * pageSize - 1);
+    const { data: logs, error, count } = await query;
+    if (error) throw error;
+
+    if (csv) {
+      const cols = ['created_at', 'group_name', 'action', 'actor_name', 'actor_role', 'target_type', 'target_name', 'target_id', 'old_value', 'new_value', 'ip_address', 'user_agent'];
+      const cell = (v) => { const t = v == null ? '' : (typeof v === 'object' ? JSON.stringify(v) : String(v)); return `"${t.replace(/"/g, '""')}"`; };
+      const body = [cols.join(','), ...(logs || []).map(l => cols.map(c => cell(l[c])).join(','))].join('\n');
+      res.setHeader('Content-Disposition', `attachment; filename="group-audit-logs-${new Date().toISOString().slice(0, 10)}.csv"`);
+      return res.type('text/csv').send(body);
+    }
+
+    // Groups for the filter dropdown (only ones this person may see)
+    let groupsQuery = sb.from('chat_groups').select('id, name').order('name').limit(500);
+    if (allowedGroupIds) groupsQuery = groupsQuery.in('id', allowedGroupIds);
+    if (orgFilter) groupsQuery = groupsQuery.eq('org_id', orgFilter);
+    const { data: groups } = await groupsQuery;
+
+    res.json({ logs: logs || [], total: count ?? (logs || []).length, page, pageSize, groups: groups || [] });
+  } catch (err) {
+    console.error('Group audit logs error:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 router.get('/:id', isAuthenticated, async (req, res) => {
   try {
     const userId = req.user._id.toString();
@@ -553,6 +635,17 @@ router.put('/:id', isAuthenticated, async (req, res) => {
       )).catch(err => console.error('Group update broadcast error:', err));
     }
 
+    {
+      const oldValue = {}, newValue = {};
+      for (const k of Object.keys(updates)) {
+        if ((group[k] ?? null) !== (updates[k] ?? null)) { oldValue[k] = group[k] ?? null; newValue[k] = updates[k]; }
+      }
+      if (Object.keys(newValue).length) {
+        forgetGroup(req.params.id);
+        logGroupAudit(req, { groupId: req.params.id, action: 'group_details_changed', targetType: 'group', targetId: req.params.id, targetName: data?.name, oldValue, newValue });
+      }
+    }
+
     res.json({ group: data });
   } catch (err) {
     console.error('Group update error:', err);
@@ -609,6 +702,8 @@ router.post('/:id/photo', isAuthenticated, upload.single('photo'), async (req, r
         })
       )).catch(err => console.error('Group photo update broadcast error:', err));
     }
+
+    logGroupAudit(req, { groupId: req.params.id, action: type === 'banner' ? 'group_banner_changed' : 'group_photo_changed', targetType: 'group', targetId: req.params.id, targetName: data?.name, oldValue: { [updateField]: group?.[updateField] || null }, newValue: { [updateField]: publicUrl } });
 
     res.json({ group: data });
   } catch (err) {
@@ -699,17 +794,14 @@ router.put('/:id/permissions', isAuthenticated, async (req, res) => {
       });
     }
 
-    // TODO: Write to chat_group_audit_logs once model is ready
-    try {
-      await sb.from('chat_group_audit_logs').insert({
-        group_id: req.params.id,
-        actor_id: userId,
-        actor_name: req.user.name || 'Admin',
-        action: 'permissions_updated',
-        new_value: updates
-      });
-    } catch (auditErr) {
-      console.error('Failed to write audit log:', auditErr);
+    {
+      const oldValue = {}, newValue = {};
+      for (const k of Object.keys(updates)) {
+        if (JSON.stringify(group[k] ?? null) !== JSON.stringify(updates[k] ?? null)) { oldValue[k] = group[k] ?? null; newValue[k] = updates[k]; }
+      }
+      if (Object.keys(newValue).length) {
+        logGroupAudit(req, { groupId: req.params.id, action: 'permissions_updated', targetType: 'group', targetId: req.params.id, targetName: group.name, oldValue, newValue });
+      }
     }
 
     broadcastToChannel(`thread:${membership.thread_id}`, 'thread_updated', { id: membership.thread_id, groupId: req.params.id, permissions_updated: true });
@@ -743,6 +835,11 @@ router.put('/:id/admins/:userId', isAuthenticated, async (req, res) => {
     if (error) throw error;
 
     broadcastToChannel(`thread:${thread.id}`, 'thread_updated', { id: thread.id, groupId: req.params.id });
+
+    {
+      const target = await User.findById(targetId).select('name').lean().catch(() => null);
+      logGroupAudit(req, { groupId: req.params.id, action: role === 'admin' ? 'member_promoted' : 'member_demoted', targetType: 'user', targetId, targetName: target?.name, newValue: { role } });
+    }
 
     res.json({ ok: true, userId: targetId, newRole: role });
   } catch (err) {
@@ -806,17 +903,7 @@ router.post('/:id/members', isAuthenticated, async (req, res) => {
       last_message_at: new Date().toISOString()
     }).eq('id', thread.id);
 
-    try {
-      await sb.from('chat_group_audit_logs').insert({
-        group_id: req.params.id,
-        actor_id: myId,
-        actor_name: req.user.name || 'Admin',
-        action: 'member_added',
-        new_value: { user_id: userId, name: targetUser.name }
-      });
-    } catch (auditErr) {
-      console.error('Audit log error:', auditErr);
-    }
+    logGroupAudit(req, { groupId: req.params.id, action: 'member_added', targetType: 'user', targetId: userId, targetName: targetUser.name, newValue: { user_id: userId, name: targetUser.name, added_by: req.user.name || null } });
 
     // Insert system message for the chat feed
     const { data: sysMsg } = await sb.from('chat_messages').insert([{
@@ -882,6 +969,11 @@ router.delete('/:id/members/:userId', isAuthenticated, async (req, res) => {
       broadcastToChannel(`thread:${thread.id}`, 'new_message', { ...sysMsg, attachments: [], reactions: {} });
     }
 
+    {
+      const target = await User.findById(targetId).select('name').lean().catch(() => null);
+      logGroupAudit(req, { groupId: req.params.id, action: 'member_removed', targetType: 'user', targetId, targetName: target?.name });
+    }
+
     res.json({ ok: true, removedUserId: targetId });
   } catch (err) {
     console.error('Remove member error:', err);
@@ -931,6 +1023,8 @@ router.post('/:id/exit', isAuthenticated, async (req, res) => {
       broadcastToChannel(`thread:${thread.id}`, 'new_message', { ...sysMsg, attachments: [], reactions: {} });
     }
 
+    logGroupAudit(req, { groupId: req.params.id, action: 'member_left', targetType: 'user', targetId: myId, targetName: req.user.name });
+
     res.json({ ok: true, leftGroup: req.params.id });
   } catch (err) {
     console.error('Exit group error:', err);
@@ -958,7 +1052,15 @@ router.delete('/:id', isAuthenticated, async (req, res) => {
     }
 
     // CASCADE will handle: thread → members, messages → attachments, polls → votes
-    const { error } = await sb.from('chat_groups').delete().eq('id', req.params.id);
+    await logGroupAudit(req, { groupId: req.params.id, action: 'group_deleted', targetType: 'group', targetId: req.params.id, targetName: group.name, groupName: group.name, oldValue: { name: group.name } });
+    forgetGroup(req.params.id);
+    let { error } = await sb.from('chat_groups').delete().eq('id', req.params.id);
+    if (error?.code === '23503') {
+      // An old foreign key from chat_group_audit_logs blocks the delete (until migration 007 removes it):
+      // detach this group's logs (they keep group_name) and try again
+      await sb.from('chat_group_audit_logs').update({ group_id: null }).eq('group_id', req.params.id);
+      ({ error } = await sb.from('chat_groups').delete().eq('id', req.params.id));
+    }
     if (error) throw error;
 
     if (thread) {
@@ -1280,6 +1382,8 @@ router.post('/:id/join-request', isAuthenticated, async (req, res) => {
        }
     }
     
+    logGroupAudit(req, { groupId, action: 'join_requested', targetType: 'user', targetId: userId, targetName: req.user.name });
+
     res.status(201).json({ request });
   } catch (err) {
     console.error('Join request error:', err);
@@ -1358,14 +1462,11 @@ router.patch('/:id/join-requests/:requestId', isAuthenticated, async (req, res) 
           user_id: request.user_id,
           role: 'member'
        });
-       // Optional: Add audit log
-       await sb.from('chat_group_audit_logs').insert({
-          group_id: groupId,
-          action: 'member_joined',
-          actor_id: myId,
-          target_user_id: request.user_id,
-          details: 'Join request approved'
-       });
+    }
+
+    {
+      const requester = await User.findById(request.user_id).select('name').lean().catch(() => null);
+      logGroupAudit(req, { groupId, action: status === 'approved' ? 'join_request_approved' : 'join_request_rejected', targetType: 'user', targetId: request.user_id, targetName: requester?.name });
     }
 
     // Send Notification to user
@@ -1430,6 +1531,8 @@ router.post('/:id/join', isAuthenticated, async (req, res) => {
        role: 'member'
     });
     
+    logGroupAudit(req, { groupId, action: 'member_joined', targetType: 'user', targetId: userId, targetName: req.user.name });
+
     res.json({ success: true });
   } catch (err) {
     res.status(500).json({ error: err.message });

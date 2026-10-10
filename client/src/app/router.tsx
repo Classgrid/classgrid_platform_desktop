@@ -143,6 +143,8 @@ import ClassroomDetailPage from "@/features/classrooms/pages/ClassroomDetailPage
 import { DiscoverClassroomsPage } from "@/features/classrooms/pages/DiscoverClassroomsPage";
 import { WebsiteCMSPage } from "@/features/website_cms/pages/WebsiteCMSPage";
 import { JoinRequestPage } from "@/features/chat/pages/JoinRequestPage";
+import { GroupAuditLogsPage } from "@/features/chat/pages/GroupAuditLogsPage";
+import { ChatAnalyticsPage } from "@/features/chat/pages/ChatAnalyticsPage";
 import { OnboardingWizardPage } from "@/features/auth/pages/OnboardingWizardPage";
 import NewRoleWelcomePage from "@/features/auth/pages/NewRoleWelcomePage";
 import { CheckoutPage } from "@/features/billing-portal/pages/CheckoutPage";
@@ -537,8 +539,9 @@ export function AppRouter() {
           <Route path="/platform-feedback" element={<GenericPage title="Platform Feedback" />} />
           <Route path="/marketplace" element={<GenericPage title="Marketplace" />} />
           <Route path="/my-requests" element={<JoinRequestPage />} />
-          {/* chat.classgrid.in: group audit logs (the ERP audit report doesn't apply to public chat accounts) */}
-          <Route path="/audit" element={typeof window !== "undefined" && window.location.hostname.startsWith("chat.") ? <GenericPage title="Audit Logs" /> : <AuditPage />} />
+            {/* chat.classgrid.in: group audit logs & analytics */}
+            <Route path="/analytics" element={typeof window !== "undefined" && window.location.hostname.startsWith("chat.") ? <ChatAnalyticsPage /> : <Navigate to="/dashboard" />} />
+            <Route path="/audit" element={typeof window !== "undefined" && window.location.hostname.startsWith("chat.") ? <GroupAuditLogsPage /> : <AuditPage />} />
           <Route path="profile" element={<SharedProfilePage />} />
           <Route path="settings" element={<SharedSettingsPage />} />
           <Route path="classrooms" element={<ClassroomsPage />} />

@@ -47,6 +47,7 @@ import multer from 'multer';
 import { randomUUID } from 'crypto';
 import { isAuthenticated } from '../middleware/auth.middleware.js';
 import User from '../models/User.js';
+import { logGroupAudit } from '../services/chat-group-audit.service.js';
 import Organization from '../models/Organization.js';
 import { primarySupabaseClient } from '../config/supabaseClient.js';
 import { broadcastToChannel } from '../services/realtimeBroadcast.js';
@@ -1834,6 +1835,7 @@ router.delete('/:id/messages/:msgId', isAuthenticated, async (req, res) => {
         .update({ message: 'This message was deleted', is_deleted: true })
         .eq('id', msgId);
       if (error) throw error;
+      logGroupAudit(req, { threadId, action: 'message_deleted', targetType: 'message', targetId: msgId, oldValue: { message: String(msg.message || '').slice(0, 500), sender_id: msg.sender_id }, newValue: { deleted_by: msg.sender_id === userId ? 'author' : 'admin' } });
     } else if (deleteType === 'me') {
       // "Delete for me" — store in MongoDB (no Supabase column needed)
       await User.updateOne(
@@ -1928,6 +1930,8 @@ router.post('/:id/messages/bulk-delete', isAuthenticated, async (req, res) => {
           .update({ message: 'This message was deleted', is_deleted: true })
           .in('id', unseenIds);
         broadcastToChannel(`thread:${threadId}`, 'messages_bulk_deleted', { messageIds: unseenIds });
+        // One audit row for the whole batch (ids + a short preview of each)
+        logGroupAudit(req, { threadId, action: 'messages_bulk_deleted', targetType: 'message', targetId: unseenIds[0], oldValue: { count: unseenIds.length, messages: msgs.filter(m => unseenIds.includes(m.id)).slice(0, 50).map(m => ({ id: m.id, message: String(m.message || '').slice(0, 120) })) }, newValue: { deleted_by: 'author' } });
       }
 
       // Update thread preview
@@ -2048,7 +2052,7 @@ router.patch('/:id/messages/:msgId', isAuthenticated, async (req, res) => {
     // Ensure the user actually sent this message
     const { data: existingMsg } = await sb
       .from('chat_messages')
-      .select('sender_id, is_deleted')
+      .select('sender_id, is_deleted, message')
       .eq('id', msgId)
       .maybeSingle();
 
@@ -2065,6 +2069,8 @@ router.patch('/:id/messages/:msgId', isAuthenticated, async (req, res) => {
     if (error) throw error;
 
     // Broadcast is handled by the client now
+
+    logGroupAudit(req, { threadId, action: 'message_edited', targetType: 'message', targetId: msgId, oldValue: { message: String(existingMsg.message || '').slice(0, 1000) }, newValue: { message: message.trim().slice(0, 1000) } });
 
     res.json({ ok: true });
   } catch (err) {
@@ -2370,6 +2376,8 @@ async function updateDisappearingMessages(req, res) {
     if (msgErr) throw msgErr;
 
     broadcastToChannel(`thread:${threadId}`, 'new_message', { ...msg, attachments: [], reactions: {} });
+    logGroupAudit(req, { threadId: threadId, action: 'disappearing_messages_changed', targetType: 'group', newValue: { message_ttl: ttl } });
+
     res.json({ success: true, ttl });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -2900,12 +2908,7 @@ router.patch('/:id/messages/:messageId/pin', isAuthenticated, async (req, res) =
     if (error) throw error;
 
     // Audit Log
-    const { data: thread } = await sb.from('chat_threads').select('group_id').eq('id', threadId).single();
-    if (thread?.group_id) {
-       await sb.from('chat_group_audit_logs').insert({
-         group_id: thread.group_id, actor_id: userId, actor_name: req.user.name || 'Admin', action: is_pinned ? 'message_pinned' : 'message_unpinned'
-       });
-    }
+    logGroupAudit(req, { threadId, action: is_pinned ? 'message_pinned' : 'message_unpinned', targetType: 'message', targetId: messageId, newValue: { message: String(updated?.message || '').slice(0, 300) } });
 
     broadcastToChannel(`thread:${threadId}`, 'message_updated', updated);
     res.json(updated);
@@ -2926,6 +2929,7 @@ router.patch('/:id/messages/:messageId/approve', isAuthenticated, async (req, re
       status: 'approved', approved_by: userId, approved_at: new Date().toISOString()
     }).eq('id', messageId).eq('thread_id', threadId).select().single();
     if (error) throw error;
+    logGroupAudit(req, { threadId, action: 'message_approved', targetType: 'message', targetId: messageId, newValue: { message: String(updated?.message || '').slice(0, 300), sender_id: updated?.sender_id } });
 
     broadcastToChannel(`thread:${threadId}`, 'message_updated', updated);
     res.json(updated);
@@ -2946,6 +2950,7 @@ router.patch('/:id/messages/:messageId/reject', isAuthenticated, async (req, res
       status: 'rejected', rejected_by: userId, rejected_at: new Date().toISOString(), rejection_reason: req.body.reason || null
     }).eq('id', messageId).eq('thread_id', threadId).select().single();
     if (error) throw error;
+    logGroupAudit(req, { threadId, action: 'message_rejected', targetType: 'message', targetId: messageId, newValue: { message: String(updated?.message || '').slice(0, 300), sender_id: updated?.sender_id, reason: req.body.reason || null } });
 
     broadcastToChannel(`thread:${threadId}`, 'message_updated', updated);
     res.json(updated);
