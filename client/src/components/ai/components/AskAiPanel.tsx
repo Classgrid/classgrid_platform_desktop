@@ -131,7 +131,7 @@ import {
 import { cn } from "../utils";
 import { CodeBlockClient } from "./CodeBlockClient";
 import { ModelPicker, useSelectedModel, MODEL_GROUPS, AUTO_MODEL_ID } from "./ModelPicker";
-import { homeGreeting, StarterCards, CapabilityStrip } from "./AgentHomeExtras";
+import { StarterCards, CapabilityStrip, TypingGreeting } from "./AgentHomeExtras";
 import { toast } from "sonner";
 import FilePreviewModal, { type FilePreviewSource } from "./FilePreviewModal";
 import { DocsImageViewer } from "./DocsImageViewer";
@@ -4013,11 +4013,11 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
 
               {/* Greeting */}
               <div className="text-center space-y-1.5">
-                <h2 className="text-xl font-semibold text-foreground tracking-tight">
-                  {homeGreeting(user?.name)}
+                <h2 className="text-xl font-semibold text-foreground tracking-tight min-h-[1.75rem]">
+                  <TypingGreeting name={user?.name} paused={input.trim().length > 0} />
                 </h2>
                 <p className="text-sm text-muted-foreground">
-                  What should we work on today?
+                  Your AI agent
                 </p>
               </div>
             </div>
@@ -5546,11 +5546,12 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
 
                   {/* Greeting */}
                   <div className="text-center space-y-1.5">
-                    <h2 className="text-xl font-semibold text-foreground tracking-tight">
-                      {homeGreeting(user?.name)}
+                    {/* Fixed height so the input below never moves while the line types; pauses while the user types */}
+                    <h2 className="text-xl font-semibold text-foreground tracking-tight min-h-[1.75rem]">
+                      <TypingGreeting name={user?.name} paused={input.trim().length > 0} />
                     </h2>
                     <p className="text-sm text-muted-foreground">
-                      What should we work on today?
+                      Your AI agent
                     </p>
                   </div>
 
