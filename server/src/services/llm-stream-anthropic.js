@@ -13,7 +13,7 @@
 //   "drop_block" makes a prefix mismatch degrade instead of failing the request.
 
 import Anthropic from "@anthropic-ai/sdk";
-import { StreamChatError, CONTINUE_PROMPT } from "./llm-stream.js";
+import { StreamChatError, CONTINUE_PROMPT, THINKING_CUT_PROMPT } from "./llm-stream.js";
 
 export const CLAUDE_CHAT_MODELS = new Set([
     "claude-haiku-5-5",
@@ -479,6 +479,14 @@ export async function streamClaudeChat({
                     console.log(`[AI-STREAM] Claude answer hit max_tokens, continuing (${continuations}/${maxContinuations})`);
                     conversation.push({ role: "assistant", content });
                     conversation.push({ role: "user", content: CONTINUE_PROMPT });
+                    continue;
+                }
+                // Cut off while still thinking, before any answer: ask for the answer itself
+                if (message.stop_reason === "max_tokens" && !piece.trim() && thoughtThisRound && continuations < maxContinuations && roomLeft) {
+                    continuations++;
+                    console.log(`[AI-STREAM] Claude cut off while thinking, asking for the answer (${continuations}/${maxContinuations})`);
+                    conversation.push({ role: "assistant", content: [{ type: "text", text: "(I ran out of room while planning.)" }] });
+                    conversation.push({ role: "user", content: THINKING_CUT_PROMPT });
                     continue;
                 }
                 return { answer: (continuedText + piece).trim() || null, usage, toolsRun, servedModel };

@@ -1009,6 +1009,27 @@ const preprocessLaTeX = (content: string) => {
   return processed;
 };
 
+// Some models draft whole code blocks (e.g. widget cards) in their thinking. The thinking panel shows one
+// "Drafting code…" line for each such stretch instead of a wall of raw code.
+const DRAFTING_LINE = "✏️ Drafting code…";
+const TAG_OR_CSS_RE = /^\s*(?:<\/?[a-z][\w-]*[\s>/]|[.#]?[\w-]+(?:\s*[\w.#:-]+)*\s*\{[^}]*:)/i;
+const JS_START_RE = /^\s*(?:const|let|var|function|document\.|return|if\s*\(|for\s*\(|\w+\.\w+\s*=)/;
+const CLOSERS_RE = /^\s*[})\];,]+\s*$/;
+function hideCodeInThought(text: string): string {
+  const withoutFences = text.replace(/```[\s\S]*?(?:```|$)/g, `\n${DRAFTING_LINE}\n`);
+  const out: string[] = [];
+  for (const line of withoutFences.split("\n")) {
+    const isCode = line === DRAFTING_LINE || TAG_OR_CSS_RE.test(line) || CLOSERS_RE.test(line)
+      || (JS_START_RE.test(line) && /[;{}=]/.test(line));
+    if (isCode) {
+      if (out[out.length - 1] !== DRAFTING_LINE) out.push(DRAFTING_LINE);
+    } else {
+      out.push(line);
+    }
+  }
+  return out.join("\n");
+}
+
 // A flashcard slide's answer starts at a line like "Answer:", "**Answer:**" or "💡 **Answer:** ..."
 const FLASHCARD_ANSWER_RE = /^[ \t]*(?:[^\w\s*#>]+[ \t]*)?(?:[*_]{1,2})?A(?:ns)?(?:wer)?(?:[*_]{1,2})?[ \t]*[:：]/im;
 
@@ -4207,7 +4228,7 @@ export function AskAiPanel({ open, onOpenChange, pageContext, variant = "in-flow
                                     {/* CombinedReasoningBlock MUST be first child - direct sibling of steps */}
                                     {((message.thought && message.thought.trim().length > 0) || (index === messages.length - 1 && thinking)) && (
                                       <CombinedReasoningBlock
-                                        sentences={message.thought && message.thought.trim().length > 0 ? message.thought.trim().split(/(?<=[.!?\n])\s+/).filter(Boolean) : []}
+                                        sentences={message.thought && message.thought.trim().length > 0 ? hideCodeInThought(message.thought).trim().split(/(?<=[.!?\n])\s+/).filter(Boolean) : []}
                                         isStreaming={index === messages.length - 1 && thinking && !(message.steps && message.steps.some(s => s.status === 'loading'))}
                                       />
                                     )}

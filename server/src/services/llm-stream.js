@@ -59,6 +59,7 @@ function createThinkSplitter(emitText, emitThought) {
 }
 
 // Sent when an answer was cut off by the length limit, so the model picks up exactly where it stopped
+export const THINKING_CUT_PROMPT = "You ran out of room while thinking and wrote no answer yet. Stop planning now and write the final answer directly, without drafting it again in your thinking. Finish everything that was asked.";
 export const CONTINUE_PROMPT = "Your previous reply was cut off by the length limit. Continue EXACTLY where it stopped, even mid-word, mid-sentence or mid-code, without repeating anything and without any preamble, apology or comment. If you were inside a code block, keep writing inside it (do not open a new ```). Finish everything that was asked.";
 
 async function streamOneRound({ provider, messages, tools, temperature, maxTokens, timeoutMs, signal, onToken, onThought }) {
@@ -218,6 +219,14 @@ export async function streamChat({
                     conversation.push({ role: "assistant", content: round.rawText });
                     conversation.push({ role: "user", content: CONTINUE_PROMPT });
                     console.log(`[AI-STREAM] answer hit the length limit, continuing (${continuations}/${maxContinuations})`);
+                    continue;
+                }
+                // Cut off while still thinking, before any answer: ask for the answer itself
+                if (round.finishReason === "length" && !round.rawText.trim() && round.reasoning && continuations < maxContinuations && roomLeft) {
+                    continuations++;
+                    console.log(`[AI-STREAM] cut off while thinking, asking for the answer (${continuations}/${maxContinuations})`);
+                    conversation.push({ role: "assistant", content: "(I ran out of room while planning.)" });
+                    conversation.push({ role: "user", content: THINKING_CUT_PROMPT });
                     continue;
                 }
                 return { answer: (continuedText + round.rawText).trim() || null, usage, toolsRun };
