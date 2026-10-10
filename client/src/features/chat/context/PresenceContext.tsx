@@ -42,8 +42,9 @@
  * ─────────────────────────────────────────────────────────
  */
 
-import { createContext, useContext, useEffect, useState, type PropsWithChildren } from "react";
+import { createContext, useContext, useEffect, useMemo, useState, type PropsWithChildren } from "react";
 import { createClient, type RealtimeChannel } from "@supabase/supabase-js";
+import { useChatBlocks } from "../hooks/useChatBlocks";
 
 const SUPABASE_CHAT_URL =
   import.meta.env.VITE_SUPABASE_CHAT_URL ||
@@ -112,8 +113,16 @@ export function PresenceProvider({ userId, children }: PresenceProviderProps) {
     };
   }, [userId]);
 
+  // Blocking: nobody on either side of a block sees the other online, on any screen (chat, profiles, dots).
+  // useChatBlocks keeps the block list live over the user's WebSocket channel.
+  const { hiddenIds } = useChatBlocks(userId);
+  const visibleOnlineUsers = useMemo(
+    () => (hiddenIds.size ? new Set([...onlineUsers].filter((id) => !hiddenIds.has(id))) : onlineUsers),
+    [onlineUsers, hiddenIds]
+  );
+
   return (
-    <PresenceContext.Provider value={{ onlineUsers }}>
+    <PresenceContext.Provider value={{ onlineUsers: visibleOnlineUsers }}>
       {children}
     </PresenceContext.Provider>
   );
