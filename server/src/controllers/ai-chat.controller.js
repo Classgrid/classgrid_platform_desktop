@@ -3567,6 +3567,7 @@ Do NOT talk about internal architecture unless asked by a @classgrid.in employee
         // Quota check, part 2: the real prompt (rules + history + message + loaded tools, ~4 chars per token) plus
         // room for the reply, priced like the deduction after the answer (V4 Pro unless a Claude model was picked).
         // Fails closed like part 1.
+        let quotaRemaining; // the user's tokens left (undefined = no limit); long answers continue only within it
         try {
             const estimatedPromptTokens = estimatePromptTokens([...messages.map(m => m.content), activeToolList]);
             const estimatedCost = chargeableTokens({ prompt_tokens: estimatedPromptTokens, completion_tokens: REPLY_TOKEN_ALLOWANCE }, isClaudeRequest ? body.selectedModel : CF_PRO_MODEL);
@@ -3580,6 +3581,7 @@ Do NOT talk about internal architecture unless asked by a @classgrid.in employee
             }
             tokenSource = check.source;
             if (check.remaining !== undefined) llmConfig.defaultMaxTokens = Math.max(1, Math.min(8192, check.remaining));
+            quotaRemaining = check.remaining;
         } catch (err) {
             console.error("Quota check error:", err);
             res.write(`data: ${JSON.stringify({ type: "error", error: "We couldn't check your AI usage balance right now, so this message was not answered. Please try again in a minute." })}\n\n`);
@@ -3745,6 +3747,9 @@ Do NOT talk about internal architecture unless asked by a @classgrid.in employee
                                 toolHandlers: llmConfig.toolHandlers,
                                 maxTokens: llmConfig.defaultMaxTokens,
                                 maxToolDepth: 100,
+                                // An answer cut off by the length limit (e.g. "draw 40 cards") is continued in the same reply
+                                maxContinuations: 3,
+                                outputBudget: quotaRemaining,
                                 timeoutMs: llmConfig.providers[0].timeoutMs,
                                 systemCacheBoundary,
                                 // Images and PDFs attached to this message are sent to Claude directly (native vision)
@@ -3803,6 +3808,8 @@ Do NOT talk about internal architecture unless asked by a @classgrid.in employee
                                 toolHandlers: llmConfig.toolHandlers,
                                 maxTokens: llmConfig.defaultMaxTokens,
                                 maxToolDepth: 100,
+                                maxContinuations: 3,
+                                outputBudget: quotaRemaining,
                                 timeoutMs: llmConfig.providers[0].timeoutMs,
                                 signal: streamAbort.signal,
                                 onStatus,

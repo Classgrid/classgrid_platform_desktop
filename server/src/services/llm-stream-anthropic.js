@@ -13,7 +13,7 @@
 //   "drop_block" makes a prefix mismatch degrade instead of failing the request.
 
 import Anthropic from "@anthropic-ai/sdk";
-import { StreamChatError } from "./llm-stream.js";
+import { StreamChatError, CONTINUE_PROMPT } from "./llm-stream.js";
 
 export const CLAUDE_CHAT_MODELS = new Set([
     "claude-haiku-5-5",
@@ -34,7 +34,7 @@ const DEFAULT_EFFORT = {
 
 // Thinking tokens count toward max_tokens, so Claude gets more room than the Cloudflare default -
 // but only when the caller's cap (derived from the user's remaining tokens) is already at its normal size.
-const MIN_MAX_TOKENS = 16000;
+const MIN_MAX_TOKENS = 32000;
 const NORMAL_CALLER_CAP = 8192;
 
 // After a mid-response server-side fallback, blocks before the last `fallback` block belong to the
@@ -314,6 +314,10 @@ export async function streamClaudeChat({
     groupNeedingLoad,
     attachments = [],
     effort,
+    // Auto-continue: when the answer hits max_tokens it is continued in the same reply, up to this many times,
+    // while outputBudget (the user's remaining tokens; undefined = no limit) still has room
+    maxContinuations = 0,
+    outputBudget,
     signal,
     onToken,
     onThought,
@@ -400,6 +404,12 @@ export async function streamClaudeChat({
     let servedModel = model; // differs from `model` when a server-side fallback answered
     // Usage of the round in progress, read from the stream events; added to `usage` if the round is cut off.
     let roundUsage = null;
+    let continuedText = ""; // earlier parts of an answer that was cut off and continued
+    let continuations = 0;
+    // Never let one round write more than the user has left
+    const roundMaxTokens = () => outputBudget === undefined
+        ? params.max_tokens
+        : Math.max(1024, Math.min(params.max_tokens, outputBudget - (usage.output_tokens || 0)));
 
     try {
         for (;;) {
@@ -415,7 +425,7 @@ export async function streamClaudeChat({
             let roundText = "";
             const splitter = createThinkSplitter((piece) => { roundText += piece; onToken?.(piece); }, emitThought);
             const stream = getClient().beta.messages.stream(
-                { ...params, messages: conversation },
+                { ...params, max_tokens: roundMaxTokens(), messages: conversation },
                 { signal, timeout: timeoutMs },
             );
 
@@ -461,7 +471,17 @@ export async function streamClaudeChat({
                 continue;
             }
             if (toolUses.length === 0) {
-                return { answer: text || null, usage, toolsRun, servedModel };
+                const piece = hadFallback ? text : roundText;
+                const roomLeft = outputBudget === undefined || outputBudget - (usage.output_tokens || 0) >= 2048;
+                if (message.stop_reason === "max_tokens" && piece.trim() && continuations < maxContinuations && roomLeft) {
+                    continuations++;
+                    continuedText += piece;
+                    console.log(`[AI-STREAM] Claude answer hit max_tokens, continuing (${continuations}/${maxContinuations})`);
+                    conversation.push({ role: "assistant", content });
+                    conversation.push({ role: "user", content: CONTINUE_PROMPT });
+                    continue;
+                }
+                return { answer: (continuedText + piece).trim() || null, usage, toolsRun, servedModel };
             }
             if (depth >= maxToolDepth) {
                 return { answer: "I searched but couldn't find a clear answer. Could you try rephrasing?", usage, toolsRun, servedModel };

@@ -58,6 +58,9 @@ function createThinkSplitter(emitText, emitThought) {
     return { push, flush };
 }
 
+// Sent when an answer was cut off by the length limit, so the model picks up exactly where it stopped
+export const CONTINUE_PROMPT = "Your previous reply was cut off by the length limit. Continue EXACTLY where it stopped, even mid-word, mid-sentence or mid-code, without repeating anything and without any preamble, apology or comment. If you were inside a code block, keep writing inside it (do not open a new ```). Finish everything that was asked.";
+
 async function streamOneRound({ provider, messages, tools, temperature, maxTokens, timeoutMs, signal, onToken, onThought }) {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(new Error(`Timeout after ${timeoutMs}ms`)), timeoutMs);
@@ -94,6 +97,7 @@ async function streamOneRound({ provider, messages, tools, temperature, maxToken
         let text = "";
         let reasoning = "";
         let usage = null;
+        let finishReason = null;
         const toolCalls = [];
         const emitReasoning = (piece) => {
             reasoning += piece;
@@ -124,6 +128,7 @@ async function streamOneRound({ provider, messages, tools, temperature, maxToken
                     usage = chunk.usage;
                 }
 
+                if (chunk.choices?.[0]?.finish_reason) finishReason = chunk.choices[0].finish_reason;
                 const delta = chunk.choices?.[0]?.delta;
                 if (!delta) continue;
 
@@ -141,7 +146,7 @@ async function streamOneRound({ provider, messages, tools, temperature, maxToken
         }
         splitter.flush();
 
-        return { text: text.trim(), reasoning, usage, toolCalls: toolCalls.filter(Boolean) };
+        return { text: text.trim(), rawText: text, finishReason, reasoning, usage, toolCalls: toolCalls.filter(Boolean) };
     } finally {
         clearTimeout(timeout);
         signal?.removeEventListener("abort", onOuterAbort);
@@ -162,6 +167,10 @@ export async function streamChat({
     maxTokens = 600,
     maxToolDepth = 100,
     timeoutMs = 300000,
+    // Auto-continue: when the answer hits maxTokens it is continued in the same reply, up to this many times,
+    // while outputBudget (the user's remaining tokens; undefined = no limit) still has room
+    maxContinuations = 0,
+    outputBudget,
     signal,
     onToken,
     onThought,
@@ -174,6 +183,8 @@ export async function streamChat({
     let depth = 0;
     let toolsRun = 0;
     let hadReasoning = false;
+    let continuedText = ""; // earlier parts of an answer that was cut off and continued
+    let continuations = 0;
 
     try {
         for (;;) {
@@ -200,7 +211,16 @@ export async function streamChat({
             }
 
             if (round.toolCalls.length === 0) {
-                return { answer: round.text || null, usage, toolsRun };
+                const roomLeft = outputBudget === undefined || outputBudget - usage.completion_tokens >= 2048;
+                if (round.finishReason === "length" && round.rawText.trim() && continuations < maxContinuations && roomLeft) {
+                    continuations++;
+                    continuedText += round.rawText;
+                    conversation.push({ role: "assistant", content: round.rawText });
+                    conversation.push({ role: "user", content: CONTINUE_PROMPT });
+                    console.log(`[AI-STREAM] answer hit the length limit, continuing (${continuations}/${maxContinuations})`);
+                    continue;
+                }
+                return { answer: (continuedText + round.rawText).trim() || null, usage, toolsRun };
             }
 
             if (depth >= maxToolDepth) {
