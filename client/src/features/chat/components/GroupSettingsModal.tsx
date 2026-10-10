@@ -727,8 +727,8 @@ export function GroupSettingsModal({ groupId, onClose, onLeaveGroup, onUserClick
                   </div>
 
 
-                  {/* Auto-Grant Admin Roles */}
-                  <div className="flex flex-col gap-2 p-3 bg-muted/30 rounded-lg border border-border md:col-span-2">
+                  {/* Auto-Grant Admin Roles (ERP school roles: hidden on chat.classgrid.in, where they don't apply) */}
+                  <div className={`flex flex-col gap-2 p-3 bg-muted/30 rounded-lg border border-border md:col-span-2 ${typeof window !== 'undefined' && window.location.hostname.startsWith('chat.') ? 'hidden' : ''}`}>
                     <span className="text-sm font-medium text-foreground">Auto-Grant Admin by Role</span>
                     <span className="text-xs text-muted-foreground mb-2">Anyone inside this chat group with these roles will automatically be given Group Admin rights.</span>
                     <div className="flex flex-wrap gap-2">

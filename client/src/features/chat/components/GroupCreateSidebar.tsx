@@ -484,8 +484,8 @@ export function GroupCreateSidebar({
 
 
 
-              {/* Auto-Grant Admin Roles */}
-              <div className="flex flex-col gap-2">
+              {/* Auto-Grant Admin Roles (ERP school roles: hidden on chat.classgrid.in, where they don't apply) */}
+              <div className={`flex flex-col gap-2 ${typeof window !== 'undefined' && window.location.hostname.startsWith('chat.') ? 'hidden' : ''}`}>
                  <span className="text-sm font-medium text-foreground">Auto-Grant Admin by Role</span>
                  <span className="text-xs text-muted-foreground mb-1">Anyone inside this chat group with these roles will automatically be given Group Admin rights.</span>
                  <div className="flex flex-wrap gap-2">
