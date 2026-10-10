@@ -366,6 +366,24 @@ function LoginContent() {
   const [countdown, setCountdown] = useState(0);
   const [otpExpired, setOtpExpired] = useState(false);
 
+  // Google/GitHub sign-in on a new device comes back here as ?device_verify=true&email=… (the server has
+  // already emailed a code). Show the code step instead of the plain login screen, like the other login pages.
+  useEffect(() => {
+    if (searchParams.get("device_verify") !== "true") return;
+    const redirectEmail = searchParams.get("email") || "";
+    if (!redirectEmail) return;
+    setMode("signin");
+    setEmail(redirectEmail);
+    setOtp("");
+    setDeviceOtpMode(true);
+    setStep("otp");
+    startCountdown();
+    toast.info("New device detected. We sent a 6-digit code to your email.");
+    // Drop the query so a refresh doesn't start this again
+    window.history.replaceState(null, "", window.location.pathname);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
+
   useEffect(() => {
     if (targetShortCode) {
       // get-email fetch bypassed
